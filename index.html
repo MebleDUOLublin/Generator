@@ -7,6 +7,7 @@
     
     <!-- Biblioteki -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="roboto-polish.js"></script>
@@ -16,6 +17,277 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <!-- Style dla generowanego PDF -->
+    <style id="pdf-styles">
+        .pdf-page {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            color: #374151;
+            background: white;
+        }
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .pdf-header .logo-img {
+            height: 60px;
+            object-fit: contain;
+        }
+        .pdf-header .seller-details {
+            text-align: right;
+            font-size: 11px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        .seller-details .seller-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+        .seller-details .contact-person {
+             margin-top: 4px;
+             padding-top: 4px;
+             border-top: 1px solid #e5e7eb;
+        }
+        .pdf-offer-title {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .pdf-offer-title h1 {
+            color: #dc2626;
+            font-size: 28px;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .pdf-offer-title .offer-meta {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #4b5563;
+        }
+        .offer-meta span {
+             margin: 0 12px;
+        }
+        .pdf-buyer-info {
+            background: #f9fafb;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #e5e7eb;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        .pdf-buyer-info .buyer-label {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .pdf-buyer-info .buyer-name {
+            font-size: 13px;
+            color: #111827;
+            font-weight: 600;
+        }
+        .pdf-buyer-info .label {
+            color: #6b7280;
+        }
+        .pdf-products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 10px;
+        }
+        .pdf-products-table th, .pdf-products-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+        .pdf-products-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            text-align: left;
+        }
+        .pdf-products-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .pdf-products-table .product-image-cell {
+            text-align: center;
+            padding: 5px;
+            width: 70px;
+        }
+        .pdf-products-table .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+        }
+        .pdf-products-table .product-name {
+            font-weight: 700;
+            color: #111827;
+            font-size: 11px;
+        }
+        .pdf-products-table .product-code {
+            font-size: 9px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .pdf-products-table .product-desc {
+            margin-top: 4px;
+            font-size: 9px;
+            color: #4b5563;
+            line-height: 1.3;
+        }
+        .pdf-products-table .product-desc div {
+             margin: 2px 0;
+        }
+        .pdf-products-table .centered { text-align: center; }
+        .pdf-products-table .right-aligned { text-align: right; }
+        .pdf-products-table .strong { font-weight: 600; }
+        .pdf-products-table .discount { color: #dc2626; }
+        .pdf-summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 25px;
+        }
+        .pdf-summary-table {
+            width: 350px;
+            border-collapse: collapse;
+        }
+        .pdf-summary-table td {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        .pdf-summary-table .summary-label {
+            text-align: right;
+        }
+        .pdf-summary-table .summary-value {
+            text-align: right;
+            font-weight: 600;
+        }
+        .pdf-summary-table .total-row td {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .pdf-summary-table .total-row .summary-value {
+            font-size: 16px;
+        }
+        .pdf-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #e5e7eb;
+        }
+        .pdf-footer .footer-sections {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .pdf-footer .terms-section {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .pdf-footer .section-title {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .pdf-footer .terms-list {
+            font-size: 10px;
+            line-height: 1.6;
+            color: #4b5563;
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .invoice-info-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 10px;
+            width: 300px;
+        }
+        .invoice-info-title {
+            font-weight: 700;
+            font-size: 11px;
+            color: #111827;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        .invoice-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .invoice-info-label {
+            color: #6b7280;
+        }
+        .invoice-info-value {
+            font-weight: 600;
+            color: #374151;
+        }
+        .invoice-info-value.highlight {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .pdf-footer .additional-notes {
+            background: #fffbeb;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border: 1px solid #fef3c7;
+            font-size: 10px;
+        }
+        .pdf-footer .notes-label {
+             color: #92400e;
+             font-weight: 600;
+        }
+        .pdf-footer .notes-content {
+             color: #b45309;
+        }
+        .pdf-footer .final-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .pdf-footer .footer-text {
+            color: #4b5563;
+            font-size: 11px;
+            font-style: italic;
+        }
+        .pdf-footer .footer-meta {
+            margin-top: 8px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+        .pdf-footer .footer-meta span {
+            margin: 0 5px;
+        }
+        .pdf-footer .footer-meta .page-number {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        .pdf-page-counter {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+    </style>
 </head>
 <body>
     <!-- CENTRUM KONTROLNE -->
@@ -702,6 +974,8 @@
         let draggedProductId = null;
         let shouldProceedWithPDF = false;
         let productIdCounter = 0;
+        let invoiceProducts = [];
+        let invoiceProductId = 0;
 
         // =================================================================
         // UNIFIED APP STATE MANAGEMENT
@@ -1578,7 +1852,7 @@
 
 
         // PROFESJONALNA FUNKCJA GENEROWANIA PDF
-        function generatePreviewForPDF() {
+        function generatePreviewForPDF(pageNum = 1, totalPages = 1) {
             const productCount = products.filter(id => document.getElementById(`productName-${id}`)?.value?.trim()).length;
             
             let productsHtml = '';
@@ -1599,14 +1873,13 @@
                 const total = qty * discountedPrice;
                 totalNet += total;
                 
-                // Format description - POPRAWIONE WYŚWIETLANIE OPISU
                 let descHtml = '';
                 if (desc) {
                     const lines = desc.split('\n').filter(l => l.trim());
                     if (lines.length > 0) {
-                        descHtml = '<div style="margin-top: 4px; font-size: 9px; color: #4b5563; line-height: 1.3;">';
+                        descHtml = '<div class="product-desc">';
                         lines.forEach(line => {
-                            descHtml += `<div style="margin: 2px 0;">• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
+                            descHtml += `<div>• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
                         });
                         descHtml += '</div>';
                     }
@@ -1614,23 +1887,23 @@
                 
                 productsHtml += `
                     <tr>
-                        <td style="text-align: center; font-weight: 700; color: #111827;">${productIndex++}</td>
-                        ${productImages[productId] ? 
-                            `<td style="text-align: center; padding: 6px;">
-                                <img src="${productImages[productId]}" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
-                            </td>` 
-                            : '<td style="text-align: center;">-</td>'}
-                        <td style="padding: 8px;">
-                            <div style="font-weight: 700; color: #111827; font-size: 11px;">${name}</div>
-                            ${code ? `<div style="font-size: 9px; color: #6b7280; margin-top: 2px;">Kod: ${code}</div>` : ''}
+                        <td class="centered strong">${productIndex++}</td>
+                        <td class="product-image-cell">
+                            ${productImages[productId] ?
+                                `<img src="${productImages[productId]}" class="product-image">`
+                                : '-'}
+                        </td>
+                        <td>
+                            <div class="product-name">${name}</div>
+                            ${code ? `<div class="product-code">Kod: ${code}</div>` : ''}
                             ${descHtml}
                         </td>
-                        <td style="text-align: center; font-weight: 600;">${qty}</td>
-                        <td style="text-align: right; font-weight: 500;">${formatCurrency(price)}</td>
-                        <td style="text-align: center; color: ${discount > 0 ? '#dc2626' : '#9ca3af'}; font-weight: 600;">
+                        <td class="centered strong">${qty}</td>
+                        <td class="right-aligned">${formatCurrency(price)}</td>
+                        <td class="centered strong ${discount > 0 ? 'discount' : ''}">
                             ${discount > 0 ? '-' + discount + '%' : '-'}
                         </td>
-                        <td style="text-align: right; font-weight: 700; color: #111827;">${formatCurrency(total)}</td>
+                        <td class="right-aligned strong">${formatCurrency(total)}</td>
                     </tr>
                 `;
             });
@@ -1638,75 +1911,63 @@
             const vat = totalNet * 0.23;
             const gross = totalNet + vat;
             
-            // Przygotuj dane klienta - pokazuj tylko te które są wypełnione
             const buyerName = document.getElementById('buyerName').value || 'Nieznany klient';
             const buyerNIP = document.getElementById('buyerNIP').value;
             const buyerAddress = document.getElementById('buyerAddress').value;
             const buyerPhone = document.getElementById('buyerPhone').value;
             const buyerEmail = document.getElementById('buyerEmail').value;
             
-            // Osoba kontaktowa po stronie sprzedawcy
             const sellerContact = document.getElementById('sellerContact').value || 'Justyna Gancarz';
             const offerNumber = document.getElementById('offerNumber').value;
             
             return `
                 <div class="pdf-page">
-                    <!-- Professional Header with Logo -->
-                    <div class="pdf-header">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <img src="${logoBase64}" style="height: 60px;">
-                        </div>
-                        <div style="text-align: right; font-size: 11px; color: #4b5563; line-height: 1.4;">
-                            <div style="font-weight: 700; font-size: 14px; color: #111827; margin-bottom: 6px;">
-                                ${document.getElementById('sellerName').value}
-                            </div>
+                    <header class="pdf-header">
+                        <img src="${logoBase64}" class="logo-img">
+                        <div class="seller-details">
+                            <div class="seller-name">${document.getElementById('sellerName').value}</div>
                             <div>NIP: ${document.getElementById('sellerNIP').value}</div>
                             <div>${document.getElementById('sellerAddress').value.replace(/\n/g, ', ')}</div>
                             <div>Tel: ${document.getElementById('sellerPhone').value}</div>
                             <div>Email: ${document.getElementById('sellerEmail').value}</div>
-                            <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #e5e7eb;">
+                            <div class="contact-person">
                                 <strong>Osoba kontaktowa:</strong> ${sellerContact}
                             </div>
                         </div>
-                    </div>
+                    </header>
                     
-                    <!-- Offer Title -->
-                    <div style="text-align: center; margin: 25px 0;">
-                        <h1 style="color: #dc2626; font-size: 28px; margin: 0; font-weight: 700; letter-spacing: -0.5px;">OFERTA CENOWA</h1>
-                        <div style="margin-top: 10px; font-size: 12px; color: #4b5563;">
-                            <span style="margin: 0 12px;"><strong>Nr:</strong> ${offerNumber}</span>
-                            <span style="margin: 0 12px;"><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
-                            <span style="margin: 0 12px;"><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
+                    <div class="pdf-offer-title">
+                        <h1>OFERTA CENOWA</h1>
+                        <div class="offer-meta">
+                            <span><strong>Nr:</strong> ${offerNumber}</span>
+                            <span><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
+                            <span><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
                         </div>
                     </div>
                     
-                    <!-- Buyer Info - pokazuj tylko wypełnione dane -->
-                    <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 12px 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e7eb;">
-                        <div style="font-size: 11px; line-height: 1.5;">
-                            <div style="font-weight: 700; color: #111827; margin-bottom: 8px; font-size: 12px;">NABYWCA:</div>
-                            <div>
-                                <strong style="font-size: 13px; color: #111827;">${buyerName}</strong>
-                                ${buyerNIP ? `<br><span style="color: #6b7280;">NIP:</span> ${buyerNIP}` : ''}
-                                ${buyerAddress ? `<br><span style="color: #6b7280;">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
-                                ${buyerPhone || buyerEmail ? '<br>' : ''}
-                                ${buyerPhone ? `<span style="color: #6b7280;">Tel:</span> ${buyerPhone}` : ''}
-                                ${buyerPhone && buyerEmail ? ' | ' : ''}
-                                ${buyerEmail ? `<span style="color: #6b7280;">Email:</span> ${buyerEmail}` : ''}
-                            </div>
+                    <div class="pdf-buyer-info">
+                        <div class="buyer-label">NABYWCA:</div>
+                        <div>
+                            <strong class="buyer-name">${buyerName}</strong>
+                            ${buyerNIP ? `<br><span class="label">NIP:</span> ${buyerNIP}` : ''}
+                            ${buyerAddress ? `<br><span class="label">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
+                            ${buyerPhone || buyerEmail ? '<br>' : ''}
+                            ${buyerPhone ? `<span class="label">Tel:</span> ${buyerPhone}` : ''}
+                            ${buyerPhone && buyerEmail ? ' | ' : ''}
+                            ${buyerEmail ? `<span class="label">Email:</span> ${buyerEmail}` : ''}
                         </div>
                     </div>
                     
-                    <!-- Products Table -->
-                    <table class="pdf-products-table" style="margin-bottom: 25px;">
+                    <table class="pdf-products-table">
                         <thead>
                             <tr>
-                                <th style="width: 35px; text-align: center;">Lp.</th>
-                                <th style="width: 70px; text-align: center;">Zdjęcie</th>
+                                <th>Lp.</th>
+                                <th>Zdjęcie</th>
                                 <th>Produkt / Opis</th>
-                                <th style="width: 50px; text-align: center;">Ilość</th>
-                                <th style="width: 85px; text-align: right;">Cena netto</th>
-                                <th style="width: 60px; text-align: center;">Rabat</th>
-                                <th style="width: 95px; text-align: right;">Wartość</th>
+                                <th class="centered">Ilość</th>
+                                <th class="right-aligned">Cena netto</th>
+                                <th class="centered">Rabat</th>
+                                <th class="right-aligned">Wartość</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1714,35 +1975,33 @@
                         </tbody>
                     </table>
                     
-                    <!-- Professional Summary -->
                     <div class="pdf-summary">
-                        <table style="width: 320px; border-collapse: collapse;">
+                        <table class="pdf-summary-table">
                             <tr>
-                                <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-top: 1px solid #e5e7eb;">Wartość netto:</td>
-                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; font-size: 12px; border-top: 1px solid #e5e7eb;">${formatCurrency(totalNet)}</td>
+                                <td class="summary-label">Wartość netto:</td>
+                                <td class="summary-value">${formatCurrency(totalNet)}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 6px 10px; text-align: right; font-size: 12px;">VAT 23%:</td>
-                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; font-size: 12px;">${formatCurrency(vat)}</td>
+                                <td class="summary-label">VAT 23%:</td>
+                                <td class="summary-value">${formatCurrency(vat)}</td>
                             </tr>
-                            <tr style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;">
-                                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-size: 14px; border-radius: 6px 0 0 6px;">RAZEM BRUTTO:</td>
-                                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-size: 16px; border-radius: 0 6px 6px 0;">${formatCurrency(gross)}</td>
+                            <tr class="total-row">
+                                <td class="summary-label">RAZEM BRUTTO:</td>
+                                <td class="summary-value">${formatCurrency(gross)}</td>
                             </tr>
                         </table>
                     </div>
                     
-                    <!-- Professional Terms & Payment Info -->
-                    <div class="pdf-footer">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                            <div style="flex: 1; margin-right: 20px;">
-                                <div style="font-weight: 700; color: #111827; margin-bottom: 8px; font-size: 12px;">WARUNKI HANDLOWE:</div>
-                                <div style="font-size: 10px; line-height: 1.5; color: #4b5563;">
-                                    • <strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}<br>
-                                    • <strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}<br>
-                                    • <strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}<br>
-                                    • <strong>Gwarancja:</strong> ${document.getElementById('warranty').value}
-                                </div>
+                    <footer class="pdf-footer">
+                        <div class="footer-sections">
+                            <div class="terms-section">
+                                <div class="section-title">WARUNKI HANDLOWE:</div>
+                                <ul class="terms-list">
+                                    <li><strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}</li>
+                                    <li><strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}</li>
+                                    <li><strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}</li>
+                                    <li><strong>Gwarancja:</strong> ${document.getElementById('warranty').value}</li>
+                                </ul>
                             </div>
                             <div class="invoice-info-box">
                                 <div class="invoice-info-title">DANE DO PRZELEWU:</div>
@@ -1752,30 +2011,32 @@
                                 </div>
                                 <div class="invoice-info-item">
                                     <span class="invoice-info-label">Nr konta:</span>
-                                    <span class="invoice-info-value" style="font-weight: 600;">${document.getElementById('sellerBank').value}</span>
+                                    <span class="invoice-info-value">${document.getElementById('sellerBank').value}</span>
                                 </div>
                                 <div class="invoice-info-item">
                                     <span class="invoice-info-label">Tytuł przelewu:</span>
-                                    <span class="invoice-info-value" style="font-weight: 700; color: #dc2626;">${offerNumber}</span>
+                                    <span class="invoice-info-value highlight">${offerNumber}</span>
                                 </div>
                             </div>
                         </div>
                         
                         ${document.getElementById('additionalNotes').value ? 
-                            `<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 10px 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #fbbf24;">
-                                <strong style="color: #78350f;">Uwagi:</strong> <span style="color: #92400e;">${document.getElementById('additionalNotes').value}</span>
+                            `<div class="additional-notes">
+                                <strong class="notes-label">Uwagi:</strong>
+                                <span class="notes-content">${document.getElementById('additionalNotes').value}</span>
                             </div>` : ''
                         }
                         
-                        <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
-                            <div style="color: #4b5563; font-size: 11px; font-style: italic;">${document.getElementById('footerText').value}</div>
-                            <div style="margin-top: 8px; font-size: 9px; color: #9ca3af;">
-                                Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')} | 
-                                www.mebleduo.com | 
-                                © ${new Date().getFullYear()} MEBLE DUO PIOTR NIEDŹWIADEK
+                        <div class="final-footer">
+                            <div class="footer-text">${document.getElementById('footerText').value}</div>
+                            <div class="footer-meta">
+                                <span>Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')}</span>|
+                                <span>www.mebleduo.com</span>|
+                                <span>© ${new Date().getFullYear()} MEBLE DUO</span>|
+                                <span class="page-number">Strona ${pageNum} z ${totalPages}</span>
                             </div>
                         </div>
-                    </div>
+                    </footer>
                 </div>
             `;
         }
@@ -1783,7 +2044,12 @@
         // Generate preview
         function generatePreview() {
             const content = document.getElementById('previewContent');
-            content.innerHTML = generatePreviewForPDF();
+            const validProducts = products.filter(id => document.getElementById(`productName-${id}`)?.value?.trim());
+            const orientation = document.getElementById('pdfOrientation').value;
+            const maxProductsPerPage = orientation === 'portrait' ? 7 : 10;
+            const totalPages = Math.ceil(validProducts.length / maxProductsPerPage) || 1;
+
+            content.innerHTML = generatePreviewForPDF(1, totalPages);
         }
 
         // Format date
@@ -1858,7 +2124,11 @@
             tempContainer.style.background = 'white';
             tempContainer.style.padding = '20px';
 
-            tempContainer.innerHTML = generatePreviewForPDF();
+            const styleEl = document.createElement('style');
+            styleEl.innerHTML = document.getElementById('pdf-styles').innerHTML;
+            tempContainer.appendChild(styleEl);
+            tempContainer.innerHTML += generatePreviewForPDF(1, 1);
+
             document.body.appendChild(tempContainer);
 
             const contentHeight = tempContainer.scrollHeight;
@@ -1934,7 +2204,11 @@
                 tempContainer.style.height = orientation === 'portrait' ? '1123px' : '794px';
                 tempContainer.style.background = 'white';
                 tempContainer.style.padding = '20px';
-                tempContainer.innerHTML = pageContent;
+
+                const styleEl = document.createElement('style');
+                styleEl.innerHTML = document.getElementById('pdf-styles').innerHTML;
+                tempContainer.appendChild(styleEl);
+                tempContainer.innerHTML += pageContent;
                 document.body.appendChild(tempContainer);
 
                 const canvas = await html2canvas(tempContainer, {
@@ -1986,9 +2260,9 @@
                 if (desc) {
                     const lines = desc.split('\n').filter(l => l.trim());
                     if (lines.length > 0) {
-                        descHtml = '<div style="margin-top: 4px; font-size: 9px; color: #4b5563; line-height: 1.3;">';
+                        descHtml = '<div class="product-desc">';
                         lines.forEach(line => {
-                            descHtml += `<div style="margin: 2px 0;">• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
+                            descHtml += `<div>• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
                         });
                         descHtml += '</div>';
                     }
@@ -1996,23 +2270,23 @@
 
                 productsHtml += `
                     <tr>
-                        <td style="text-align: center; font-weight: 700; color: #111827;">${productIndex}</td>
-                        ${productImages[productId] ?
-                            `<td style="text-align: center; padding: 6px;">
-                                <img src="${productImages[productId]}" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
-                            </td>`
-                            : '<td style="text-align: center;">-</td>'}
-                        <td style="padding: 8px;">
-                            <div style="font-weight: 700; color: #111827; font-size: 11px;">${name}</div>
-                            ${code ? `<div style="font-size: 9px; color: #6b7280; margin-top: 2px;">Kod: ${code}</div>` : ''}
+                        <td class="centered strong">${productIndex}</td>
+                         <td class="product-image-cell">
+                            ${productImages[productId] ?
+                                `<img src="${productImages[productId]}" class="product-image">`
+                                : '-'}
+                        </td>
+                        <td>
+                            <div class="product-name">${name}</div>
+                            ${code ? `<div class="product-code">Kod: ${code}</div>` : ''}
                             ${descHtml}
                         </td>
-                        <td style="text-align: center; font-weight: 600;">${qty}</td>
-                        <td style="text-align: right; font-weight: 500;">${formatCurrency(price)}</td>
-                        <td style="text-align: center; color: ${discount > 0 ? '#dc2626' : '#9ca3af'}; font-weight: 600;">
+                        <td class="centered strong">${qty}</td>
+                        <td class="right-aligned">${formatCurrency(price)}</td>
+                        <td class="centered strong ${discount > 0 ? 'discount' : ''}">
                             ${discount > 0 ? '-' + discount + '%' : '-'}
                         </td>
-                        <td style="text-align: right; font-weight: 700; color: #111827;">${formatCurrency(total)}</td>
+                        <td class="right-aligned strong">${formatCurrency(total)}</td>
                     </tr>
                 `;
             });
@@ -2032,39 +2306,35 @@
             let headerHtml = '';
             if (showHeader) {
                 headerHtml = `
-                    <div class="pdf-header">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <img src="${logoBase64}" style="height: 60px;">
-                        </div>
-                        <div style="text-align: right; font-size: 11px; color: #4b5563; line-height: 1.4;">
-                            <div style="font-weight: 700; font-size: 14px; color: #111827; margin-bottom: 6px;">${document.getElementById('sellerName').value}</div>
+                    <header class="pdf-header">
+                        <img src="${logoBase64}" class="logo-img">
+                        <div class="seller-details">
+                            <div class="seller-name">${document.getElementById('sellerName').value}</div>
                             <div>NIP: ${document.getElementById('sellerNIP').value}</div>
                             <div>${document.getElementById('sellerAddress').value.replace(/\n/g, ', ')}</div>
                             <div>Tel: ${document.getElementById('sellerPhone').value}</div>
                             <div>Email: ${document.getElementById('sellerEmail').value}</div>
-                            <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #e5e7eb;"><strong>Osoba kontaktowa:</strong> ${sellerContact}</div>
+                            <div class="contact-person"><strong>Osoba kontaktowa:</strong> ${sellerContact}</div>
+                        </div>
+                    </header>
+                    <div class="pdf-offer-title">
+                        <h1>OFERTA CENOWA</h1>
+                        <div class="offer-meta">
+                            <span><strong>Nr:</strong> ${offerNumber}</span>
+                            <span><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
+                            <span><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
                         </div>
                     </div>
-                    <div style="text-align: center; margin: 25px 0;">
-                        <h1 style="color: #dc2626; font-size: 28px; margin: 0; font-weight: 700; letter-spacing: -0.5px;">OFERTA CENOWA</h1>
-                        <div style="margin-top: 10px; font-size: 12px; color: #4b5563;">
-                            <span style="margin: 0 12px;"><strong>Nr:</strong> ${offerNumber}</span>
-                            <span style="margin: 0 12px;"><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
-                            <span style="margin: 0 12px;"><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
-                        </div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 12px 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e7eb;">
-                        <div style="font-size: 11px; line-height: 1.5;">
-                            <div style="font-weight: 700; color: #111827; margin-bottom: 8px; font-size: 12px;">NABYWCA:</div>
-                            <div>
-                                <strong style="font-size: 13px; color: #111827;">${buyerName}</strong>
-                                ${buyerNIP ? `<br><span style="color: #6b7280;">NIP:</span> ${buyerNIP}` : ''}
-                                ${buyerAddress ? `<br><span style="color: #6b7280;">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
-                                ${buyerPhone || buyerEmail ? '<br>' : ''}
-                                ${buyerPhone ? `<span style="color: #6b7280;">Tel:</span> ${buyerPhone}` : ''}
-                                ${buyerPhone && buyerEmail ? ' | ' : ''}
-                                ${buyerEmail ? `<span style="color: #6b7280;">Email:</span> ${buyerEmail}` : ''}
-                            </div>
+                    <div class="pdf-buyer-info">
+                        <div class="buyer-label">NABYWCA:</div>
+                        <div>
+                            <strong class="buyer-name">${buyerName}</strong>
+                            ${buyerNIP ? `<br><span class="label">NIP:</span> ${buyerNIP}` : ''}
+                            ${buyerAddress ? `<br><span class="label">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
+                            ${buyerPhone || buyerEmail ? '<br>' : ''}
+                            ${buyerPhone ? `<span class="label">Tel:</span> ${buyerPhone}` : ''}
+                            ${buyerPhone && buyerEmail ? ' | ' : ''}
+                            ${buyerEmail ? `<span class="label">Email:</span> ${buyerEmail}` : ''}
                         </div>
                     </div>
                 `;
@@ -2074,79 +2344,91 @@
             if (showSummary) {
                  summaryAndFooterHtml = `
                     <div class="pdf-summary">
-                        <table style="width: 320px; border-collapse: collapse;">
+                        <table class="pdf-summary-table">
                             <tr>
-                                <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-top: 1px solid #e5e7eb;">Wartość netto:</td>
-                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; font-size: 12px; border-top: 1px solid #e5e7eb;">${formatCurrency(fullTotalNet)}</td>
+                                <td class="summary-label">Wartość netto:</td>
+                                <td class="summary-value">${formatCurrency(fullTotalNet)}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 6px 10px; text-align: right; font-size: 12px;">VAT 23%:</td>
-                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; font-size: 12px;">${formatCurrency(vat)}</td>
+                                <td class="summary-label">VAT 23%:</td>
+                                <td class="summary-value">${formatCurrency(vat)}</td>
                             </tr>
-                            <tr style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;">
-                                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-size: 14px; border-radius: 6px 0 0 6px;">RAZEM BRUTTO:</td>
-                                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-size: 16px; border-radius: 0 6px 6px 0;">${formatCurrency(gross)}</td>
+                            <tr class="total-row">
+                                <td class="summary-label">RAZEM BRUTTO:</td>
+                                <td class="summary-value">${formatCurrency(gross)}</td>
                             </tr>
                         </table>
                     </div>
-                    <div class="pdf-footer">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                            <div style="flex: 1; margin-right: 20px;">
-                                <div style="font-weight: 700; color: #111827; margin-bottom: 8px; font-size: 12px;">WARUNKI HANDLOWE:</div>
-                                <div style="font-size: 10px; line-height: 1.5; color: #4b5563;">
-                                    • <strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}<br>
-                                    • <strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}<br>
-                                    • <strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}<br>
-                                    • <strong>Gwarancja:</strong> ${document.getElementById('warranty').value}
-                                </div>
+                    <footer class="pdf-footer">
+                        <div class="footer-sections">
+                            <div class="terms-section">
+                                <div class="section-title">WARUNKI HANDLOWE:</div>
+                                <ul class="terms-list">
+                                    <li><strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}</li>
+                                    <li><strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}</li>
+                                    <li><strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}</li>
+                                    <li><strong>Gwarancja:</strong> ${document.getElementById('warranty').value}</li>
+                                </ul>
                             </div>
                             <div class="invoice-info-box">
                                 <div class="invoice-info-title">DANE DO PRZELEWU:</div>
-                                <div class="invoice-info-item"><span class="invoice-info-label">Odbiorca:</span><span class="invoice-info-value">MEBLE DUO PIOTR NIEDŹWIADEK</span></div>
-                                <div class="invoice-info-item"><span class="invoice-info-label">Nr konta:</span><span class="invoice-info-value" style="font-weight: 600;">${document.getElementById('sellerBank').value}</span></div>
-                                <div class="invoice-info-item"><span class="invoice-info-label">Tytuł przelewu:</span><span class="invoice-info-value" style="font-weight: 700; color: #dc2626;">${offerNumber}</span></div>
+                                <div class="invoice-info-item">
+                                    <span class="invoice-info-label">Odbiorca:</span>
+                                    <span class="invoice-info-value">MEBLE DUO PIOTR NIEDŹWIADEK</span>
+                                </div>
+                                <div class="invoice-info-item">
+                                    <span class="invoice-info-label">Nr konta:</span>
+                                    <span class="invoice-info-value">${document.getElementById('sellerBank').value}</span>
+                                </div>
+                                <div class="invoice-info-item">
+                                    <span class="invoice-info-label">Tytuł przelewu:</span>
+                                    <span class="invoice-info-value highlight">${offerNumber}</span>
+                                </div>
                             </div>
                         </div>
                         ${document.getElementById('additionalNotes').value ?
-                            `<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 10px 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #fbbf24;">
-                                <strong style="color: #78350f;">Uwagi:</strong> <span style="color: #92400e;">${document.getElementById('additionalNotes').value}</span>
+                            `<div class="additional-notes">
+                                <strong class="notes-label">Uwagi:</strong> <span class="notes-content">${document.getElementById('additionalNotes').value}</span>
                             </div>` : ''
                         }
-                    </div>
+                    </footer>
                  `;
             }
 
-            let pageCounter = `<div style="position: absolute; bottom: 10px; right: 20px; font-size: 10px; color: #9ca3af;">Strona ${pageNum} / ${totalPages}</div>`;
+            let footerHtml = '';
             if (showSummary) {
-                pageCounter = '';
-                summaryAndFooterHtml += `
-                 <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
-                    <div style="color: #4b5563; font-size: 11px; font-style: italic;">${document.getElementById('footerText').value}</div>
-                    <div style="margin-top: 8px; font-size: 9px; color: #9ca3af;">
-                        Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')} | www.mebleduo.com | © ${new Date().getFullYear()} MEBLE DUO PIOTR NIEDŹWIADEK | Strona ${pageNum} / ${totalPages}
+                footerHtml = summaryAndFooterHtml + `
+                 <div class="final-footer">
+                    <div class="footer-text">${document.getElementById('footerText').value}</div>
+                    <div class="footer-meta">
+                        <span>Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')}</span>|
+                        <span>www.mebleduo.com</span>|
+                        <span>© ${new Date().getFullYear()} MEBLE DUO</span>|
+                        <span class="page-number">Strona ${pageNum} z ${totalPages}</span>
                     </div>
                 </div>`;
+            } else {
+                footerHtml = `<div class="pdf-page-counter">Strona ${pageNum} z ${totalPages}</div>`;
             }
 
             return `
                 <div class="pdf-page">
                     ${headerHtml}
-                    <table class="pdf-products-table" style="margin-bottom: 25px;">
-                        <thead>
+                    <table class="pdf-products-table">
+                         <thead>
                             <tr>
-                                <th style="width: 35px; text-align: center;">Lp.</th>
-                                <th style="width: 70px; text-align: center;">Zdjęcie</th>
+                                <th>Lp.</th>
+                                <th>Zdjęcie</th>
                                 <th>Produkt / Opis</th>
-                                <th style="width: 50px; text-align: center;">Ilość</th>
-                                <th style="width: 85px; text-align: right;">Cena netto</th>
-                                <th style="width: 60px; text-align: center;">Rabat</th>
-                                <th style="width: 95px; text-align: right;">Wartość</th>
+                                <th class="centered">Ilość</th>
+                                <th class="right-aligned">Cena netto</th>
+                                <th class="centered">Rabat</th>
+                                <th class="right-aligned">Wartość</th>
                             </tr>
                         </thead>
                         <tbody>${productsHtml}</tbody>
                     </table>
-                    ${summaryAndFooterHtml}
-                    ${pageCounter}
+                    ${footerHtml}
                 </div>
             `;
         }
@@ -5043,34 +5325,71 @@ Sob: 9:00 - 14:00
 
 
         function saveInvoice() {
-            const data = collectInvoiceDataForState();
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Faktura_${data.number.replace(/\//g, '-')}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showNotification('Faktura zapisana do pliku JSON!', 'success');
+            try {
+                const data = collectInvoiceDataForState();
+                if (!data.number) {
+                    showNotification('❌ Proszę wprowadzić numer faktury przed zapisem.', 'error');
+                    return;
+                }
+
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+
+                const filename = `Faktura_${data.number.replace(/[\/\\:*?"<>|]/g, '-')}.json`;
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showNotification(`✅ Faktura zapisana pomyślnie!`, 'success');
+
+            } catch (error) {
+                console.error('❌ Błąd podczas zapisywania faktury:', error);
+                showNotification('❌ Wystąpił błąd podczas zapisu faktury.', 'error');
+            }
         }
 
         function loadInvoice() {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-            input.onchange = e => {
+
+            input.onchange = function(e) {
                 const file = e.target.files[0];
+                if (!file) return;
+
+                showNotification('📂 Wczytywanie faktury...', 'info');
                 const reader = new FileReader();
-                reader.onload = event => {
-                    const data = safeJSONParse(event.target.result);
-                    if (data) {
+
+                reader.onload = function(event) {
+                    try {
+                        const data = safeJSONParse(event.target.result);
+                        if (!data) throw new Error('Nieprawidłowy format pliku JSON.');
+
+                        // Prosta walidacja czy to plik faktury
+                        if (!data.number || !data.seller) {
+                           throw new Error('Plik nie wygląda na poprawny plik faktury.');
+                        }
+
                         populateInvoiceData(data);
-                        showNotification('Faktura wczytana!', 'success');
+
+                        showNotification(`✅ Faktura "${data.number}" wczytana pomyślnie.`);
+
+                    } catch (error) {
+                        console.error('❌ Błąd wczytywania faktury:', error);
+                        showNotification(`❌ Błąd: ${error.message}`, 'error');
                     }
                 };
-                reader.readAsText(file);
+
+                reader.onerror = () => showNotification('❌ Błąd odczytu pliku.', 'error');
+                reader.readAsText(file, 'UTF-8');
             };
+
             input.click();
         }
 
@@ -5106,6 +5425,59 @@ Sob: 9:00 - 14:00
             5. Możesz zapisać i wczytać fakturę w formacie JSON.`);
         }
 
+        function amountToWords(amount) {
+            const units = ["", "jeden", "dwa", "trzy", "cztery", "pięć", "sześć", "siedem", "osiem", "dziewięć"];
+            const teens = ["dziesięć", "jedenaście", "dwanaście", "trzynaście", "czternaście", "piętnaście", "szesnaście", "siedemnaście", "osiemnaście", "dziewiętnaście"];
+            const tens = ["", "dziesięć", "dwadzieścia", "trzydzieści", "czterdzieści", "pięćdziesiąt", "sześćdziesiąt", "siedemdziesiąt", "osiemdziesiąt", "dziewięćdziesiąt"];
+            const hundreds = ["", "sto", "dwieście", "trzysta", "czterysta", "pięćset", "sześćset", "siedemset", "osiemset", "dziewięćset"];
+            const groups = [
+                ["", "", ""],
+                ["tysiąc", "tysiące", "tysięcy"],
+                ["milion", "miliony", "milionów"],
+            ];
+
+            let [zl, gr] = amount.toFixed(2).split('.').map(Number);
+            let result = [];
+
+            if (zl === 0) {
+                result.push("zero");
+            }
+
+            let g = 0;
+            while (zl > 0) {
+                let h = Math.floor(zl / 100) % 10;
+                let t = Math.floor(zl / 10) % 10;
+                let u = zl % 10;
+
+                if (h > 0 || t > 0 || u > 0) {
+                    let h_word = hundreds[h];
+                    let t_word = "";
+                    let u_word = "";
+                    let group_word = "";
+
+                    if (t === 1 && u > 0) {
+                        t_word = teens[u];
+                    } else {
+                        t_word = tens[t];
+                        u_word = units[u];
+                    }
+
+                    if (g > 0) {
+                        if (u === 1 && t !== 1) group_word = groups[g][0];
+                        else if (u >= 2 && u <= 4) group_word = groups[g][1];
+                        else group_word = groups[g][2];
+                    }
+
+                    result.unshift([h_word, t_word, u_word, group_word].filter(Boolean).join(" "));
+                }
+
+                g++;
+                zl = Math.floor(zl / 1000);
+            }
+
+            return `${result.join(" ")} PLN ${gr.toString().padStart(2, '0')}/100`;
+        }
+
         function generateInvoicePDF() {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
@@ -5114,74 +5486,188 @@ Sob: 9:00 - 14:00
 
             const sellerName = document.getElementById('invoiceSellerName').value;
             const sellerNIP = document.getElementById('invoiceSellerNIP').value;
-            const sellerAddress = document.getElementById('invoiceSellerAddress').value;
+            const sellerAddress = document.getElementById('invoiceSellerAddress').value.split('\n');
             const buyerName = document.getElementById('invoiceBuyerName').value;
             const buyerNIP = document.getElementById('invoiceBuyerNIP').value;
-            const buyerAddress = document.getElementById('invoiceBuyerAddress').value;
+            const buyerAddress = document.getElementById('invoiceBuyerAddress').value.split('\n');
             const invoiceNumber = document.getElementById('invoiceNumber').value;
             const invoiceDate = formatDate(document.getElementById('invoiceDate').value);
             const saleDate = formatDate(document.getElementById('invoiceSaleDate').value);
+            const city = document.getElementById('invoiceCity').value;
             const paymentMethod = document.getElementById('invoicePaymentMethod').value;
             const paymentDueDate = formatDate(document.getElementById('invoicePaymentDueDate').value);
             const bankAccount = document.getElementById('invoiceBank').value;
+            const paymentStatus = document.getElementById('invoicePaymentStatus').value;
             const issuer = document.getElementById('invoiceIssuer').value;
             const notes = document.getElementById('invoiceNotes').value;
 
-            pdf.setFontSize(20);
-            pdf.text(`Faktura VAT nr ${invoiceNumber}`, 15, 20);
-            pdf.setFontSize(12);
-            pdf.text(`Data wystawienia: ${invoiceDate}`, 15, 30);
-            pdf.text(`Data sprzedaży: ${saleDate}`, 15, 37);
+            const margin = 15;
+            const pageWidth = pdf.internal.pageSize.getWidth();
 
-            pdf.text('Sprzedawca:', 105, 30);
-            pdf.text(sellerName, 105, 37);
-            pdf.text(sellerAddress, 105, 44);
-            pdf.text(`NIP: ${sellerNIP}`, 105, 51);
+            pdf.setFontSize(22);
+            pdf.setTextColor('#333333');
+            pdf.text(`Faktura VAT nr ${invoiceNumber}`, margin, 25);
 
-            pdf.text('Nabywca:', 15, 58);
-            pdf.text(buyerName, 15, 65);
-            pdf.text(buyerAddress, 15, 72);
-            pdf.text(`NIP: ${buyerNIP}`, 15, 79);
-
-            let y = 90;
             pdf.setFontSize(10);
-            pdf.text('Lp.', 15, y);
-            pdf.text('Nazwa towaru/usługi', 25, y);
-            pdf.text('Ilość', 120, y);
-            pdf.text('Cena netto', 135, y);
-            pdf.text('Wartość brutto', 165, y);
-            y += 7;
+            pdf.setTextColor('#666666');
+            pdf.text(`Miejsce wystawienia: ${city}`, margin, 35);
+            pdf.text(`Data wystawienia: ${invoiceDate}`, pageWidth - margin, 35, { align: 'right' });
+            pdf.text(`Data sprzedaży: ${saleDate}`, pageWidth - margin, 40, { align: 'right' });
+
+            pdf.setLineWidth(0.2);
+            pdf.line(margin, 48, pageWidth - margin, 48);
+
+            pdf.setFontSize(12);
+            pdf.setTextColor('#000000');
+            pdf.text('Sprzedawca', margin, 55);
+            pdf.text('Nabywca', pageWidth / 2 + 5, 55);
+
+            pdf.setFontSize(10);
+            pdf.setTextColor('#333333');
+
+            let yPosSeller = 62;
+            pdf.text(sellerName, margin, yPosSeller);
+            sellerAddress.forEach(line => { yPosSeller += 5; pdf.text(line, margin, yPosSeller); });
+            yPosSeller += 5;
+            pdf.text(`NIP: ${sellerNIP}`, margin, yPosSeller);
+
+            let yPosBuyer = 62;
+            pdf.text(buyerName, pageWidth / 2 + 5, yPosBuyer);
+            buyerAddress.forEach(line => { yPosBuyer += 5; pdf.text(line, pageWidth / 2 + 5, yPosBuyer); });
+            yPosBuyer += 5;
+            if (buyerNIP) {
+                pdf.text(`NIP: ${buyerNIP}`, pageWidth / 2 + 5, yPosBuyer);
+            }
+
+            let startY = Math.max(yPosSeller, yPosBuyer) + 15;
+
+            const head = [['Lp.', 'Nazwa towaru/usługi', 'J.m.', 'Ilość', 'Cena netto', 'Wartość netto', 'VAT', 'Kwota VAT', 'Wartość brutto']];
+            const body = [];
+            const vatSummary = {};
 
             invoiceProducts.forEach((id, index) => {
                 const name = document.getElementById(`invoiceProductName-${id}`).value;
-                const qty = document.getElementById(`invoiceProductQty-${id}`).value;
-                const price = parseFloat(document.getElementById(`invoiceProductPrice-${id}`).value).toFixed(2);
-                const total = document.getElementById(`invoiceProductTotal-${id}`).value;
+                const qty = parseFloat(document.getElementById(`invoiceProductQty-${id}`).value) || 0;
+                const price = parseFloat(document.getElementById(`invoiceProductPrice-${id}`).value) || 0;
+                const vatRateStr = document.getElementById(`invoiceProductVat-${id}`).value;
+                const vatRate = vatRateStr === 'zw' ? 0 : parseFloat(vatRateStr);
+                const netValue = qty * price;
+                const vatValue = netValue * (vatRate / 100);
+                const grossValue = netValue + vatValue;
 
-                pdf.text(`${index + 1}`, 15, y);
-                pdf.text(name, 25, y);
-                pdf.text(qty, 120, y);
-                pdf.text(price, 135, y);
-                pdf.text(total, 165, y);
-                y += 7;
+                if (!vatSummary[vatRateStr]) {
+                    vatSummary[vatRateStr] = { net: 0, vat: 0, gross: 0 };
+                }
+                vatSummary[vatRateStr].net += netValue;
+                vatSummary[vatRateStr].vat += vatValue;
+                vatSummary[vatRateStr].gross += grossValue;
+
+                body.push([
+                    index + 1, name, 'szt.', qty.toFixed(2), price.toFixed(2),
+                    netValue.toFixed(2), `${vatRate}%`, vatValue.toFixed(2), grossValue.toFixed(2)
+                ]);
             });
 
-            const totalGross = document.getElementById('invoiceTotalGross').textContent;
-            pdf.setFontSize(12);
-            pdf.text(`Do zapłaty: ${totalGross}`, 140, y + 10);
+            pdf.autoTable({
+                startY: startY,
+                head: head,
+                body: body,
+                theme: 'grid',
+                headStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], font: 'RobotoCondensed-Light', fontStyle: 'bold' },
+                styles: { font: 'RobotoCondensed-Light', fontSize: 9 },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 8 },
+                    1: { cellWidth: 'auto' },
+                    2: { halign: 'center', cellWidth: 10 },
+                    3: { halign: 'right', cellWidth: 12 },
+                    4: { halign: 'right', cellWidth: 18 },
+                    5: { halign: 'right', cellWidth: 20 },
+                    6: { halign: 'center', cellWidth: 10 },
+                    7: { halign: 'right', cellWidth: 18 },
+                    8: { halign: 'right', cellWidth: 22 }
+                }
+            });
 
-            pdf.text(`Sposób płatności: ${paymentMethod}`, 15, y + 20);
-            pdf.text(`Termin płatności: ${paymentDueDate}`, 15, y + 27);
-            pdf.text(`Nr konta: ${bankAccount}`, 15, y + 34);
+            let finalY = pdf.lastAutoTable.finalY + 5;
 
-            if(notes) {
-                 pdf.text(`Uwagi: ${notes}`, 15, y + 41);
+            const summaryBody = [];
+            let totalNet = 0, totalVat = 0, totalGross = 0;
+
+            Object.keys(vatSummary).sort().forEach(rate => {
+                const summary = vatSummary[rate];
+                summaryBody.push([
+                    `w tym ${rate === 'zw' ? 'zw.' : rate + '%'}`,
+                    summary.net.toFixed(2), summary.vat.toFixed(2), summary.gross.toFixed(2)
+                ]);
+                totalNet += summary.net;
+                totalVat += summary.vat;
+                totalGross += summary.gross;
+            });
+             summaryBody.push([
+                { content: 'Razem', styles: { fontStyle: 'bold' } },
+                { content: totalNet.toFixed(2), styles: { fontStyle: 'bold' } },
+                { content: totalVat.toFixed(2), styles: { fontStyle: 'bold' } },
+                { content: totalGross.toFixed(2), styles: { fontStyle: 'bold' } }
+            ]);
+
+            pdf.autoTable({
+                startY: finalY,
+                head: [['Stawka VAT', 'Wartość netto', 'Kwota VAT', 'Wartość brutto']],
+                body: summaryBody,
+                theme: 'grid',
+                headStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], font: 'RobotoCondensed-Light', fontStyle: 'bold' },
+                styles: { font: 'RobotoCondensed-Light', fontSize: 9, halign: 'right' },
+                columnStyles: { 0: { halign: 'left' } },
+                tableWidth: 'wrap',
+                margin: { left: pageWidth - margin - 95 }
+            });
+            finalY = pdf.lastAutoTable.finalY;
+
+            finalY += 10;
+            pdf.setFontSize(11);
+            pdf.setTextColor('#000000');
+            pdf.text('Do zapłaty:', margin, finalY);
+            pdf.setFont('RobotoCondensed-Light', 'bold');
+            pdf.text(`${totalGross.toFixed(2)} PLN`, margin + 25, finalY);
+            pdf.setFont('RobotoCondensed-Light', 'normal');
+
+            finalY += 7;
+            pdf.setFontSize(10);
+            pdf.text(`Słownie: ${amountToWords(totalGross)}`, margin, finalY);
+
+            finalY += 10;
+            pdf.text(`Sposób płatności: ${paymentMethod}`, margin, finalY);
+            pdf.text(`Termin płatności: ${paymentDueDate}`, margin, finalY + 5);
+            pdf.text(`Numer konta: ${bankAccount}`, margin, finalY + 10);
+
+            if (notes) {
+                pdf.text(`Uwagi: ${notes}`, margin, finalY + 20);
             }
 
-            pdf.text(`Wystawił(a): ${issuer}`, 15, y + 55);
+            if (paymentStatus === 'Opłacona') {
+                pdf.setFontSize(24);
+                pdf.setTextColor(0, 150, 0);
+                pdf.text('ZAPŁACONO', pageWidth / 2, finalY + 30, {
+                    angle: -20,
+                    align: 'center',
+                    fontStyle: 'bold'
+                });
+            }
 
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            pdf.setFontSize(9);
+            pdf.setTextColor('#333333');
+            pdf.text(`Wystawił(a): ${issuer}`, margin, pageHeight - 25);
+            pdf.text('Odebrał(a):', pageWidth / 2, pageHeight - 25);
+            pdf.setLineWidth(0.2);
+            pdf.line(margin + 25, pageHeight - 27, margin + 70, pageHeight - 27);
+            pdf.line(pageWidth / 2 + 20, pageHeight - 27, pageWidth / 2 + 65, pageHeight - 27);
+            pdf.setFontSize(7);
+            pdf.setTextColor('#999999');
+            pdf.text('(podpis osoby upoważnionej)', margin + 30, pageHeight - 22);
+            pdf.text('(podpis osoby upoważnionej)', pageWidth / 2 + 25, pageHeight - 22);
 
-            const filename = `Faktura_${invoiceNumber.replace(/\//g, '-')}.pdf`;
+            const filename = `Faktura_${invoiceNumber.replace(/[\/\\]/g, '-')}.pdf`;
             pdf.save(filename);
             showNotification('Faktura PDF wygenerowana!', 'success');
         }
