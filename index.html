@@ -701,6 +701,7 @@
         let autosaveTimer = null;
         let draggedProductId = null;
         let shouldProceedWithPDF = false;
+        let productIdCounter = 0;
 
         // =================================================================
         // UNIFIED APP STATE MANAGEMENT
@@ -1126,7 +1127,7 @@
 
         // Product management
         function addProduct() {
-            const productId = Date.now();
+            const productId = Date.now() + productIdCounter++;
             products.push(productId);
             
             const html = `
