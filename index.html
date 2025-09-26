@@ -18,276 +18,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
-    <!-- Style dla generowanego PDF -->
-    <style id="pdf-styles">
-        .pdf-page {
-            font-family: 'Inter', sans-serif;
-            font-size: 10px;
-            color: #374151;
-            background: white;
-        }
-        .pdf-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        .pdf-header .logo-img {
-            height: 60px;
-            object-fit: contain;
-        }
-        .pdf-header .seller-details {
-            text-align: right;
-            font-size: 11px;
-            color: #4b5563;
-            line-height: 1.5;
-        }
-        .seller-details .seller-name {
-            font-weight: 700;
-            font-size: 14px;
-            color: #111827;
-            margin-bottom: 6px;
-        }
-        .seller-details .contact-person {
-             margin-top: 4px;
-             padding-top: 4px;
-             border-top: 1px solid #e5e7eb;
-        }
-        .pdf-offer-title {
-            text-align: center;
-            margin: 25px 0;
-        }
-        .pdf-offer-title h1 {
-            color: #dc2626;
-            font-size: 28px;
-            margin: 0;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        .pdf-offer-title .offer-meta {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #4b5563;
-        }
-        .offer-meta span {
-             margin: 0 12px;
-        }
-        .pdf-buyer-info {
-            background: #f9fafb;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 1px solid #e5e7eb;
-            font-size: 11px;
-            line-height: 1.5;
-        }
-        .pdf-buyer-info .buyer-label {
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        .pdf-buyer-info .buyer-name {
-            font-size: 13px;
-            color: #111827;
-            font-weight: 600;
-        }
-        .pdf-buyer-info .label {
-            color: #6b7280;
-        }
-        .pdf-products-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            font-size: 10px;
-        }
-        .pdf-products-table th, .pdf-products-table td {
-            border: 1px solid #e5e7eb;
-            padding: 8px 10px;
-            vertical-align: middle;
-        }
-        .pdf-products-table th {
-            background-color: #f9fafb;
-            font-weight: 600;
-            color: #374151;
-            text-align: left;
-        }
-        .pdf-products-table tbody tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
-        .pdf-products-table .product-image-cell {
-            text-align: center;
-            padding: 5px;
-            width: 70px;
-        }
-        .pdf-products-table .product-image {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            background: white;
-        }
-        .pdf-products-table .product-name {
-            font-weight: 700;
-            color: #111827;
-            font-size: 11px;
-        }
-        .pdf-products-table .product-code {
-            font-size: 9px;
-            color: #6b7280;
-            margin-top: 2px;
-        }
-        .pdf-products-table .product-desc {
-            margin-top: 4px;
-            font-size: 9px;
-            color: #4b5563;
-            line-height: 1.3;
-        }
-        .pdf-products-table .product-desc div {
-             margin: 2px 0;
-        }
-        .pdf-products-table .centered { text-align: center; }
-        .pdf-products-table .right-aligned { text-align: right; }
-        .pdf-products-table .strong { font-weight: 600; }
-        .pdf-products-table .discount { color: #dc2626; }
-        .pdf-summary {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 25px;
-        }
-        .pdf-summary-table {
-            width: 350px;
-            border-collapse: collapse;
-        }
-        .pdf-summary-table td {
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-        .pdf-summary-table .summary-label {
-            text-align: right;
-        }
-        .pdf-summary-table .summary-value {
-            text-align: right;
-            font-weight: 600;
-        }
-        .pdf-summary-table .total-row td {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-        }
-        .pdf-summary-table .total-row .summary-value {
-            font-size: 16px;
-        }
-        .pdf-footer {
-            margin-top: 30px;
-            padding-top: 15px;
-            border-top: 2px solid #e5e7eb;
-        }
-        .pdf-footer .footer-sections {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .pdf-footer .terms-section {
-            flex: 1;
-            margin-right: 20px;
-        }
-        .pdf-footer .section-title {
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        .pdf-footer .terms-list {
-            font-size: 10px;
-            line-height: 1.6;
-            color: #4b5563;
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        .invoice-info-box {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 10px;
-            width: 300px;
-        }
-        .invoice-info-title {
-            font-weight: 700;
-            font-size: 11px;
-            color: #111827;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
-        }
-        .invoice-info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-        }
-        .invoice-info-label {
-            color: #6b7280;
-        }
-        .invoice-info-value {
-            font-weight: 600;
-            color: #374151;
-        }
-        .invoice-info-value.highlight {
-            color: #dc2626;
-            font-weight: 700;
-        }
-        .pdf-footer .additional-notes {
-            background: #fffbeb;
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin: 15px 0;
-            border: 1px solid #fef3c7;
-            font-size: 10px;
-        }
-        .pdf-footer .notes-label {
-             color: #92400e;
-             font-weight: 600;
-        }
-        .pdf-footer .notes-content {
-             color: #b45309;
-        }
-        .pdf-footer .final-footer {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .pdf-footer .footer-text {
-            color: #4b5563;
-            font-size: 11px;
-            font-style: italic;
-        }
-        .pdf-footer .footer-meta {
-            margin-top: 8px;
-            font-size: 10px;
-            color: #9ca3af;
-        }
-        .pdf-footer .footer-meta span {
-            margin: 0 5px;
-        }
-        .pdf-footer .footer-meta .page-number {
-            font-weight: 600;
-            color: #4b5563;
-        }
-        .pdf-page-counter {
-            position: absolute;
-            bottom: 15px;
-            right: 20px;
-            font-size: 10px;
-            color: #9ca3af;
-        }
-    </style>
 </head>
 <body>
     <!-- CENTRUM KONTROLNE -->
@@ -3024,45 +2754,58 @@ Sob: 9:00 - 14:00
         }
 
         // Funkcja do tworzenia backupu danych
-        function createBackup(data, type = 'offer') {
-            const backup = {
-                timestamp: new Date().toISOString(),
-                type: type,
-                version: '2.3',
-                data: compressJSON(data)
+        function createBackup() {
+            const dataToBackup = {
+                appState: safeJSONParse(localStorage.getItem('appState')),
+                orderHistory: safeJSONParse(localStorage.getItem('orderHistory')),
             };
 
-            // Zapisz do localStorage z limitem (zachowaj ostatnie 5 backupów)
-            const backups = safeJSONParse(localStorage.getItem('backups'), []);
-            backups.push(backup);
+            const json = JSON.stringify(dataToBackup, null, 2);
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `backup_centrum_dowodzenia_${date}.json`;
 
-            // Zachowaj tylko ostatnie 5 backupów
-            if (backups.length > 5) {
-                backups.shift();
-            }
-
-            localStorage.setItem('backups', JSON.stringify(backups));
-            console.log(`Backup ${type} utworzony: ${backup.timestamp}`);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification('✅ Kopia zapasowa została pomyślnie utworzona!', 'success');
         }
 
         // Funkcja do przywracania z backupu
-        function restoreFromBackup(index = -1) {
-            const backups = safeJSONParse(localStorage.getItem('backups'), []);
+        function restoreFromBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
 
-            if (backups.length === 0) {
-                showNotification('Brak dostępnych backupów', 'warning');
-                return null;
-            }
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            const backupIndex = index === -1 ? backups.length - 1 : index;
-            const backup = backups[backupIndex];
-
-            if (!backup) {
-                showNotification('Nie znaleziono backupu', 'error');
-                return null;
-            }
-
-            return backup.data;
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const data = safeJSONParse(event.target.result);
+                        if (data && data.appState && data.orderHistory) {
+                            localStorage.setItem('appState', JSON.stringify(data.appState));
+                            localStorage.setItem('orderHistory', JSON.stringify(data.orderHistory));
+                            showNotification('✅ Kopia zapasowa wczytana. Odświeżanie strony...', 'success');
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            showNotification('❌ Nieprawidłowy format pliku kopii zapasowej.', 'error');
+                        }
+                    } catch (error) {
+                        showNotification('❌ Błąd podczas wczytywania kopii zapasowej.', 'error');
+                        console.error(error);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         }
 
         // Funkcja do eksportu wszystkich danych aplikacji
@@ -3198,23 +2941,23 @@ Sob: 9:00 - 14:00
         // ROZSZERZONE FUNKCJE BIZNESOWE
 
         // Kalkulator marż i zysków
-        function calculateProfitMargins() {
+        function calculateProfitMargins(productsData) {
             const results = [];
             let totalCost = 0;
             let totalRevenue = 0;
 
-            products.forEach(productId => {
-                const name = document.getElementById(`productName-${productId}`)?.value;
-                const qty = parseFloat(document.getElementById(`productQty-${productId}`)?.value) || 0;
-                const price = parseFloat(document.getElementById(`productPrice-${productId}`)?.value) || 0;
-                const discount = parseFloat(document.getElementById(`productDiscount-${productId}`)?.value) || 0;
+            productsData.forEach(product => {
+                const name = product.name;
+                const qty = parseFloat(product.qty) || 0;
+                const price = parseFloat(product.price) || 0;
+                const discount = parseFloat(product.discount) || 0;
 
                 if (name && qty > 0 && price > 0) {
                     // Załóżmy koszt jako 60% ceny (można dostosować)
                     const estimatedCost = price * 0.6;
                     const sellingPrice = price * (1 - discount / 100);
                     const profit = (sellingPrice - estimatedCost) * qty;
-                    const margin = ((sellingPrice - estimatedCost) / sellingPrice) * 100;
+                    const margin = sellingPrice > 0 ? ((sellingPrice - estimatedCost) / sellingPrice) * 100 : 0;
 
                     totalCost += estimatedCost * qty;
                     totalRevenue += sellingPrice * qty;
@@ -3246,12 +2989,18 @@ Sob: 9:00 - 14:00
 
         // Funkcja do generowania dashboard analitycznego
         function generateAnalyticsDashboard() {
-            const margins = calculateProfitMargins();
-            const productCount = products.filter(id =>
-                document.getElementById(`productName-${id}`)?.value?.trim()
-            ).length;
+            const history = safeJSONParse(localStorage.getItem('orderHistory'), []);
+            const allProducts = history.flatMap(entry => {
+                if (entry.type === 'offer' && entry.data && entry.data.products) {
+                    return entry.data.products;
+                }
+                return [];
+            });
 
-            const totalValue = parseFloat(document.getElementById('totalGross').textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+            const margins = calculateProfitMargins(allProducts);
+            const productCount = allProducts.length;
+
+            const totalValue = margins.summary.totalRevenue * 1.23; // Brutto
 
             const analytics = {
                 timestamp: new Date().toISOString(),
@@ -3281,14 +3030,15 @@ Sob: 9:00 - 14:00
                 data: compressJSON(orderData)
             };
 
-            history.push(historyEntry);
+            history.unshift(historyEntry);
 
             // Zachowaj tylko ostatnie 50 zamówień
             if (history.length > 50) {
-                history.shift();
+                history.pop();
             }
 
             localStorage.setItem('orderHistory', JSON.stringify(history));
+            updateRecentActivity();
         }
 
         // Funkcja do przeglądania historii
@@ -3842,29 +3592,27 @@ Sob: 9:00 - 14:00
                             <table class="diablo-table" id="diabloAddressTable">
                                 <tbody>
                                     <tr>
-                                        <td style="width: 200px; background: #fafafa; font-weight: 500;">
-                                            Nazwa / Imię i Nazwisko
-                                        </td>
+                                        <td class="diablo-address-label">Nazwa / Imię i Nazwisko</td>
                                         <td contenteditable="true" id="diabloClientName" oninput="updateDiabloStats()"></td>
                                     </tr>
                                     <tr>
-                                        <td style="background: #fafafa; font-weight: 500;">Ulica z numerem</td>
+                                        <td class="diablo-address-label">Ulica z numerem</td>
                                         <td contenteditable="true" id="diabloStreet"></td>
                                     </tr>
                                     <tr>
-                                        <td style="background: #fafafa; font-weight: 500;">Kod pocztowy</td>
+                                        <td class="diablo-address-label">Kod pocztowy</td>
                                         <td contenteditable="true" id="diabloPostCode"></td>
                                     </tr>
                                     <tr>
-                                        <td style="background: #fafafa; font-weight: 500;">Miasto</td>
+                                        <td class="diablo-address-label">Miasto</td>
                                         <td contenteditable="true" id="diabloCity"></td>
                                     </tr>
                                     <tr>
-                                        <td style="background: #fafafa; font-weight: 500;">Numer telefonu</td>
+                                        <td class="diablo-address-label">Numer telefonu</td>
                                         <td contenteditable="true" id="diabloPhone"></td>
                                     </tr>
                                     <tr>
-                                        <td style="background: #fafafa; font-weight: 500;">Adres mailowy</td>
+                                        <td class="diablo-address-label">Adres mailowy</td>
                                         <td contenteditable="true" id="diabloEmail"></td>
                                     </tr>
                                 </tbody>
@@ -3876,30 +3624,30 @@ Sob: 9:00 - 14:00
                             <h3 class="diablo-section-title">
                                 <span>📦</span>
                                 Lista produktów
-                                <button class="toolbar-btn" onclick="addDiabloProduct()" style="margin-left: auto; padding: 0.5rem 1rem;">
+                                <button class="btn btn-success" onclick="addDiabloProduct()" style="margin-left: auto;">
                                     ➕ Dodaj produkt
                                 </button>
                             </h3>
                             <table class="diablo-table" id="diabloProductsTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 40px; text-align: center;">#</th>
-                                        <th style="min-width: 120px;">SKU / EAN</th>
-                                        <th style="min-width: 250px;">Nazwa produktu</th>
-                                        <th style="width: 80px; text-align: center;">Ilość</th>
-                                        <th style="min-width: 120px; text-align: right;">Cena netto</th>
-                                        <th style="min-width: 130px; text-align: right;">Cena brutto</th>
-                                        <th style="width: 80px; text-align: center;">Akcje</th>
+                                        <th style="text-align: center;">#</th>
+                                        <th>SKU / EAN</th>
+                                        <th>Nazwa produktu</th>
+                                        <th style="text-align: center;">Ilość</th>
+                                        <th style="text-align: right;">Cena netto</th>
+                                        <th style="text-align: right;">Cena brutto</th>
+                                        <th style="text-align: center;">Akcje</th>
                                     </tr>
                                 </thead>
                                 <tbody id="diabloProductsBody">
                                     <!-- Produkty będą dodawane dynamicznie -->
                                 </tbody>
                                 <tfoot>
-                                    <tr style="background: #f3f4f6; font-weight: 600;">
-                                        <td colspan="4" style="text-align: right;">SUMA:</td>
-                                        <td style="text-align: right;" id="diabloTotalNetto">0,00 zł</td>
-                                        <td style="text-align: right;" id="diabloTotalBrutto">0,00 zł</td>
+                                    <tr class="diablo-summary-row">
+                                        <td colspan="4">SUMA:</td>
+                                        <td id="diabloTotalNetto">0,00 zł</td>
+                                        <td id="diabloTotalBrutto">0,00 zł</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -3912,12 +3660,11 @@ Sob: 9:00 - 14:00
                                 <span>📝</span>
                                 Dodatkowe informacje
                             </h3>
-                            <textarea 
-                                id="diabloNotes" 
-                                class="diablo-input" 
-                                rows="3" 
+                            <textarea
+                                id="diabloNotes"
+                                class="diablo-input-textarea"
+                                rows="3"
                                 placeholder="Uwagi do zamówienia, specjalne instrukcje dostawy..."
-                                style="width: 100%; resize: vertical;"
                             ></textarea>
                         </div>
                     </div>
@@ -4619,6 +4366,7 @@ Sob: 9:00 - 14:00
             a.click();
             
             URL.revokeObjectURL(url);
+            saveOrderToHistory(data, 'diablo');
             showNotification('Zamówienie zapisane', 'success');
         }
 
@@ -5064,56 +4812,48 @@ Sob: 9:00 - 14:00
                 if (!activityList) return;
 
                 const history = safeJSONParse(localStorage.getItem('orderHistory'), []);
-                const offers = safeJSONParse(localStorage.getItem('lastSavedOffer'), {});
-                const diabloOrders = safeJSONParse(localStorage.getItem('diabloOrder'), {});
 
-                let activities = [];
-
-                // Dodaj ostatnie działania
-                if (history.length > 0) {
-                    history.slice(-3).reverse().forEach(entry => {
-                        activities.push({
-                            type: 'Oferta',
-                            date: new Date(entry.timestamp).toLocaleDateString('pl-PL'),
-                            desc: `Oferta ${entry.data?.offer?.number || 'Nr nieznany'}`
-                        });
-                    });
+                if (history.length === 0) {
+                    activityList.innerHTML = `
+                        <div class="activity-empty">
+                            <div class="empty-icon">📋</div>
+                            <div class="empty-title">Brak ostatnich działań</div>
+                            <div class="empty-desc">Rozpocznij pracę, aby zobaczyć historię</div>
+                        </div>`;
+                    return;
                 }
 
-                if (offers && offers.timestamp) {
-                    activities.push({
-                        type: 'Oferta',
-                        date: new Date(offers.timestamp || Date.now()).toLocaleDateString('pl-PL'),
-                        desc: 'Ostatnia zapisana oferta'
-                    });
-                }
-
-                if (diabloOrders && diabloOrders.date) {
-                    activities.push({
-                        type: 'Zamówienie',
-                        date: new Date(diabloOrders.date).toLocaleDateString('pl-PL'),
-                        desc: 'Zamówienie Diablo'
-                    });
-                }
-
-                // Jeśli brak działań, pokaż pusty stan
-                if (activities.length === 0) {
-                    return; // Zachowaj domyślny stan
-                }
-
-                // Wyświetl ostatnie 3 działania
-                const recentActivities = activities.slice(0, 3);
+                const recentActivities = history.slice(0, 5);
                 let html = '';
 
-                recentActivities.forEach(activity => {
+                recentActivities.forEach(entry => {
+                    const date = new Date(entry.timestamp).toLocaleDateString('pl-PL');
+                    let desc = 'Nieznana akcja';
+                    let icon = '📄';
+                    let docType = 'Dokument';
+
+                    if (entry.type === 'offer') {
+                        desc = `Oferta ${entry.data?.offer?.number || 'bez numeru'}`;
+                        icon = '📄';
+                        docType = 'Oferta';
+                    } else if (entry.type === 'diablo') {
+                        desc = `Zamówienie Diablo dla ${entry.data?.client?.name || 'klienta'}`;
+                        icon = '🪑';
+                        docType = 'Zamówienie Diablo';
+                    } else if (entry.type === 'invoice') {
+                        desc = `Faktura ${entry.data?.number || 'bez numeru'}`;
+                        icon = '🧾';
+                        docType = 'Faktura';
+                    }
+
                     html += `
                         <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: white; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                             <div class="activity-icon" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem;">
-                                ${activity.type === 'Oferta' ? '📄' : '🪑'}
+                                ${icon}
                             </div>
                             <div class="activity-content" style="flex: 1;">
-                                <div class="activity-title" style="font-weight: 600; color: var(--dark);">${activity.desc}</div>
-                                <div class="activity-date" style="font-size: 0.875rem; color: var(--gray);">${activity.date}</div>
+                                <div class="activity-title" style="font-weight: 600; color: var(--dark);">${desc}</div>
+                                <div class="activity-date" style="font-size: 0.875rem; color: var(--gray);">${docType} - ${date}</div>
                             </div>
                         </div>
                     `;
@@ -5346,6 +5086,7 @@ Sob: 9:00 - 14:00
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
 
+                saveOrderToHistory(data, 'invoice');
                 showNotification(`✅ Faktura zapisana pomyślnie!`, 'success');
 
             } catch (error) {
