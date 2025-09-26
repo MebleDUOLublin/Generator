@@ -52,21 +52,6 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
     --transition-slow: all 0.5s ease;
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 @keyframes slideInLeft {
@@ -892,77 +877,6 @@ body {
     cursor: pointer;
     font-size: 1.125rem;
     transition: all 0.3s ease;
-}
-
-.control-help-btn:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
-}
-
-.control-help {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.control-help-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    padding: 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.125rem;
-    transition: all 0.3s ease;
-}
-
-.control-help-btn:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
-}
-
-.control-help {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.control-help-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    padding: 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.125rem;
-    transition: all 0.3s ease;
-}
-
-.control-help-btn:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
-}
-
-.control-help {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.control-help-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    padding: 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.125rem;
-    transition: all 0.3s ease;
-}
-
-.control-help-btn:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
 }
 
 .control-tabs {
