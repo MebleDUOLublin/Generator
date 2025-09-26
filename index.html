@@ -7,14 +7,287 @@
     
     <!-- Biblioteki -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="roboto-polish.js"></script>
     
     <!-- Fonty -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <!-- Style dla generowanego PDF -->
+    <style id="pdf-styles">
+        .pdf-page {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            color: #374151;
+            background: white;
+        }
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .pdf-header .logo-img {
+            height: 60px;
+            object-fit: contain;
+        }
+        .pdf-header .seller-details {
+            text-align: right;
+            font-size: 11px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        .seller-details .seller-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+        .seller-details .contact-person {
+             margin-top: 4px;
+             padding-top: 4px;
+             border-top: 1px solid #e5e7eb;
+        }
+        .pdf-offer-title {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .pdf-offer-title h1 {
+            color: #dc2626;
+            font-size: 28px;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .pdf-offer-title .offer-meta {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #4b5563;
+        }
+        .offer-meta span {
+             margin: 0 12px;
+        }
+        .pdf-buyer-info {
+            background: #f9fafb;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #e5e7eb;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        .pdf-buyer-info .buyer-label {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .pdf-buyer-info .buyer-name {
+            font-size: 13px;
+            color: #111827;
+            font-weight: 600;
+        }
+        .pdf-buyer-info .label {
+            color: #6b7280;
+        }
+        .pdf-products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 10px;
+        }
+        .pdf-products-table th, .pdf-products-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+        .pdf-products-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            text-align: left;
+        }
+        .pdf-products-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .pdf-products-table .product-image-cell {
+            text-align: center;
+            padding: 5px;
+            width: 70px;
+        }
+        .pdf-products-table .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+        }
+        .pdf-products-table .product-name {
+            font-weight: 700;
+            color: #111827;
+            font-size: 11px;
+        }
+        .pdf-products-table .product-code {
+            font-size: 9px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .pdf-products-table .product-desc {
+            margin-top: 4px;
+            font-size: 9px;
+            color: #4b5563;
+            line-height: 1.3;
+        }
+        .pdf-products-table .product-desc div {
+             margin: 2px 0;
+        }
+        .pdf-products-table .centered { text-align: center; }
+        .pdf-products-table .right-aligned { text-align: right; }
+        .pdf-products-table .strong { font-weight: 600; }
+        .pdf-products-table .discount { color: #dc2626; }
+        .pdf-summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 25px;
+        }
+        .pdf-summary-table {
+            width: 350px;
+            border-collapse: collapse;
+        }
+        .pdf-summary-table td {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        .pdf-summary-table .summary-label {
+            text-align: right;
+        }
+        .pdf-summary-table .summary-value {
+            text-align: right;
+            font-weight: 600;
+        }
+        .pdf-summary-table .total-row td {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .pdf-summary-table .total-row .summary-value {
+            font-size: 16px;
+        }
+        .pdf-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #e5e7eb;
+        }
+        .pdf-footer .footer-sections {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .pdf-footer .terms-section {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .pdf-footer .section-title {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .pdf-footer .terms-list {
+            font-size: 10px;
+            line-height: 1.6;
+            color: #4b5563;
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .invoice-info-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 10px;
+            width: 300px;
+        }
+        .invoice-info-title {
+            font-weight: 700;
+            font-size: 11px;
+            color: #111827;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        .invoice-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .invoice-info-label {
+            color: #6b7280;
+        }
+        .invoice-info-value {
+            font-weight: 600;
+            color: #374151;
+        }
+        .invoice-info-value.highlight {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .pdf-footer .additional-notes {
+            background: #fffbeb;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border: 1px solid #fef3c7;
+            font-size: 10px;
+        }
+        .pdf-footer .notes-label {
+             color: #92400e;
+             font-weight: 600;
+        }
+        .pdf-footer .notes-content {
+             color: #b45309;
+        }
+        .pdf-footer .final-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .pdf-footer .footer-text {
+            color: #4b5563;
+            font-size: 11px;
+            font-style: italic;
+        }
+        .pdf-footer .footer-meta {
+            margin-top: 8px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+        .pdf-footer .footer-meta span {
+            margin: 0 5px;
+        }
+        .pdf-footer .footer-meta .page-number {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        .pdf-page-counter {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+    </style>
 </head>
 <body>
     <!-- CENTRUM KONTROLNE -->
@@ -44,6 +317,10 @@
             <button class="control-tab" onclick="switchApp('diablo')">
                 <span class="control-tab-icon">🪑</span>
                 Zamówienia Diablo
+            </button>
+            <button class="control-tab" onclick="switchApp('invoices')">
+                <span class="control-tab-icon">🧾</span>
+                Faktury
             </button>
             <button class="control-tab" onclick="switchApp('help')">
                 <span class="control-tab-icon">❓</span>
@@ -696,6 +973,221 @@
         let autosaveTimer = null;
         let draggedProductId = null;
         let shouldProceedWithPDF = false;
+        let productIdCounter = 0;
+        let invoiceProducts = [];
+        let invoiceProductId = 0;
+
+        // =================================================================
+        // UNIFIED APP STATE MANAGEMENT
+        // =================================================================
+        let appState = {
+            currentOffer: {},
+            currentDiabloOrder: {},
+            currentInvoice: {},
+        };
+
+        function saveAppState() {
+            try {
+                const offerData = collectOfferDataForState();
+                const diabloData = collectDiabloData();
+                const invoiceData = collectInvoiceDataForState();
+
+                const stateToSave = {
+                    currentOffer: offerData,
+                    currentDiabloOrder: diabloData,
+                    currentInvoice: invoiceData,
+                };
+
+                localStorage.setItem('appState', JSON.stringify(stateToSave));
+            } catch (error) {
+                console.error('Error saving app state:', error);
+            }
+        }
+
+        function loadAppState() {
+            const savedState = safeJSONParse(localStorage.getItem('appState'));
+            if (savedState) {
+                if (savedState.currentOffer) {
+                    populateOfferData(savedState.currentOffer);
+                }
+                if (savedState.currentDiabloOrder) {
+                    populateDiabloData(savedState.currentDiabloOrder);
+                }
+                if (savedState.currentInvoice) {
+                    populateInvoiceData(savedState.currentInvoice);
+                }
+                showNotification('✅ Poprzednia sesja przywrócona.', 'info');
+            }
+        }
+
+        function collectInvoiceDataForState() {
+            return {
+                number: document.getElementById('invoiceNumber').value,
+                date: document.getElementById('invoiceDate').value,
+                saleDate: document.getElementById('invoiceSaleDate').value,
+                city: document.getElementById('invoiceCity').value,
+                seller: {
+                    name: document.getElementById('invoiceSellerName').value,
+                    nip: document.getElementById('invoiceSellerNIP').value,
+                    address: document.getElementById('invoiceSellerAddress').value,
+                },
+                buyer: {
+                    name: document.getElementById('invoiceBuyerName').value,
+                    nip: document.getElementById('invoiceBuyerNIP').value,
+                    address: document.getElementById('invoiceBuyerAddress').value,
+                },
+                payment: {
+                    method: document.getElementById('invoicePaymentMethod').value,
+                    dueDate: document.getElementById('invoicePaymentDueDate').value,
+                    bank: document.getElementById('invoiceBank').value,
+                    status: document.getElementById('invoicePaymentStatus').value,
+                },
+                issuer: document.getElementById('invoiceIssuer').value,
+                notes: document.getElementById('invoiceNotes').value,
+                products: invoiceProducts.map(id => ({
+                    name: document.getElementById(`invoiceProductName-${id}`).value,
+                    qty: document.getElementById(`invoiceProductQty-${id}`).value,
+                    price: document.getElementById(`invoiceProductPrice-${id}`).value,
+                    vat: document.getElementById(`invoiceProductVat-${id}`).value,
+                })),
+            };
+        }
+
+        function populateInvoiceData(data) {
+            if (!data) return;
+            document.getElementById('invoiceNumber').value = data.number || '';
+            document.getElementById('invoiceDate').value = data.date || '';
+            document.getElementById('invoiceSaleDate').value = data.saleDate || '';
+            document.getElementById('invoiceCity').value = data.city || '';
+
+            if(data.seller) {
+                document.getElementById('invoiceSellerName').value = data.seller.name || '';
+                document.getElementById('invoiceSellerNIP').value = data.seller.nip || '';
+                document.getElementById('invoiceSellerAddress').value = data.seller.address || '';
+            }
+            if(data.buyer) {
+                document.getElementById('invoiceBuyerName').value = data.buyer.name || '';
+                document.getElementById('invoiceBuyerNIP').value = data.buyer.nip || '';
+                document.getElementById('invoiceBuyerAddress').value = data.buyer.address || '';
+            }
+            if(data.payment) {
+                document.getElementById('invoicePaymentMethod').value = data.payment.method || 'Przelew';
+                document.getElementById('invoicePaymentDueDate').value = data.payment.dueDate || '';
+                document.getElementById('invoiceBank').value = data.payment.bank || '';
+                document.getElementById('invoicePaymentStatus').value = data.payment.status || 'Nieopłacona';
+            }
+
+            document.getElementById('invoiceIssuer').value = data.issuer || '';
+            document.getElementById('invoiceNotes').value = data.notes || '';
+
+            document.getElementById('invoiceProductsList').innerHTML = '';
+            invoiceProducts = [];
+            if (data.products && data.products.length > 0) {
+                data.products.forEach(p => {
+                    addInvoiceProduct();
+                    const id = invoiceProducts[invoiceProducts.length - 1];
+                    document.getElementById(`invoiceProductName-${id}`).value = p.name;
+                    document.getElementById(`invoiceProductQty-${id}`).value = p.qty;
+                    document.getElementById(`invoiceProductPrice-${id}`).value = p.price;
+                    document.getElementById(`invoiceProductVat-${id}`).value = p.vat;
+                });
+            }
+            updateInvoiceSummary();
+        }
+
+        function collectOfferDataForState() {
+            return {
+                version: '2.5',
+                created: new Date().toISOString(),
+                offer: {
+                    number: document.getElementById('offerNumber').value.trim(),
+                    date: document.getElementById('offerDate').value,
+                    validUntil: document.getElementById('validUntil').value,
+                    currency: document.getElementById('currency').value
+                },
+                seller: {
+                    name: document.getElementById('sellerName').value.trim(),
+                    nip: document.getElementById('sellerNIP').value.trim(),
+                    address: document.getElementById('sellerAddress').value.trim(),
+                    phone: document.getElementById('sellerPhone').value.trim(),
+                    email: document.getElementById('sellerEmail').value.trim(),
+                    contact: document.getElementById('sellerContact').value.trim(),
+                    bank: document.getElementById('sellerBank').value.trim()
+                },
+                buyer: {
+                    name: document.getElementById('buyerName').value.trim(),
+                    nip: document.getElementById('buyerNIP').value.trim(),
+                    address: document.getElementById('buyerAddress').value.trim(),
+                    phone: document.getElementById('buyerPhone').value.trim(),
+                    email: document.getElementById('buyerEmail').value.trim(),
+                    notes: document.getElementById('buyerNotes').value.trim()
+                },
+                terms: {
+                    payment: document.getElementById('paymentTerms').value,
+                    delivery: document.getElementById('deliveryTime').value,
+                    warranty: document.getElementById('warranty').value,
+                    deliveryMethod: document.getElementById('deliveryMethod').value
+                },
+                settings: {
+                    orientation: document.getElementById('pdfOrientation').value,
+                    format: document.getElementById('pdfFormat').value,
+                    quality: document.getElementById('imageQuality').value,
+                    language: document.getElementById('docLanguage').value
+                },
+                notes: document.getElementById('additionalNotes').value.trim(),
+                footer: document.getElementById('footerText').value.trim(),
+                products: products.map((productId, index) => {
+                    const name = document.getElementById(`productName-${productId}`)?.value.trim();
+                    if (!name) return null;
+
+                    return {
+                        id: productId,
+                        name: name,
+                        code: document.getElementById(`productCode-${productId}`)?.value.trim() || '',
+                        qty: document.getElementById(`productQty-${productId}`)?.value || '1',
+                        price: document.getElementById(`productPrice-${productId}`)?.value || '0',
+                        discount: document.getElementById(`productDiscount-${productId}`)?.value || '0',
+                        desc: document.getElementById(`productDesc-${productId}`)?.value.trim() || '',
+                        image: productImages[productId] || null,
+                        order: index
+                    };
+                }).filter(p => p !== null)
+            };
+        }
+
+        function populateDiabloData(data) {
+            if (!data || !data.client) return;
+
+            document.getElementById('diabloClientName').textContent = data.client.name || '';
+            document.getElementById('diabloStreet').textContent = data.client.street || '';
+            document.getElementById('diabloPostCode').textContent = data.client.postCode || '';
+            document.getElementById('diabloCity').textContent = data.client.city || '';
+            document.getElementById('diabloPhone').textContent = data.client.phone || '';
+            document.getElementById('diabloEmail').textContent = data.client.email || '';
+
+            if (data.products && data.products.length > 0) {
+                document.getElementById('diabloProductsBody').innerHTML = '';
+                diabloProductId = 0;
+                const validProducts = data.products.filter(p => p && p.name && p.name.trim());
+
+                validProducts.forEach(product => {
+                    addDiabloProduct();
+                    const lastRow = document.querySelector('#diabloProductsBody tr:last-child');
+                    const cells = lastRow.getElementsByTagName('td');
+                    cells[1].textContent = product.sku || '';
+                    cells[2].textContent = product.name || '';
+                    cells[3].textContent = product.qty || '1';
+                    cells[4].textContent = product.netto || '0,00';
+                    cells[5].textContent = product.brutto || '0,00';
+                });
+            }
+
+            if (data.notes) {
+                document.getElementById('diabloNotes').value = data.notes;
+            }
+
+            updateDiabloStats();
+        }
         
         // PROFESJONALNE LOGO MEBLE DUO W SVG ZAKODOWANE W BASE64
         const MEBLE_DUO_LOGO_SVG = `data:image/png;base64,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`;
@@ -712,7 +1204,7 @@
             setupEventListeners();
             loadMebleDuoLogo();
             createProductSelectorModal();
-            loadFromLocalStorage();
+            loadAppState(); // Use the new unified state loader
             startAutosave();
         }
 
@@ -909,7 +1401,7 @@
 
         // Product management
         function addProduct() {
-            const productId = Date.now();
+            const productId = Date.now() + productIdCounter++;
             products.push(productId);
             
             const html = `
@@ -982,6 +1474,7 @@
             updateSummary();
             updateStatusBar();
             showToast('➕ Dodano nowy produkt');
+            return productId;
         }
 
         function removeProduct(productId) {
@@ -997,27 +1490,22 @@
         }
 
         function duplicateProduct(productId) {
-            const newProductId = Date.now();
-            products.push(newProductId);
+            const newProductId = addProduct();
             
-            setTimeout(() => {
-                document.getElementById(`productName-${newProductId}`).value = document.getElementById(`productName-${productId}`).value;
-                document.getElementById(`productCode-${newProductId}`).value = document.getElementById(`productCode-${productId}`).value;
-                document.getElementById(`productQty-${newProductId}`).value = document.getElementById(`productQty-${productId}`).value;
-                document.getElementById(`productPrice-${newProductId}`).value = document.getElementById(`productPrice-${productId}`).value;
-                document.getElementById(`productDiscount-${newProductId}`).value = document.getElementById(`productDiscount-${productId}`).value;
-                document.getElementById(`productDesc-${newProductId}`).value = document.getElementById(`productDesc-${productId}`).value;
-                
-                if (productImages[productId]) {
-                    productImages[newProductId] = productImages[productId];
-                    updateProductImage(newProductId);
-                }
-                
-                updateSummary();
-                showToast('📋 Produkt zduplikowany');
-            }, 100);
+            document.getElementById(`productName-${newProductId}`).value = document.getElementById(`productName-${productId}`).value;
+            document.getElementById(`productCode-${newProductId}`).value = document.getElementById(`productCode-${productId}`).value;
+            document.getElementById(`productQty-${newProductId}`).value = document.getElementById(`productQty-${productId}`).value;
+            document.getElementById(`productPrice-${newProductId}`).value = document.getElementById(`productPrice-${productId}`).value;
+            document.getElementById(`productDiscount-${newProductId}`).value = document.getElementById(`productDiscount-${productId}`).value;
+            document.getElementById(`productDesc-${newProductId}`).value = document.getElementById(`productDesc-${productId}`).value;
             
-            addProduct();
+            if (productImages[productId]) {
+                productImages[newProductId] = productImages[productId];
+                updateProductImage(newProductId);
+            }
+
+            updateSummary();
+            showToast('📋 Produkt zduplikowany');
         }
 
         function duplicateLastProduct() {
@@ -1362,8 +1850,9 @@
             generatePDFActual();
         }
 
+
         // PROFESJONALNA FUNKCJA GENEROWANIA PDF
-        function generatePreviewForPDF() {
+        function generatePreviewForPDF(pageNum = 1, totalPages = 1) {
             const productCount = products.filter(id => document.getElementById(`productName-${id}`)?.value?.trim()).length;
             
             let productsHtml = '';
@@ -1384,14 +1873,13 @@
                 const total = qty * discountedPrice;
                 totalNet += total;
                 
-                // Format description - POPRAWIONE WYŚWIETLANIE OPISU
                 let descHtml = '';
                 if (desc) {
                     const lines = desc.split('\n').filter(l => l.trim());
                     if (lines.length > 0) {
-                        descHtml = '<div style="margin-top: 4px; font-size: 9px; color: #4b5563; line-height: 1.3;">';
+                        descHtml = '<div class="product-desc">';
                         lines.forEach(line => {
-                            descHtml += `<div style="margin: 2px 0;">• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
+                            descHtml += `<div>• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
                         });
                         descHtml += '</div>';
                     }
@@ -1399,23 +1887,23 @@
                 
                 productsHtml += `
                     <tr>
-                        <td style="text-align: center; font-weight: 700; color: #111827;">${productIndex++}</td>
-                        ${productImages[productId] ? 
-                            `<td style="text-align: center; padding: 6px;">
-                                <img src="${productImages[productId]}" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
-                            </td>` 
-                            : '<td style="text-align: center;">-</td>'}
-                        <td style="padding: 8px;">
-                            <div style="font-weight: 700; color: #111827; font-size: 11px;">${name}</div>
-                            ${code ? `<div style="font-size: 9px; color: #6b7280; margin-top: 2px;">Kod: ${code}</div>` : ''}
+                        <td class="centered strong">${productIndex++}</td>
+                        <td class="product-image-cell">
+                            ${productImages[productId] ?
+                                `<img src="${productImages[productId]}" class="product-image">`
+                                : '-'}
+                        </td>
+                        <td>
+                            <div class="product-name">${name}</div>
+                            ${code ? `<div class="product-code">Kod: ${code}</div>` : ''}
                             ${descHtml}
                         </td>
-                        <td style="text-align: center; font-weight: 600;">${qty}</td>
-                        <td style="text-align: right; font-weight: 500;">${formatCurrency(price)}</td>
-                        <td style="text-align: center; color: ${discount > 0 ? '#dc2626' : '#9ca3af'}; font-weight: 600;">
+                        <td class="centered strong">${qty}</td>
+                        <td class="right-aligned">${formatCurrency(price)}</td>
+                        <td class="centered strong ${discount > 0 ? 'discount' : ''}">
                             ${discount > 0 ? '-' + discount + '%' : '-'}
                         </td>
-                        <td style="text-align: right; font-weight: 700; color: #111827;">${formatCurrency(total)}</td>
+                        <td class="right-aligned strong">${formatCurrency(total)}</td>
                     </tr>
                 `;
             });
@@ -1423,75 +1911,63 @@
             const vat = totalNet * 0.23;
             const gross = totalNet + vat;
             
-            // Przygotuj dane klienta - pokazuj tylko te które są wypełnione
             const buyerName = document.getElementById('buyerName').value || 'Nieznany klient';
             const buyerNIP = document.getElementById('buyerNIP').value;
             const buyerAddress = document.getElementById('buyerAddress').value;
             const buyerPhone = document.getElementById('buyerPhone').value;
             const buyerEmail = document.getElementById('buyerEmail').value;
             
-            // Osoba kontaktowa po stronie sprzedawcy
             const sellerContact = document.getElementById('sellerContact').value || 'Justyna Gancarz';
             const offerNumber = document.getElementById('offerNumber').value;
             
             return `
                 <div class="pdf-page">
-                    <!-- Professional Header with Logo -->
-                    <div class="pdf-header">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <img src="${logoBase64}" style="height: 60px;">
-                        </div>
-                        <div style="text-align: right; font-size: 11px; color: #4b5563; line-height: 1.4;">
-                            <div style="font-weight: 700; font-size: 14px; color: #111827; margin-bottom: 6px;">
-                                ${document.getElementById('sellerName').value}
-                            </div>
+                    <header class="pdf-header">
+                        <img src="${logoBase64}" class="logo-img">
+                        <div class="seller-details">
+                            <div class="seller-name">${document.getElementById('sellerName').value}</div>
                             <div>NIP: ${document.getElementById('sellerNIP').value}</div>
                             <div>${document.getElementById('sellerAddress').value.replace(/\n/g, ', ')}</div>
                             <div>Tel: ${document.getElementById('sellerPhone').value}</div>
                             <div>Email: ${document.getElementById('sellerEmail').value}</div>
-                            <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #e5e7eb;">
+                            <div class="contact-person">
                                 <strong>Osoba kontaktowa:</strong> ${sellerContact}
                             </div>
                         </div>
-                    </div>
+                    </header>
                     
-                    <!-- Offer Title -->
-                    <div style="text-align: center; margin: 25px 0;">
-                        <h1 style="color: #dc2626; font-size: 28px; margin: 0; font-weight: 700; letter-spacing: -0.5px;">OFERTA CENOWA</h1>
-                        <div style="margin-top: 10px; font-size: 12px; color: #4b5563;">
-                            <span style="margin: 0 12px;"><strong>Nr:</strong> ${offerNumber}</span>
-                            <span style="margin: 0 12px;"><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
-                            <span style="margin: 0 12px;"><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
+                    <div class="pdf-offer-title">
+                        <h1>OFERTA CENOWA</h1>
+                        <div class="offer-meta">
+                            <span><strong>Nr:</strong> ${offerNumber}</span>
+                            <span><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
+                            <span><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
                         </div>
                     </div>
                     
-                    <!-- Buyer Info - pokazuj tylko wypełnione dane -->
-                    <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 12px 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e7eb;">
-                        <div style="font-size: 11px; line-height: 1.5;">
-                            <div style="font-weight: 700; color: #111827; margin-bottom: 8px; font-size: 12px;">NABYWCA:</div>
-                            <div>
-                                <strong style="font-size: 13px; color: #111827;">${buyerName}</strong>
-                                ${buyerNIP ? `<br><span style="color: #6b7280;">NIP:</span> ${buyerNIP}` : ''}
-                                ${buyerAddress ? `<br><span style="color: #6b7280;">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
-                                ${buyerPhone || buyerEmail ? '<br>' : ''}
-                                ${buyerPhone ? `<span style="color: #6b7280;">Tel:</span> ${buyerPhone}` : ''}
-                                ${buyerPhone && buyerEmail ? ' | ' : ''}
-                                ${buyerEmail ? `<span style="color: #6b7280;">Email:</span> ${buyerEmail}` : ''}
-                            </div>
+                    <div class="pdf-buyer-info">
+                        <div class="buyer-label">NABYWCA:</div>
+                        <div>
+                            <strong class="buyer-name">${buyerName}</strong>
+                            ${buyerNIP ? `<br><span class="label">NIP:</span> ${buyerNIP}` : ''}
+                            ${buyerAddress ? `<br><span class="label">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
+                            ${buyerPhone || buyerEmail ? '<br>' : ''}
+                            ${buyerPhone ? `<span class="label">Tel:</span> ${buyerPhone}` : ''}
+                            ${buyerPhone && buyerEmail ? ' | ' : ''}
+                            ${buyerEmail ? `<span class="label">Email:</span> ${buyerEmail}` : ''}
                         </div>
                     </div>
                     
-                    <!-- Products Table -->
-                    <table class="pdf-products-table" style="margin-bottom: 25px;">
+                    <table class="pdf-products-table">
                         <thead>
                             <tr>
-                                <th style="width: 35px; text-align: center;">Lp.</th>
-                                <th style="width: 70px; text-align: center;">Zdjęcie</th>
+                                <th>Lp.</th>
+                                <th>Zdjęcie</th>
                                 <th>Produkt / Opis</th>
-                                <th style="width: 50px; text-align: center;">Ilość</th>
-                                <th style="width: 85px; text-align: right;">Cena netto</th>
-                                <th style="width: 60px; text-align: center;">Rabat</th>
-                                <th style="width: 95px; text-align: right;">Wartość</th>
+                                <th class="centered">Ilość</th>
+                                <th class="right-aligned">Cena netto</th>
+                                <th class="centered">Rabat</th>
+                                <th class="right-aligned">Wartość</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1499,35 +1975,33 @@
                         </tbody>
                     </table>
                     
-                    <!-- Professional Summary -->
                     <div class="pdf-summary">
-                        <table style="width: 320px; border-collapse: collapse;">
+                        <table class="pdf-summary-table">
                             <tr>
-                                <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-top: 1px solid #e5e7eb;">Wartość netto:</td>
-                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; font-size: 12px; border-top: 1px solid #e5e7eb;">${formatCurrency(totalNet)}</td>
+                                <td class="summary-label">Wartość netto:</td>
+                                <td class="summary-value">${formatCurrency(totalNet)}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 6px 10px; text-align: right; font-size: 12px;">VAT 23%:</td>
-                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; font-size: 12px;">${formatCurrency(vat)}</td>
+                                <td class="summary-label">VAT 23%:</td>
+                                <td class="summary-value">${formatCurrency(vat)}</td>
                             </tr>
-                            <tr style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;">
-                                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-size: 14px; border-radius: 6px 0 0 6px;">RAZEM BRUTTO:</td>
-                                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-size: 16px; border-radius: 0 6px 6px 0;">${formatCurrency(gross)}</td>
+                            <tr class="total-row">
+                                <td class="summary-label">RAZEM BRUTTO:</td>
+                                <td class="summary-value">${formatCurrency(gross)}</td>
                             </tr>
                         </table>
                     </div>
                     
-                    <!-- Professional Terms & Payment Info -->
-                    <div class="pdf-footer">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                            <div style="flex: 1; margin-right: 20px;">
-                                <div style="font-weight: 700; color: #111827; margin-bottom: 8px; font-size: 12px;">WARUNKI HANDLOWE:</div>
-                                <div style="font-size: 10px; line-height: 1.5; color: #4b5563;">
-                                    • <strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}<br>
-                                    • <strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}<br>
-                                    • <strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}<br>
-                                    • <strong>Gwarancja:</strong> ${document.getElementById('warranty').value}
-                                </div>
+                    <footer class="pdf-footer">
+                        <div class="footer-sections">
+                            <div class="terms-section">
+                                <div class="section-title">WARUNKI HANDLOWE:</div>
+                                <ul class="terms-list">
+                                    <li><strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}</li>
+                                    <li><strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}</li>
+                                    <li><strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}</li>
+                                    <li><strong>Gwarancja:</strong> ${document.getElementById('warranty').value}</li>
+                                </ul>
                             </div>
                             <div class="invoice-info-box">
                                 <div class="invoice-info-title">DANE DO PRZELEWU:</div>
@@ -1537,30 +2011,32 @@
                                 </div>
                                 <div class="invoice-info-item">
                                     <span class="invoice-info-label">Nr konta:</span>
-                                    <span class="invoice-info-value" style="font-weight: 600;">${document.getElementById('sellerBank').value}</span>
+                                    <span class="invoice-info-value">${document.getElementById('sellerBank').value}</span>
                                 </div>
                                 <div class="invoice-info-item">
                                     <span class="invoice-info-label">Tytuł przelewu:</span>
-                                    <span class="invoice-info-value" style="font-weight: 700; color: #dc2626;">${offerNumber}</span>
+                                    <span class="invoice-info-value highlight">${offerNumber}</span>
                                 </div>
                             </div>
                         </div>
                         
                         ${document.getElementById('additionalNotes').value ? 
-                            `<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 10px 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #fbbf24;">
-                                <strong style="color: #78350f;">Uwagi:</strong> <span style="color: #92400e;">${document.getElementById('additionalNotes').value}</span>
+                            `<div class="additional-notes">
+                                <strong class="notes-label">Uwagi:</strong>
+                                <span class="notes-content">${document.getElementById('additionalNotes').value}</span>
                             </div>` : ''
                         }
                         
-                        <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
-                            <div style="color: #4b5563; font-size: 11px; font-style: italic;">${document.getElementById('footerText').value}</div>
-                            <div style="margin-top: 8px; font-size: 9px; color: #9ca3af;">
-                                Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')} | 
-                                www.mebleduo.com | 
-                                © ${new Date().getFullYear()} MEBLE DUO PIOTR NIEDŹWIADEK
+                        <div class="final-footer">
+                            <div class="footer-text">${document.getElementById('footerText').value}</div>
+                            <div class="footer-meta">
+                                <span>Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')}</span>|
+                                <span>www.mebleduo.com</span>|
+                                <span>© ${new Date().getFullYear()} MEBLE DUO</span>|
+                                <span class="page-number">Strona ${pageNum} z ${totalPages}</span>
                             </div>
                         </div>
-                    </div>
+                    </footer>
                 </div>
             `;
         }
@@ -1568,7 +2044,12 @@
         // Generate preview
         function generatePreview() {
             const content = document.getElementById('previewContent');
-            content.innerHTML = generatePreviewForPDF();
+            const validProducts = products.filter(id => document.getElementById(`productName-${id}`)?.value?.trim());
+            const orientation = document.getElementById('pdfOrientation').value;
+            const maxProductsPerPage = orientation === 'portrait' ? 7 : 10;
+            const totalPages = Math.ceil(validProducts.length / maxProductsPerPage) || 1;
+
+            content.innerHTML = generatePreviewForPDF(1, totalPages);
         }
 
         // Format date
@@ -1595,6 +2076,379 @@
             }
 
             generatePDFActual();
+        }
+
+        async function generatePDFActual() {
+            showLoading(true);
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const orientation = document.getElementById('pdfOrientation').value;
+                const format = document.getElementById('pdfFormat').value;
+                const quality = parseFloat(document.getElementById('imageQuality').value);
+
+                const validProducts = products.filter(id =>
+                    document.getElementById(`productName-${id}`)?.value?.trim()
+                );
+                const productCount = validProducts.length;
+
+                const maxProductsPerPage = orientation === 'portrait' ? 7 : 10;
+                const needsMultiplePages = productCount > maxProductsPerPage;
+
+                if (needsMultiplePages) {
+                    await generateMultiPagePDF(orientation, format, quality);
+                } else {
+                    await generateSinglePagePDF(orientation, format, quality);
+                }
+
+                showNotification('✅ PDF został wygenerowany i zapisany!');
+                shouldProceedWithPDF = false;
+
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                showNotification('❌ Błąd generowania PDF: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function generateSinglePagePDF(orientation, format, quality) {
+            const { jsPDF } = window.jspdf;
+            const pageWidthPx = orientation === 'portrait' ? 794 : 1123;
+            const pageHeightPx = orientation === 'portrait' ? 1123 : 794;
+
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.width = pageWidthPx + 'px';
+            tempContainer.style.background = 'white';
+            tempContainer.style.padding = '20px';
+
+            const styleEl = document.createElement('style');
+            styleEl.innerHTML = document.getElementById('pdf-styles').innerHTML;
+            tempContainer.appendChild(styleEl);
+            tempContainer.innerHTML += generatePreviewForPDF(1, 1);
+
+            document.body.appendChild(tempContainer);
+
+            const contentHeight = tempContainer.scrollHeight;
+            const scale = contentHeight > pageHeightPx ? pageHeightPx / contentHeight : 1;
+
+            const canvas = await html2canvas(tempContainer, {
+                scale: scale > 0.5 ? 2 : 3,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                windowWidth: pageWidthPx,
+                height: contentHeight
+            });
+
+            document.body.removeChild(tempContainer);
+
+            const pdf = new jsPDF({
+                orientation: orientation,
+                unit: 'mm',
+                format: format
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            const imgData = canvas.toDataURL('image/jpeg', quality);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, '', 'FAST');
+
+            setPDFMetadata(pdf);
+            savePDF(pdf);
+        }
+
+        async function generateMultiPagePDF(orientation, format, quality) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: orientation,
+                unit: 'mm',
+                format: format
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            const productsPerPage = orientation === 'portrait' ? 7 : 10;
+            const validProducts = products.filter(id =>
+                document.getElementById(`productName-${id}`)?.value?.trim()
+            );
+
+            const totalPages = Math.ceil(validProducts.length / productsPerPage);
+
+            for (let page = 0; page < totalPages; page++) {
+                if (page > 0) {
+                    pdf.addPage();
+                }
+
+                const startIdx = page * productsPerPage;
+                const endIdx = Math.min(startIdx + productsPerPage, validProducts.length);
+                const pageProducts = validProducts.slice(startIdx, endIdx);
+
+                const pageContent = generatePageContent(
+                    pageProducts,
+                    page + 1,
+                    totalPages,
+                    page === 0,
+                    page === totalPages - 1
+                );
+
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'fixed';
+                tempContainer.style.left = '-9999px';
+                tempContainer.style.width = orientation === 'portrait' ? '794px' : '1123px';
+                tempContainer.style.height = orientation === 'portrait' ? '1123px' : '794px';
+                tempContainer.style.background = 'white';
+                tempContainer.style.padding = '20px';
+
+                const styleEl = document.createElement('style');
+                styleEl.innerHTML = document.getElementById('pdf-styles').innerHTML;
+                tempContainer.appendChild(styleEl);
+                tempContainer.innerHTML += pageContent;
+                document.body.appendChild(tempContainer);
+
+                const canvas = await html2canvas(tempContainer, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+
+                document.body.removeChild(tempContainer);
+
+                const imgData = canvas.toDataURL('image/jpeg', quality);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, '', 'FAST');
+            }
+
+            setPDFMetadata(pdf);
+            savePDF(pdf);
+        }
+
+        function generatePageContent(pageProducts, pageNum, totalPages, showHeader, showSummary) {
+            let productsHtml = '';
+            let fullTotalNet = 0;
+            products.forEach(productId => {
+                const name = document.getElementById(`productName-${productId}`)?.value;
+                if (!name || !name.trim()) return;
+                const qty = parseFloat(document.getElementById(`productQty-${productId}`)?.value) || 0;
+                const price = parseFloat(document.getElementById(`productPrice-${productId}`)?.value) || 0;
+                const discount = parseFloat(document.getElementById(`productDiscount-${productId}`)?.value) || 0;
+                const discountedPrice = price * (1 - discount / 100);
+                fullTotalNet += qty * discountedPrice;
+            });
+
+            pageProducts.forEach(productId => {
+                const name = document.getElementById(`productName-${productId}`)?.value;
+                if (!name || !name.trim()) return;
+
+                const productIndex = products.findIndex(pId => pId === productId) + 1;
+                const code = document.getElementById(`productCode-${productId}`)?.value || '';
+                const qty = parseFloat(document.getElementById(`productQty-${productId}`)?.value) || 0;
+                const price = parseFloat(document.getElementById(`productPrice-${productId}`)?.value) || 0;
+                const discount = parseFloat(document.getElementById(`productDiscount-${productId}`)?.value) || 0;
+                const desc = document.getElementById(`productDesc-${productId}`)?.value || '';
+
+                const discountedPrice = price * (1 - discount / 100);
+                const total = qty * discountedPrice;
+
+                let descHtml = '';
+                if (desc) {
+                    const lines = desc.split('\n').filter(l => l.trim());
+                    if (lines.length > 0) {
+                        descHtml = '<div class="product-desc">';
+                        lines.forEach(line => {
+                            descHtml += `<div>• ${line.replace(/^[•\-\d\.]\s*/, '').trim()}</div>`;
+                        });
+                        descHtml += '</div>';
+                    }
+                }
+
+                productsHtml += `
+                    <tr>
+                        <td class="centered strong">${productIndex}</td>
+                         <td class="product-image-cell">
+                            ${productImages[productId] ?
+                                `<img src="${productImages[productId]}" class="product-image">`
+                                : '-'}
+                        </td>
+                        <td>
+                            <div class="product-name">${name}</div>
+                            ${code ? `<div class="product-code">Kod: ${code}</div>` : ''}
+                            ${descHtml}
+                        </td>
+                        <td class="centered strong">${qty}</td>
+                        <td class="right-aligned">${formatCurrency(price)}</td>
+                        <td class="centered strong ${discount > 0 ? 'discount' : ''}">
+                            ${discount > 0 ? '-' + discount + '%' : '-'}
+                        </td>
+                        <td class="right-aligned strong">${formatCurrency(total)}</td>
+                    </tr>
+                `;
+            });
+
+            const vat = fullTotalNet * 0.23;
+            const gross = fullTotalNet + vat;
+
+            const buyerName = document.getElementById('buyerName').value || 'Nieznany klient';
+            const buyerNIP = document.getElementById('buyerNIP').value;
+            const buyerAddress = document.getElementById('buyerAddress').value;
+            const buyerPhone = document.getElementById('buyerPhone').value;
+            const buyerEmail = document.getElementById('buyerEmail').value;
+
+            const sellerContact = document.getElementById('sellerContact').value || 'Justyna Gancarz';
+            const offerNumber = document.getElementById('offerNumber').value;
+
+            let headerHtml = '';
+            if (showHeader) {
+                headerHtml = `
+                    <header class="pdf-header">
+                        <img src="${logoBase64}" class="logo-img">
+                        <div class="seller-details">
+                            <div class="seller-name">${document.getElementById('sellerName').value}</div>
+                            <div>NIP: ${document.getElementById('sellerNIP').value}</div>
+                            <div>${document.getElementById('sellerAddress').value.replace(/\n/g, ', ')}</div>
+                            <div>Tel: ${document.getElementById('sellerPhone').value}</div>
+                            <div>Email: ${document.getElementById('sellerEmail').value}</div>
+                            <div class="contact-person"><strong>Osoba kontaktowa:</strong> ${sellerContact}</div>
+                        </div>
+                    </header>
+                    <div class="pdf-offer-title">
+                        <h1>OFERTA CENOWA</h1>
+                        <div class="offer-meta">
+                            <span><strong>Nr:</strong> ${offerNumber}</span>
+                            <span><strong>Data:</strong> ${formatDate(document.getElementById('offerDate').value)}</span>
+                            <span><strong>Ważna do:</strong> ${formatDate(document.getElementById('validUntil').value)}</span>
+                        </div>
+                    </div>
+                    <div class="pdf-buyer-info">
+                        <div class="buyer-label">NABYWCA:</div>
+                        <div>
+                            <strong class="buyer-name">${buyerName}</strong>
+                            ${buyerNIP ? `<br><span class="label">NIP:</span> ${buyerNIP}` : ''}
+                            ${buyerAddress ? `<br><span class="label">Adres:</span> ${buyerAddress.replace(/\n/g, ', ')}` : ''}
+                            ${buyerPhone || buyerEmail ? '<br>' : ''}
+                            ${buyerPhone ? `<span class="label">Tel:</span> ${buyerPhone}` : ''}
+                            ${buyerPhone && buyerEmail ? ' | ' : ''}
+                            ${buyerEmail ? `<span class="label">Email:</span> ${buyerEmail}` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            let summaryAndFooterHtml = '';
+            if (showSummary) {
+                 summaryAndFooterHtml = `
+                    <div class="pdf-summary">
+                        <table class="pdf-summary-table">
+                            <tr>
+                                <td class="summary-label">Wartość netto:</td>
+                                <td class="summary-value">${formatCurrency(fullTotalNet)}</td>
+                            </tr>
+                            <tr>
+                                <td class="summary-label">VAT 23%:</td>
+                                <td class="summary-value">${formatCurrency(vat)}</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td class="summary-label">RAZEM BRUTTO:</td>
+                                <td class="summary-value">${formatCurrency(gross)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <footer class="pdf-footer">
+                        <div class="footer-sections">
+                            <div class="terms-section">
+                                <div class="section-title">WARUNKI HANDLOWE:</div>
+                                <ul class="terms-list">
+                                    <li><strong>Płatność:</strong> ${document.getElementById('paymentTerms').value}</li>
+                                    <li><strong>Realizacja:</strong> ${document.getElementById('deliveryTime').value}</li>
+                                    <li><strong>Dostawa:</strong> ${document.getElementById('deliveryMethod').value}</li>
+                                    <li><strong>Gwarancja:</strong> ${document.getElementById('warranty').value}</li>
+                                </ul>
+                            </div>
+                            <div class="invoice-info-box">
+                                <div class="invoice-info-title">DANE DO PRZELEWU:</div>
+                                <div class="invoice-info-item">
+                                    <span class="invoice-info-label">Odbiorca:</span>
+                                    <span class="invoice-info-value">MEBLE DUO PIOTR NIEDŹWIADEK</span>
+                                </div>
+                                <div class="invoice-info-item">
+                                    <span class="invoice-info-label">Nr konta:</span>
+                                    <span class="invoice-info-value">${document.getElementById('sellerBank').value}</span>
+                                </div>
+                                <div class="invoice-info-item">
+                                    <span class="invoice-info-label">Tytuł przelewu:</span>
+                                    <span class="invoice-info-value highlight">${offerNumber}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${document.getElementById('additionalNotes').value ?
+                            `<div class="additional-notes">
+                                <strong class="notes-label">Uwagi:</strong> <span class="notes-content">${document.getElementById('additionalNotes').value}</span>
+                            </div>` : ''
+                        }
+                    </footer>
+                 `;
+            }
+
+            let footerHtml = '';
+            if (showSummary) {
+                footerHtml = summaryAndFooterHtml + `
+                 <div class="final-footer">
+                    <div class="footer-text">${document.getElementById('footerText').value}</div>
+                    <div class="footer-meta">
+                        <span>Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')}</span>|
+                        <span>www.mebleduo.com</span>|
+                        <span>© ${new Date().getFullYear()} MEBLE DUO</span>|
+                        <span class="page-number">Strona ${pageNum} z ${totalPages}</span>
+                    </div>
+                </div>`;
+            } else {
+                footerHtml = `<div class="pdf-page-counter">Strona ${pageNum} z ${totalPages}</div>`;
+            }
+
+            return `
+                <div class="pdf-page">
+                    ${headerHtml}
+                    <table class="pdf-products-table">
+                         <thead>
+                            <tr>
+                                <th>Lp.</th>
+                                <th>Zdjęcie</th>
+                                <th>Produkt / Opis</th>
+                                <th class="centered">Ilość</th>
+                                <th class="right-aligned">Cena netto</th>
+                                <th class="centered">Rabat</th>
+                                <th class="right-aligned">Wartość</th>
+                            </tr>
+                        </thead>
+                        <tbody>${productsHtml}</tbody>
+                    </table>
+                    ${footerHtml}
+                </div>
+            `;
+        }
+
+        function setPDFMetadata(pdf) {
+            pdf.setProperties({
+                title: `Oferta ${document.getElementById('offerNumber').value}`,
+                subject: 'Oferta cenowa - MEBLE DUO',
+                author: 'MEBLE DUO PIOTR NIEDŹWIADEK',
+                keywords: 'oferta, meble, krzesła, biurka',
+                creator: 'Generator Ofert PDF Pro 2025'
+            });
+        }
+
+        function savePDF(pdf) {
+            const buyerName = document.getElementById('buyerName').value.replace(/[^a-zA-Z0-9]/g, '_');
+            const offerNum = document.getElementById('offerNumber').value.replace(/\//g, '-');
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `Oferta_${offerNum}_${buyerName}_${date}.pdf`;
+            pdf.save(filename);
         }
 
         // ZREFAKTORYZOWANA I ULEPSZONA FUNKCJA ZAPISYWANIA OFERTY
@@ -1681,7 +2535,7 @@
                 URL.revokeObjectURL(url);
 
                 localStorage.setItem('lastSavedOffer', json);
-                saveOrderToHistory(data);
+                saveOrderToHistory(data, 'offer');
                 showNotification(`✅ Oferta zapisana pomyślnie!`, 'success');
 
             } catch (error) {
@@ -1745,8 +2599,6 @@
                 buyer: ['buyerName', 'buyerNIP', 'buyerAddress', 'buyerPhone', 'buyerEmail', 'buyerNotes'],
                 terms: ['paymentTerms', 'deliveryTime', 'warranty', 'deliveryMethod'],
                 settings: ['pdfOrientation', 'pdfFormat', 'imageQuality', 'docLanguage'],
-                notes: ['additionalNotes'],
-                footer: ['footerText']
             };
 
             for (const section in fieldMappings) {
@@ -1772,11 +2624,21 @@
                     .filter(p => p && p.name && p.name.trim())
                     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-                validProducts.forEach((productData, index) => {
-                    const newProductId = Date.now() + index;
-                    products.push(newProductId);
+                validProducts.forEach(productData => {
+                    const newProductId = addProduct();
 
-                    createAndPopulateProductElement(newProductId, productData, index);
+                    // Wypełnij dane dla nowo utworzonego produktu
+                    document.getElementById(`productName-${newProductId}`).value = productData.name || '';
+                    document.getElementById(`productCode-${newProductId}`).value = productData.code || '';
+                    document.getElementById(`productQty-${newProductId}`).value = productData.qty || '1';
+                    document.getElementById(`productPrice-${newProductId}`).value = productData.price || '0';
+                    document.getElementById(`productDiscount-${newProductId}`).value = productData.discount || '0';
+                    document.getElementById(`productDesc-${newProductId}`).value = productData.desc || '';
+
+                    if (productData.image) {
+                        productImages[newProductId] = productData.image;
+                        updateProductImage(newProductId);
+                    }
                 });
             }
 
@@ -1784,79 +2646,6 @@
             updateStatusBar();
         }
 
-        function createAndPopulateProductElement(productId, productData, index) {
-             const html = `
-                <div class="product-card" id="product-${productId}" draggable="true" ondragstart="dragStart(event, ${productId})" ondragover="dragOver(event)" ondrop="drop(event, ${productId})">
-                    <div class="drag-handle">☰</div>
-                    <div class="product-header">
-                        <div class="product-number">${index + 1}</div>
-                        <div class="product-actions">
-                            <button class="btn btn-outline btn-icon" onclick="duplicateProduct(${productId})" title="Duplikuj">
-                                📋
-                            </button>
-                            <button class="btn btn-danger btn-icon" onclick="removeProduct(${productId})" title="Usuń">
-                                🗑️
-                            </button>
-                        </div>
-                    </div>
-                    <div class="product-content">
-                        <input type="file" id="productImage-${productId}" accept="image/*"
-                               style="display: none;" onchange="handleProductImage(event, ${productId})">
-                        <div class="product-image-zone" id="productImageZone-${productId}"
-                             onclick="document.getElementById('productImage-${productId}').click()">
-                            <div style="text-align: center; color: var(--gray); font-size: 0.875rem;">
-                                + Zdjęcie<br>
-                                <small style="font-size: 0.75rem;">Kliknij lub Ctrl+V</small>
-                            </div>
-                        </div>
-                        <div class="product-fields">
-                             <div class="form-group">
-                                <label class="form-label">Nazwa produktu <span class="required">*</span></label>
-                                <input type="text" class="form-input" id="productName-${productId}" value="${productData.name || ''}"
-                                       placeholder="np. Krzesło biurowe ERGO" onchange="updateSummary()">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Kod produktu</label>
-                                <input type="text" class="form-input" id="productCode-${productId}" value="${productData.code || ''}"
-                                       placeholder="np. ERGO-001">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Ilość</label>
-                                <input type="number" class="form-input" id="productQty-${productId}" value="${productData.qty || '1'}"
-                                       min="1" onchange="updateSummary()">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Cena netto (zł)</label>
-                                <input type="number" class="form-input" id="productPrice-${productId}" value="${productData.price || '0'}"
-                                       step="0.01" min="0" onchange="updateSummary()">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Rabat (%)</label>
-                                <input type="number" class="form-input" id="productDiscount-${productId}" value="${productData.discount || '0'}"
-                                       min="0" max="100" onchange="updateSummary()">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Opis produktu</label>
-                        <div class="desc-toolbar">
-                            <button class="desc-btn" onclick="addBullet(${productId})">• Punkt</button>
-                            <button class="desc-btn" onclick="addDash(${productId})">- Lista</button>
-                            <button class="desc-btn" onclick="addNumber(${productId})">1. Numer</button>
-                            <button class="desc-btn" onclick="addBold(${productId})">Ważne:</button>
-                        </div>
-                        <textarea class="form-textarea" id="productDesc-${productId}" rows="4"
-                                  placeholder="Opisz produkt...">${productData.desc || ''}</textarea>
-                    </div>
-                </div>
-            `;
-            document.getElementById('productsList').insertAdjacentHTML('beforeend', html);
-
-            if (productData.image) {
-                productImages[productId] = productData.image;
-                updateProductImage(productId);
-            }
-        }
 
         // Validate form - teraz mniej restrykcyjne
         function validateForm() {
@@ -1946,42 +2735,11 @@
         }
 
         function autosave() {
-            const data = {
-                offer: {
-                    number: document.getElementById('offerNumber').value,
-                    date: document.getElementById('offerDate').value,
-                    validUntil: document.getElementById('validUntil').value
-                },
-                buyer: {
-                    name: document.getElementById('buyerName').value,
-                    address: document.getElementById('buyerAddress').value
-                },
-                products: products.map(id => ({
-                    name: document.getElementById(`productName-${id}`)?.value,
-                    qty: document.getElementById(`productQty-${id}`)?.value,
-                    price: document.getElementById(`productPrice-${id}`)?.value,
-                    desc: document.getElementById(`productDesc-${id}`)?.value
-                }))
-            };
-            
-            localStorage.setItem('offerAutosave', JSON.stringify(data));
+            saveAppState();
             
             const indicator = document.getElementById('autosaveIndicator');
             indicator.classList.add('show');
             setTimeout(() => indicator.classList.remove('show'), 2000);
-        }
-
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('offerAutosave');
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    // Opcjonalnie możesz automatycznie wczytać dane z localStorage
-                    // Ale lepiej pytać użytkownika czy chce przywrócić poprzednią sesję
-                } catch (e) {
-                    console.error('Autosave load error:', e);
-                }
-            }
         }
 
         function handleKeyboardShortcuts(e) {
@@ -2514,12 +3272,12 @@ Sob: 9:00 - 14:00
         }
 
         // Historia zamówień
-        function saveOrderToHistory(orderData) {
+        function saveOrderToHistory(orderData, type) {
             const history = safeJSONParse(localStorage.getItem('orderHistory'), []);
             const historyEntry = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
-                type: 'offer',
+                type: type, // 'offer' or 'diablo'
                 data: compressJSON(orderData)
             };
 
@@ -2586,284 +3344,8 @@ Sob: 9:00 - 14:00
             }
         }
 
-        // FUNKCJA DO WCZYTYWANIA DANYCH OFERTY - NAPRAWIONA
-        function loadOfferFromData(data) {
-            try {
-                console.log('🔄 Wczytywanie danych oferty...', data);
-
-                // WYCZYŚĆ ISTNIEJĄCE PRODUKTY
-                products = [];
-                productImages = {};
-                document.getElementById('productsList').innerHTML = '';
-
-                // WCZYTAJ DANE OFERTY
-                if (data.offer) {
-                    console.log('📋 Wczytywanie danych oferty');
-                    const offerFields = ['offerNumber', 'offerDate', 'validUntil', 'currency'];
-                    offerFields.forEach(field => {
-                        const element = document.getElementById(field);
-                        const dataKey = field.replace('offer', '').toLowerCase();
-                        if (element && data.offer[dataKey] !== undefined) {
-                            element.value = data.offer[dataKey];
-                            console.log(`✅ ${field}:`, data.offer[dataKey]);
-                        }
-                    });
-                }
-
-                // WCZYTAJ DANE SPRZEDAWCY
-                if (data.seller) {
-                    console.log('🏢 Wczytywanie danych sprzedawcy');
-                    const sellerFields = ['sellerName', 'sellerNIP', 'sellerAddress', 'sellerPhone', 'sellerEmail', 'sellerContact', 'sellerBank'];
-                    sellerFields.forEach(field => {
-                        const element = document.getElementById(field);
-                        const dataKey = field.replace('seller', '').toLowerCase();
-                        if (element && data.seller[dataKey] !== undefined) {
-                            element.value = data.seller[dataKey];
-                        }
-                    });
-                }
-
-                // WCZYTAJ DANE NABYWCY
-                if (data.buyer) {
-                    console.log('🛒 Wczytywanie danych nabywcy');
-                    const buyerFields = ['buyerName', 'buyerNIP', 'buyerAddress', 'buyerPhone', 'buyerEmail', 'buyerNotes'];
-                    buyerFields.forEach(field => {
-                        const element = document.getElementById(field);
-                        const dataKey = field.replace('buyer', '').toLowerCase();
-                        if (element && data.buyer[dataKey] !== undefined) {
-                            element.value = data.buyer[dataKey];
-                        }
-                    });
-                }
-
-                // WCZYTAJ WARUNKI HANDLOWE
-                if (data.terms) {
-                    console.log('📝 Wczytywanie warunków handlowych');
-                    const termsFields = ['paymentTerms', 'deliveryTime', 'warranty', 'deliveryMethod'];
-                    termsFields.forEach(field => {
-                        const element = document.getElementById(field);
-                        const dataKey = field.replace(/([A-Z])/g, (match, letter) => letter.toLowerCase());
-                        if (element && data.terms[dataKey] !== undefined) {
-                            element.value = data.terms[dataKey];
-                        }
-                    });
-                }
-
-                // WCZYTAJ USTAWIENIA
-                if (data.settings) {
-                    console.log('⚙️ Wczytywanie ustawień');
-                    const settingsFields = ['pdfOrientation', 'pdfFormat', 'imageQuality', 'docLanguage'];
-                    settingsFields.forEach(field => {
-                        const element = document.getElementById(field);
-                        const dataKey = field.replace('pdf', '').replace('doc', '').toLowerCase();
-                        if (element && data.settings[dataKey] !== undefined) {
-                            element.value = data.settings[dataKey];
-                        }
-                    });
-                }
-
-                // WCZYTAJ DODATKOWE INFORMACJE
-                if (data.notes !== undefined) {
-                    const notesEl = document.getElementById('additionalNotes');
-                    if (notesEl) notesEl.value = data.notes;
-                }
-
-                if (data.footer !== undefined) {
-                    const footerEl = document.getElementById('footerText');
-                    if (footerEl) footerEl.value = data.footer;
-                }
-
-                // WCZYTAJ PRODUKTY - NAPRAWIONA SYNCHRONICZNA WERSJA
-                if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-                    console.log(`📦 Wczytywanie ${data.products.length} produktów`);
-
-                    // FILTRUJ TYLKO PRODUKTY Z NAZWAMI
-                    const validProducts = data.products.filter(product =>
-                        product && typeof product === 'object' && product.name && product.name.trim()
-                    );
-
-                    console.log(`✅ Ważnych produktów: ${validProducts.length}`);
-
-                    if (validProducts.length === 0) {
-                        console.log('⚠️ Brak produktów z nazwami');
-                        updateSummary();
-                        updateStatusBar();
-                        showNotification('⚠️ Brak produktów do wczytania', 'warning');
-                        return;
-                    }
-
-                    // SORTOWANIE PRODUKTÓW WEDŁUG KOLEJNOŚCI
-                    validProducts.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-                    // WCZYTAJ PRODUKTY SYNCHRONICZNIE - USUNIĘTO setTimeout
-                    validProducts.forEach((productData, index) => {
-                        try {
-                            console.log(`🔄 Dodaję produkt ${index + 1}/${validProducts.length}:`, productData.name);
-
-                            // DODAJ PRODUKT DO TABLICY
-                            const newProductId = Date.now() + index; // Unikalne ID
-                            products.push(newProductId);
-
-                            // STWÓRZ ELEMENT PRODUKTU W DOM
-                            createProductElementSync(newProductId, productData, index);
-
-                            // WCZYTAJ DANE PRODUKTU SYNCHRONICZNIE
-                            loadSingleProductDataSync(newProductId, productData, index);
-
-                            console.log(`✅ Produkt ${index + 1} wczytany synchronicznie`);
-
-                        } catch (error) {
-                            console.error(`❌ Błąd dodawania produktu ${index + 1}:`, error);
-                        }
-                    });
-
-                    // AKTUALIZUJ PODSUMOWANIE PO WSZYSTKICH PRODUKTACH
-                    setTimeout(() => {
-                        updateSummary();
-                        updateStatusBar();
-                        console.log('✅ Wszystkie produkty wczytane pomyślnie');
-                        showNotification(`✅ Oferta wczytana pomyślnie (${validProducts.length} produktów)`);
-
-                        // Zapisz do localStorage jako ostatnia oferta
-                        localStorage.setItem('lastSavedOffer', JSON.stringify(data));
-                    }, 100);
-
-                } else {
-                    // Brak produktów
-                    console.log('⚠️ Brak produktów do wczytania');
-                    updateSummary();
-                    updateStatusBar();
-                    showNotification('✅ Oferta wczytana (bez produktów)');
-                }
-
-            } catch (error) {
-                console.error('❌ Błąd wczytywania danych oferty:', error);
-                showNotification('❌ Błąd wczytywania danych oferty: ' + error.message, 'error');
-                throw error;
-            }
-        }
-
-        // SYNCHRONICZNA FUNKCJA TWORZENIA ELEMENTU PRODUKTU
-        function createProductElementSync(productId, productData, index) {
-            const html = `
-                <div class="product-card" id="product-${productId}" draggable="true" ondragstart="dragStart(event, ${productId})" ondragover="dragOver(event)" ondrop="drop(event, ${productId})">
-                    <div class="drag-handle">☰</div>
-                    <div class="product-header">
-                        <div class="product-number">${index + 1}</div>
-                        <div class="product-actions">
-                            <button class="btn btn-outline btn-icon" onclick="duplicateProduct(${productId})" title="Duplikuj">
-                                📋
-                            </button>
-                            <button class="btn btn-danger btn-icon" onclick="removeProduct(${productId})" title="Usuń">
-                                🗑️
-                            </button>
-                        </div>
-                    </div>
-                    <div class="product-content">
-                        <input type="file" id="productImage-${productId}" accept="image/*"
-                               style="display: none;" onchange="handleProductImage(event, ${productId})">
-                        <div class="product-image-zone" id="productImageZone-${productId}"
-                             onclick="document.getElementById('productImage-${productId}').click()">
-                            <div style="text-align: center; color: var(--gray); font-size: 0.875rem;">
-                                + Zdjęcie<br>
-                                <small style="font-size: 0.75rem;">Kliknij lub Ctrl+V</small>
-                            </div>
-                        </div>
-                        <div class="product-fields">
-                            <div class="form-group">
-                                <label class="form-label">Nazwa produktu <span class="required">*</span></label>
-                                <input type="text" class="form-input" id="productName-${productId}"
-                                       placeholder="np. Krzesło biurowe ERGO" onchange="updateSummary()">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Kod produktu</label>
-                                <input type="text" class="form-input" id="productCode-${productId}"
-                                       placeholder="np. ERGO-001">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Ilość</label>
-                                <input type="number" class="form-input" id="productQty-${productId}"
-                                       value="1" min="1" onchange="updateSummary()">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Cena netto (zł)</label>
-                                <input type="number" class="form-input" id="productPrice-${productId}"
-                                       value="0" step="0.01" min="0" onchange="updateSummary()">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Rabat (%)</label>
-                                <input type="number" class="form-input" id="productDiscount-${productId}"
-                                       value="0" min="0" max="100" onchange="updateSummary()">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Opis produktu</label>
-                        <div class="desc-toolbar">
-                            <button class="desc-btn" onclick="addBullet(${productId})">• Punkt</button>
-                            <button class="desc-btn" onclick="addDash(${productId})">- Lista</button>
-                            <button class="desc-btn" onclick="addNumber(${productId})">1. Numer</button>
-                            <button class="desc-btn" onclick="addBold(${productId})">Ważne:</button>
-                        </div>
-                        <textarea class="form-textarea" id="productDesc-${productId}" rows="4"
-                                  placeholder="Opisz produkt - cechy, specyfikacja, zalety...&#10;• Cecha 1&#10;• Cecha 2&#10;• Cecha 3"></textarea>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('productsList').insertAdjacentHTML('beforeend', html);
-        }
-
-        // SYNCHRONICZNA FUNKCJA WCZYTYWANIA DANYCH JEDNEGO PRODUKTU
-        function loadSingleProductDataSync(productId, productData, index) {
-            try {
-                console.log(`📝 Wypełniam dane produktu ${index + 1}:`, productData.name);
-
-                // ZNAJDŹ ELEMENTY FORMULARZA
-                const nameEl = document.getElementById(`productName-${productId}`);
-                const codeEl = document.getElementById(`productCode-${productId}`);
-                const qtyEl = document.getElementById(`productQty-${productId}`);
-                const priceEl = document.getElementById(`productPrice-${productId}`);
-                const discountEl = document.getElementById(`productDiscount-${productId}`);
-                const descEl = document.getElementById(`productDesc-${productId}`);
-
-                // BEZPIECZNE WYPEŁNIANIE DANYCH Z WALIDACJĄ
-                if (nameEl) {
-                    nameEl.value = (productData.name || '').trim();
-                    console.log(`✅ Nazwa: ${nameEl.value}`);
-                }
-                if (codeEl) {
-                    codeEl.value = (productData.code || '').trim();
-                }
-                if (qtyEl) {
-                    qtyEl.value = productData.qty || '1';
-                }
-                if (priceEl) {
-                    priceEl.value = productData.price || '0';
-                }
-                if (discountEl) {
-                    discountEl.value = productData.discount || '0';
-                }
-                if (descEl) {
-                    descEl.value = (productData.desc || '').trim();
-                }
-
-                // WCZYTAJ OBRAZEK JEŚLI ISTNIEJE
-                if (productData.image && productData.image.trim()) {
-                    productImages[productId] = productData.image;
-                    updateProductImage(productId);
-                    console.log(`🖼️ Obrazek wczytany dla produktu ${index + 1}`);
-                }
-
-                console.log(`✅ Produkt ${index + 1} wczytany pomyślnie`);
-
-            } catch (error) {
-                console.error(`❌ Błąd wczytywania danych produktu ${index + 1}:`, error);
-            }
-        }
-
         // Funkcja pomocnicza do wczytywania danych oferty
-        function loadOfferFromData(data) {
+        function populateOfferData(data) {
             // Wyczyść istniejące produkty
             products = [];
             productImages = {};
@@ -3439,6 +3921,210 @@ Sob: 9:00 - 14:00
                             ></textarea>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GENERATOR FAKTUR -->
+        <div id="invoices-app" class="app-section">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="logo-section">
+                        <div class="logo-container" id="invoiceLogoContainer">
+                            <div class="logo-loading">Ładowanie...</div>
+                        </div>
+                        <div>
+                            <h1 class="app-title">Generator Faktur Pro</h1>
+                            <div class="app-subtitle">
+                                <span class="autosave-indicator" id="invoiceAutosaveIndicator">
+                                    ✓ Zapisano automatycznie
+                                </span>
+                                <span>System fakturowania Meble Duo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline" onclick="loadFromOffer()">📄 Wczytaj z oferty</button>
+                        <button class="btn btn-outline" onclick="showInvoiceHelp()">❓ Pomoc</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Container -->
+            <div class="container">
+                <div class="main-card">
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchInvoiceTab('invoice-data', event)">📄 Dane faktury</button>
+                        <button class="tab" onclick="switchInvoiceTab('invoice-products', event)">📦 Pozycje</button>
+                        <button class="tab" onclick="switchInvoiceTab('invoice-settings', event)">⚙️ Ustawienia</button>
+                    </div>
+
+                    <!-- Tab: Dane faktury -->
+                    <div id="invoice-data-tab" class="tab-content active">
+                        <!-- Dane faktury -->
+                        <div class="section">
+                            <h2 class="section-title">📋 Informacje o fakturze</h2>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Numer faktury <span class="required">*</span></label>
+                                    <input type="text" class="form-input" id="invoiceNumber" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Data wystawienia</label>
+                                    <input type="date" class="form-input" id="invoiceDate">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Data sprzedaży</label>
+                                    <input type="date" class="form-input" id="invoiceSaleDate">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Miejsce wystawienia</label>
+                                    <input type="text" class="form-input" id="invoiceCity" value="Lublin">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sprzedawca i Nabywca -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <!-- Sprzedawca -->
+                            <div class="section">
+                                <h2 class="section-title">🏢 Sprzedawca</h2>
+                                <div class="form-group">
+                                    <label class="form-label">Nazwa firmy</label>
+                                    <input type="text" class="form-input" id="invoiceSellerName" value="MEBLE DUO PIOTR NIEDŹWIADEK">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">NIP</label>
+                                    <input type="text" class="form-input" id="invoiceSellerNIP" value="9461016794">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Adres</label>
+                                    <textarea class="form-textarea" id="invoiceSellerAddress">ul. Łęczyńska 52, 20-309 Lublin</textarea>
+                                </div>
+                            </div>
+
+                            <!-- Nabywca -->
+                            <div class="section">
+                                <h2 class="section-title">🛒 Nabywca</h2>
+                                <div class="form-group">
+                                    <label class="form-label">Nazwa firmy/Klient <span class="required">*</span></label>
+                                    <input type="text" class="form-input" id="invoiceBuyerName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">NIP</label>
+                                    <input type="text" class="form-input" id="invoiceBuyerNIP">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Adres</label>
+                                    <textarea class="form-textarea" id="invoiceBuyerAddress"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Płatność i Bank -->
+                        <div class="section">
+                            <h2 class="section-title">💰 Płatność</h2>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Sposób płatności</label>
+                                    <select class="form-select" id="invoicePaymentMethod">
+                                        <option value="Przelew">Przelew</option>
+                                        <option value="Gotówka">Gotówka</option>
+                                        <option value="Karta">Karta</option>
+                                        <option value="Pobranie">Pobranie</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Termin płatności</label>
+                                    <input type="date" class="form-input" id="invoicePaymentDueDate">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Numer konta</label>
+                                    <input type="text" class="form-input" id="invoiceBank" value="18 1240 5497 1111 0010 5358 5771">
+                                </div>
+                                 <div class="form-group">
+                                    <label class="form-label">Status płatności</label>
+                                    <select class="form-select" id="invoicePaymentStatus">
+                                        <option value="Nieopłacona">Nieopłacona</option>
+                                        <option value="Opłacona">Opłacona</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Pozycje -->
+                    <div id="invoice-products-tab" class="tab-content">
+                        <div class="section">
+                            <h2 class="section-title">
+                                📦 Pozycje na fakturze
+                                <button class="btn btn-success btn-icon" onclick="addInvoiceProduct()" title="Dodaj pozycję">
+                                    +
+                                </button>
+                            </h2>
+                            <div id="invoiceProductsList"></div>
+                            <button class="btn btn-success" onclick="addInvoiceProduct()">
+                                ➕ Dodaj kolejną pozycję
+                            </button>
+                        </div>
+
+                        <!-- Podsumowanie -->
+                        <div class="section">
+                            <h2 class="section-title">💰 Podsumowanie faktury</h2>
+                            <table class="summary-table">
+                                <thead>
+                                    <tr>
+                                        <th>Stawka VAT</th>
+                                        <th>Wartość netto</th>
+                                        <th>Kwota VAT</th>
+                                        <th>Wartość brutto</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoiceSummaryTableBody">
+                                    <!-- Dynamicznie generowane podsumowanie per stawka VAT -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="final-row">
+                                        <td>RAZEM</td>
+                                        <td id="invoiceTotalNet">0,00 zł</td>
+                                        <td id="invoiceTotalVat">0,00 zł</td>
+                                        <td id="invoiceTotalGross">0,00 zł</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Ustawienia -->
+                     <div id="invoice-settings-tab" class="tab-content">
+                        <div class="section">
+                            <h2 class="section-title">📝 Dodatkowe informacje</h2>
+                             <div class="form-group">
+                                <label class="form-label">Osoba wystawiająca</label>
+                                <input type="text" class="form-input" id="invoiceIssuer" value="Justyna Gancarz">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Uwagi do faktury</label>
+                                <textarea class="form-textarea" id="invoiceNotes" rows="4"
+                                          placeholder="Dodatkowe uwagi, które pojawią się na fakturze..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="actions-bar">
+                    <button class="btn btn-primary" onclick="generateInvoicePDF()">
+                        🧾 Generuj Fakturę PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="saveInvoice()">
+                        💾 Zapisz fakturę
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadInvoice()">
+                        📂 Wczytaj fakturę
+                    </button>
                 </div>
             </div>
         </div>
@@ -4034,6 +4720,7 @@ Sob: 9:00 - 14:00
         function saveDiabloToStorage() {
             const data = collectDiabloData();
             localStorage.setItem('diabloOrder', JSON.stringify(data));
+            saveOrderToHistory(data, 'diablo');
         }
 
         // Wczytaj z localStorage
@@ -4187,7 +4874,7 @@ Sob: 9:00 - 14:00
 
                     // Wczytaj dane po krótkim opóźnieniu
                     setTimeout(() => {
-                        loadOfferFromData(data);
+                        populateOfferData(data);
                         showNotification('Ostatnia oferta wczytana', 'success');
                     }, 500);
                 }
@@ -4336,25 +5023,25 @@ Sob: 9:00 - 14:00
         // Funkcja do aktualizacji statystyk na stronie startowej
         function updateWelcomeStats() {
             try {
-                // Sprawdź liczbę ofert
-                const offers = safeJSONParse(localStorage.getItem('lastSavedOffer'), {});
-                const totalOffers = offers && offers.offer ? 1 : 0;
-
-                // Sprawdź zamówienia Diablo
-                const diabloOrders = safeJSONParse(localStorage.getItem('diabloOrder'), {});
-                const totalOrders = diabloOrders && diabloOrders.products ? 1 : 0;
-
-                // Oblicz wartość całkowitą
+                const history = safeJSONParse(localStorage.getItem('orderHistory'), []);
+                let totalOffers = 0;
+                let totalOrders = 0;
                 let totalValue = 0;
-                if (offers.products && Array.isArray(offers.products)) {
-                    offers.products.forEach(product => {
-                        const qty = parseFloat(product.qty) || 0;
-                        const price = parseFloat(product.price) || 0;
-                        const discount = parseFloat(product.discount) || 0;
-                        const discountedPrice = price * (1 - discount / 100);
-                        totalValue += qty * discountedPrice;
-                    });
-                }
+
+                history.forEach(entry => {
+                    if (entry.type === 'offer' && entry.data && entry.data.products) {
+                        totalOffers++;
+                        entry.data.products.forEach(product => {
+                            const qty = parseFloat(product.qty) || 0;
+                            const price = parseFloat(product.price) || 0;
+                            const discount = parseFloat(product.discount) || 0;
+                            const discountedPrice = price * (1 - discount / 100);
+                            totalValue += qty * discountedPrice;
+                        });
+                    } else if (entry.type === 'diablo' && entry.data && entry.data.products) {
+                        totalOrders++;
+                    }
+                });
 
                 // Aktualizuj wyświetlanie
                 const totalOffersEl = document.getElementById('totalOffers');
@@ -4363,7 +5050,7 @@ Sob: 9:00 - 14:00
 
                 if (totalOffersEl) totalOffersEl.textContent = totalOffers;
                 if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
-                if (totalValueEl) totalValueEl.textContent = totalValue > 0 ? totalValue.toFixed(2) + ' zł' : '0 zł';
+                if (totalValueEl) totalValueEl.textContent = totalValue > 0 ? formatCurrency(totalValue) : '0 zł';
 
             } catch (error) {
                 console.error('Błąd aktualizacji statystyk:', error);
@@ -4523,6 +5210,573 @@ Sob: 9:00 - 14:00
         console.log('🎯 Centrum Dowodzenia Justy - Załadowane');
         console.log('📧 Kontakt: biuro@mebleduo.com');
         console.log('🌐 www.mebleduo.com');
+
+        // Invoice module functions
+        function switchInvoiceTab(tabName, event) {
+            document.querySelectorAll('#invoices-app .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('#invoices-app .tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function addInvoiceProduct() {
+            invoiceProductId++;
+            const productHtml = `
+                <div class="product-card" id="invoiceProduct-${invoiceProductId}">
+                    <div class="product-header">
+                        <div class="product-number">${invoiceProducts.length + 1}</div>
+                        <button class="btn btn-danger btn-icon" onclick="removeInvoiceProduct(${invoiceProductId})" title="Usuń">
+                            🗑️
+                        </button>
+                    </div>
+                    <div class="form-grid" style="grid-template-columns: 3fr 1fr 1fr 1fr 1fr; align-items: flex-end;">
+                        <div class="form-group">
+                            <label class="form-label">Nazwa towaru/usługi</label>
+                            <input type="text" class="form-input" id="invoiceProductName-${invoiceProductId}" oninput="updateInvoiceSummary()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ilość</label>
+                            <input type="number" class="form-input" id="invoiceProductQty-${invoiceProductId}" value="1" oninput="updateInvoiceSummary()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cena netto</label>
+                            <input type="number" class="form-input" id="invoiceProductPrice-${invoiceProductId}" value="0" step="0.01" oninput="updateInvoiceSummary()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Stawka VAT</label>
+                            <select class="form-select" id="invoiceProductVat-${invoiceProductId}" oninput="updateInvoiceSummary()">
+                                <option value="23">23%</option>
+                                <option value="8">8%</option>
+                                <option value="5">5%</option>
+                                <option value="0">0%</option>
+                                <option value="zw">zw.</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                             <label class="form-label">Wartość brutto</label>
+                             <input type="text" class="form-input" id="invoiceProductTotal-${invoiceProductId}" readonly>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('invoiceProductsList').insertAdjacentHTML('beforeend', productHtml);
+            invoiceProducts.push(invoiceProductId);
+        }
+
+        function removeInvoiceProduct(id) {
+            document.getElementById(`invoiceProduct-${id}`).remove();
+            invoiceProducts = invoiceProducts.filter(pId => pId !== id);
+            updateInvoiceSummary();
+        }
+
+        function updateInvoiceSummary() {
+            let totalNet = 0;
+            let totalVat = 0;
+            let totalGross = 0;
+            const vatSummary = {};
+
+            invoiceProducts.forEach(id => {
+                const qty = parseFloat(document.getElementById(`invoiceProductQty-${id}`).value) || 0;
+                const price = parseFloat(document.getElementById(`invoiceProductPrice-${id}`).value) || 0;
+                const vatRateStr = document.getElementById(`invoiceProductVat-${id}`).value;
+                const vatRate = vatRateStr === 'zw' ? 0 : parseFloat(vatRateStr) / 100;
+
+                const netValue = qty * price;
+                const vatValue = netValue * vatRate;
+                const grossValue = netValue + vatValue;
+
+                document.getElementById(`invoiceProductTotal-${id}`).value = grossValue.toFixed(2) + ' zł';
+
+                if (!vatSummary[vatRateStr]) {
+                    vatSummary[vatRateStr] = { net: 0, vat: 0, gross: 0 };
+                }
+                vatSummary[vatRateStr].net += netValue;
+                vatSummary[vatRateStr].vat += vatValue;
+                vatSummary[vatRateStr].gross += grossValue;
+
+                totalNet += netValue;
+                totalVat += vatValue;
+                totalGross += grossValue;
+            });
+
+            const summaryBody = document.getElementById('invoiceSummaryTableBody');
+            summaryBody.innerHTML = '';
+            for (const rate in vatSummary) {
+                const summary = vatSummary[rate];
+                summaryBody.innerHTML += `
+                    <tr>
+                        <td>${rate === 'zw' ? 'zw.' : rate + '%'}</td>
+                        <td>${summary.net.toFixed(2)} zł</td>
+                        <td>${summary.vat.toFixed(2)} zł</td>
+                        <td>${summary.gross.toFixed(2)} zł</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('invoiceTotalNet').textContent = totalNet.toFixed(2) + ' zł';
+            document.getElementById('invoiceTotalVat').textContent = totalVat.toFixed(2) + ' zł';
+            document.getElementById('invoiceTotalGross').textContent = totalGross.toFixed(2) + ' zł';
+        }
+
+
+        function saveInvoice() {
+            try {
+                const data = collectInvoiceDataForState();
+                if (!data.number) {
+                    showNotification('❌ Proszę wprowadzić numer faktury przed zapisem.', 'error');
+                    return;
+                }
+
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+
+                const filename = `Faktura_${data.number.replace(/[\/\\:*?"<>|]/g, '-')}.json`;
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showNotification(`✅ Faktura zapisana pomyślnie!`, 'success');
+
+            } catch (error) {
+                console.error('❌ Błąd podczas zapisywania faktury:', error);
+                showNotification('❌ Wystąpił błąd podczas zapisu faktury.', 'error');
+            }
+        }
+
+        function loadInvoice() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                showNotification('📂 Wczytywanie faktury...', 'info');
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    try {
+                        const data = safeJSONParse(event.target.result);
+                        if (!data) throw new Error('Nieprawidłowy format pliku JSON.');
+
+                        // Prosta walidacja czy to plik faktury
+                        if (!data.number || !data.seller) {
+                           throw new Error('Plik nie wygląda na poprawny plik faktury.');
+                        }
+
+                        populateInvoiceData(data);
+
+                        showNotification(`✅ Faktura "${data.number}" wczytana pomyślnie.`);
+
+                    } catch (error) {
+                        console.error('❌ Błąd wczytywania faktury:', error);
+                        showNotification(`❌ Błąd: ${error.message}`, 'error');
+                    }
+                };
+
+                reader.onerror = () => showNotification('❌ Błąd odczytu pliku.', 'error');
+                reader.readAsText(file, 'UTF-8');
+            };
+
+            input.click();
+        }
+
+        function loadFromOffer() {
+            const offerData = collectOfferDataForState();
+
+            // Prosta konwersja, można rozbudować
+            document.getElementById('invoiceBuyerName').value = offerData.buyer.name;
+            document.getElementById('invoiceBuyerNIP').value = offerData.buyer.nip;
+            document.getElementById('invoiceBuyerAddress').value = offerData.buyer.address;
+
+            document.getElementById('invoiceProductsList').innerHTML = '';
+            invoiceProducts = [];
+            offerData.products.forEach(p => {
+                addInvoiceProduct();
+                const id = invoiceProducts[invoiceProducts.length - 1];
+                document.getElementById(`invoiceProductName-${id}`).value = p.name;
+                document.getElementById(`invoiceProductQty-${id}`).value = p.qty;
+                document.getElementById(`invoiceProductPrice-${id}`).value = p.price;
+                document.getElementById(`invoiceProductVat-${id}`).value = 23; // Domyślny VAT
+            });
+            updateInvoiceSummary();
+            showNotification('Dane wczytane z aktywnej oferty!', 'info');
+        }
+
+        function showInvoiceHelp() {
+            alert(`🧾 GENERATOR FAKTUR - POMOC
+
+            1. Wypełnij dane faktury, sprzedawcy i nabywcy.
+            2. Dodaj pozycje na fakturze, podając nazwę, ilość, cenę netto i stawkę VAT.
+            3. System automatycznie obliczy wartości brutto i podsumowanie.
+            4. Kliknij "Generuj Fakturę PDF", aby pobrać dokument.
+            5. Możesz zapisać i wczytać fakturę w formacie JSON.`);
+        }
+
+        function amountToWords(amount) {
+            const units = ["", "jeden", "dwa", "trzy", "cztery", "pięć", "sześć", "siedem", "osiem", "dziewięć"];
+            const teens = ["dziesięć", "jedenaście", "dwanaście", "trzynaście", "czternaście", "piętnaście", "szesnaście", "siedemnaście", "osiemnaście", "dziewiętnaście"];
+            const tens = ["", "dziesięć", "dwadzieścia", "trzydzieści", "czterdzieści", "pięćdziesiąt", "sześćdziesiąt", "siedemdziesiąt", "osiemdziesiąt", "dziewięćdziesiąt"];
+            const hundreds = ["", "sto", "dwieście", "trzysta", "czterysta", "pięćset", "sześćset", "siedemset", "osiemset", "dziewięćset"];
+            const groups = [
+                ["", "", ""],
+                ["tysiąc", "tysiące", "tysięcy"],
+                ["milion", "miliony", "milionów"],
+            ];
+
+            let [zl, gr] = amount.toFixed(2).split('.').map(Number);
+            let result = [];
+
+            if (zl === 0) {
+                result.push("zero");
+            }
+
+            let g = 0;
+            while (zl > 0) {
+                let h = Math.floor(zl / 100) % 10;
+                let t = Math.floor(zl / 10) % 10;
+                let u = zl % 10;
+
+                if (h > 0 || t > 0 || u > 0) {
+                    let h_word = hundreds[h];
+                    let t_word = "";
+                    let u_word = "";
+                    let group_word = "";
+
+                    if (t === 1 && u > 0) {
+                        t_word = teens[u];
+                    } else {
+                        t_word = tens[t];
+                        u_word = units[u];
+                    }
+
+                    if (g > 0) {
+                        if (u === 1 && t !== 1) group_word = groups[g][0];
+                        else if (u >= 2 && u <= 4) group_word = groups[g][1];
+                        else group_word = groups[g][2];
+                    }
+
+                    result.unshift([h_word, t_word, u_word, group_word].filter(Boolean).join(" "));
+                }
+
+                g++;
+                zl = Math.floor(zl / 1000);
+            }
+
+            return `${result.join(" ")} PLN ${gr.toString().padStart(2, '0')}/100`;
+        }
+
+        function generateInvoicePDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+
+            pdf.setFont('RobotoCondensed-Light', 'normal');
+
+            const sellerName = document.getElementById('invoiceSellerName').value;
+            const sellerNIP = document.getElementById('invoiceSellerNIP').value;
+            const sellerAddress = document.getElementById('invoiceSellerAddress').value.split('\n');
+            const buyerName = document.getElementById('invoiceBuyerName').value;
+            const buyerNIP = document.getElementById('invoiceBuyerNIP').value;
+            const buyerAddress = document.getElementById('invoiceBuyerAddress').value.split('\n');
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            const invoiceDate = formatDate(document.getElementById('invoiceDate').value);
+            const saleDate = formatDate(document.getElementById('invoiceSaleDate').value);
+            const city = document.getElementById('invoiceCity').value;
+            const paymentMethod = document.getElementById('invoicePaymentMethod').value;
+            const paymentDueDate = formatDate(document.getElementById('invoicePaymentDueDate').value);
+            const bankAccount = document.getElementById('invoiceBank').value;
+            const paymentStatus = document.getElementById('invoicePaymentStatus').value;
+            const issuer = document.getElementById('invoiceIssuer').value;
+            const notes = document.getElementById('invoiceNotes').value;
+
+            const margin = 15;
+            const pageWidth = pdf.internal.pageSize.getWidth();
+
+            pdf.setFontSize(22);
+            pdf.setTextColor('#333333');
+            pdf.text(`Faktura VAT nr ${invoiceNumber}`, margin, 25);
+
+            pdf.setFontSize(10);
+            pdf.setTextColor('#666666');
+            pdf.text(`Miejsce wystawienia: ${city}`, margin, 35);
+            pdf.text(`Data wystawienia: ${invoiceDate}`, pageWidth - margin, 35, { align: 'right' });
+            pdf.text(`Data sprzedaży: ${saleDate}`, pageWidth - margin, 40, { align: 'right' });
+
+            pdf.setLineWidth(0.2);
+            pdf.line(margin, 48, pageWidth - margin, 48);
+
+            pdf.setFontSize(12);
+            pdf.setTextColor('#000000');
+            pdf.text('Sprzedawca', margin, 55);
+            pdf.text('Nabywca', pageWidth / 2 + 5, 55);
+
+            pdf.setFontSize(10);
+            pdf.setTextColor('#333333');
+
+            let yPosSeller = 62;
+            pdf.text(sellerName, margin, yPosSeller);
+            sellerAddress.forEach(line => { yPosSeller += 5; pdf.text(line, margin, yPosSeller); });
+            yPosSeller += 5;
+            pdf.text(`NIP: ${sellerNIP}`, margin, yPosSeller);
+
+            let yPosBuyer = 62;
+            pdf.text(buyerName, pageWidth / 2 + 5, yPosBuyer);
+            buyerAddress.forEach(line => { yPosBuyer += 5; pdf.text(line, pageWidth / 2 + 5, yPosBuyer); });
+            yPosBuyer += 5;
+            if (buyerNIP) {
+                pdf.text(`NIP: ${buyerNIP}`, pageWidth / 2 + 5, yPosBuyer);
+            }
+
+            let startY = Math.max(yPosSeller, yPosBuyer) + 15;
+
+            const head = [['Lp.', 'Nazwa towaru/usługi', 'J.m.', 'Ilość', 'Cena netto', 'Wartość netto', 'VAT', 'Kwota VAT', 'Wartość brutto']];
+            const body = [];
+            const vatSummary = {};
+
+            invoiceProducts.forEach((id, index) => {
+                const name = document.getElementById(`invoiceProductName-${id}`).value;
+                const qty = parseFloat(document.getElementById(`invoiceProductQty-${id}`).value) || 0;
+                const price = parseFloat(document.getElementById(`invoiceProductPrice-${id}`).value) || 0;
+                const vatRateStr = document.getElementById(`invoiceProductVat-${id}`).value;
+                const vatRate = vatRateStr === 'zw' ? 0 : parseFloat(vatRateStr);
+                const netValue = qty * price;
+                const vatValue = netValue * (vatRate / 100);
+                const grossValue = netValue + vatValue;
+
+                if (!vatSummary[vatRateStr]) {
+                    vatSummary[vatRateStr] = { net: 0, vat: 0, gross: 0 };
+                }
+                vatSummary[vatRateStr].net += netValue;
+                vatSummary[vatRateStr].vat += vatValue;
+                vatSummary[vatRateStr].gross += grossValue;
+
+                body.push([
+                    index + 1, name, 'szt.', qty.toFixed(2), price.toFixed(2),
+                    netValue.toFixed(2), `${vatRate}%`, vatValue.toFixed(2), grossValue.toFixed(2)
+                ]);
+            });
+
+            pdf.autoTable({
+                startY: startY,
+                head: head,
+                body: body,
+                theme: 'grid',
+                headStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], font: 'RobotoCondensed-Light', fontStyle: 'bold' },
+                styles: { font: 'RobotoCondensed-Light', fontSize: 9 },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 8 },
+                    1: { cellWidth: 'auto' },
+                    2: { halign: 'center', cellWidth: 10 },
+                    3: { halign: 'right', cellWidth: 12 },
+                    4: { halign: 'right', cellWidth: 18 },
+                    5: { halign: 'right', cellWidth: 20 },
+                    6: { halign: 'center', cellWidth: 10 },
+                    7: { halign: 'right', cellWidth: 18 },
+                    8: { halign: 'right', cellWidth: 22 }
+                }
+            });
+
+            let finalY = pdf.lastAutoTable.finalY + 5;
+
+            const summaryBody = [];
+            let totalNet = 0, totalVat = 0, totalGross = 0;
+
+            Object.keys(vatSummary).sort().forEach(rate => {
+                const summary = vatSummary[rate];
+                summaryBody.push([
+                    `w tym ${rate === 'zw' ? 'zw.' : rate + '%'}`,
+                    summary.net.toFixed(2), summary.vat.toFixed(2), summary.gross.toFixed(2)
+                ]);
+                totalNet += summary.net;
+                totalVat += summary.vat;
+                totalGross += summary.gross;
+            });
+             summaryBody.push([
+                { content: 'Razem', styles: { fontStyle: 'bold' } },
+                { content: totalNet.toFixed(2), styles: { fontStyle: 'bold' } },
+                { content: totalVat.toFixed(2), styles: { fontStyle: 'bold' } },
+                { content: totalGross.toFixed(2), styles: { fontStyle: 'bold' } }
+            ]);
+
+            pdf.autoTable({
+                startY: finalY,
+                head: [['Stawka VAT', 'Wartość netto', 'Kwota VAT', 'Wartość brutto']],
+                body: summaryBody,
+                theme: 'grid',
+                headStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], font: 'RobotoCondensed-Light', fontStyle: 'bold' },
+                styles: { font: 'RobotoCondensed-Light', fontSize: 9, halign: 'right' },
+                columnStyles: { 0: { halign: 'left' } },
+                tableWidth: 'wrap',
+                margin: { left: pageWidth - margin - 95 }
+            });
+            finalY = pdf.lastAutoTable.finalY;
+
+            finalY += 10;
+            pdf.setFontSize(11);
+            pdf.setTextColor('#000000');
+            pdf.text('Do zapłaty:', margin, finalY);
+            pdf.setFont('RobotoCondensed-Light', 'bold');
+            pdf.text(`${totalGross.toFixed(2)} PLN`, margin + 25, finalY);
+            pdf.setFont('RobotoCondensed-Light', 'normal');
+
+            finalY += 7;
+            pdf.setFontSize(10);
+            pdf.text(`Słownie: ${amountToWords(totalGross)}`, margin, finalY);
+
+            finalY += 10;
+            pdf.text(`Sposób płatności: ${paymentMethod}`, margin, finalY);
+            pdf.text(`Termin płatności: ${paymentDueDate}`, margin, finalY + 5);
+            pdf.text(`Numer konta: ${bankAccount}`, margin, finalY + 10);
+
+            if (notes) {
+                pdf.text(`Uwagi: ${notes}`, margin, finalY + 20);
+            }
+
+            if (paymentStatus === 'Opłacona') {
+                pdf.setFontSize(24);
+                pdf.setTextColor(0, 150, 0);
+                pdf.text('ZAPŁACONO', pageWidth / 2, finalY + 30, {
+                    angle: -20,
+                    align: 'center',
+                    fontStyle: 'bold'
+                });
+            }
+
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            pdf.setFontSize(9);
+            pdf.setTextColor('#333333');
+            pdf.text(`Wystawił(a): ${issuer}`, margin, pageHeight - 25);
+            pdf.text('Odebrał(a):', pageWidth / 2, pageHeight - 25);
+            pdf.setLineWidth(0.2);
+            pdf.line(margin + 25, pageHeight - 27, margin + 70, pageHeight - 27);
+            pdf.line(pageWidth / 2 + 20, pageHeight - 27, pageWidth / 2 + 65, pageHeight - 27);
+            pdf.setFontSize(7);
+            pdf.setTextColor('#999999');
+            pdf.text('(podpis osoby upoważnionej)', margin + 30, pageHeight - 22);
+            pdf.text('(podpis osoby upoważnionej)', pageWidth / 2 + 25, pageHeight - 22);
+
+            const filename = `Faktura_${invoiceNumber.replace(/[\/\\]/g, '-')}.pdf`;
+            pdf.save(filename);
+            showNotification('Faktura PDF wygenerowana!', 'success');
+        }
+
+        function generateInvoicePreviewForPDF() {
+            const sellerName = document.getElementById('invoiceSellerName').value;
+            const sellerNIP = document.getElementById('invoiceSellerNIP').value;
+            const sellerAddress = document.getElementById('invoiceSellerAddress').value;
+            const buyerName = document.getElementById('invoiceBuyerName').value;
+            const buyerNIP = document.getElementById('invoiceBuyerNIP').value;
+            const buyerAddress = document.getElementById('invoiceBuyerAddress').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            const invoiceDate = formatDate(document.getElementById('invoiceDate').value);
+            const saleDate = formatDate(document.getElementById('invoiceSaleDate').value);
+            const paymentMethod = document.getElementById('invoicePaymentMethod').value;
+            const paymentDueDate = formatDate(document.getElementById('invoicePaymentDueDate').value);
+            const bankAccount = document.getElementById('invoiceBank').value;
+            const issuer = document.getElementById('invoiceIssuer').value;
+            const notes = document.getElementById('invoiceNotes').value;
+
+            let productsHtml = '';
+            invoiceProducts.forEach((id, index) => {
+                const name = document.getElementById(`invoiceProductName-${id}`).value;
+                const qty = document.getElementById(`invoiceProductQty-${id}`).value;
+                const price = parseFloat(document.getElementById(`invoiceProductPrice-${id}`).value).toFixed(2);
+                const vatRate = document.getElementById(`invoiceProductVat-${id}`).value;
+                const netValue = (qty * price).toFixed(2);
+                const vatAmount = (netValue * (vatRate === 'zw' ? 0 : parseFloat(vatRate) / 100)).toFixed(2);
+                const grossValue = (parseFloat(netValue) + parseFloat(vatAmount)).toFixed(2);
+
+                productsHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${name}</td>
+                        <td>szt.</td>
+                        <td>${qty}</td>
+                        <td>${price}</td>
+                        <td>${netValue}</td>
+                        <td>${vatRate}%</td>
+                        <td>${vatAmount}</td>
+                        <td>${grossValue}</td>
+                    </tr>
+                `;
+            });
+
+            const totalNet = document.getElementById('invoiceTotalNet').textContent;
+            const totalVat = document.getElementById('invoiceTotalVat').textContent;
+            const totalGross = document.getElementById('invoiceTotalGross').textContent;
+
+            return `
+                <div style="font-family: sans-serif; font-size: 10px; padding: 20px; background: white; color: black;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <div>
+                            <h2>FAKTURA VAT nr ${invoiceNumber}</h2>
+                            <p>Oryginał/Kopia</p>
+                            <p>Data wystawienia: ${invoiceDate}</p>
+                            <p>Data sprzedaży: ${saleDate}</p>
+                        </div>
+                        <div>
+                            <p><strong>Sprzedawca:</strong></p>
+                            <p>${sellerName}</p>
+                            <p>${sellerAddress}</p>
+                            <p>NIP: ${sellerNIP}</p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <p><strong>Nabywca:</strong></p>
+                        <p>${buyerName}</p>
+                        <p>${buyerAddress}</p>
+                        <p>NIP: ${buyerNIP}</p>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid black; padding: 5px;">Lp.</th>
+                                <th style="border: 1px solid black; padding: 5px;">Nazwa</th>
+                                <th style="border: 1px solid black; padding: 5px;">J.m.</th>
+                                <th style="border: 1px solid black; padding: 5px;">Ilość</th>
+                                <th style="border: 1px solid black; padding: 5px;">Cena netto</th>
+                                <th style="border: 1px solid black; padding: 5px;">Wartość netto</th>
+                                <th style="border: 1px solid black; padding: 5px;">VAT</th>
+                                <th style="border: 1px solid black; padding: 5px;">Kwota VAT</th>
+                                <th style="border: 1px solid black; padding: 5px;">Wartość brutto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productsHtml}
+                        </tbody>
+                    </table>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                        <table style="border-collapse: collapse;">
+                            <tr><td style="padding: 5px;">Suma netto:</td><td style="padding: 5px;">${totalNet}</td></tr>
+                            <tr><td style="padding: 5px;">Kwota VAT:</td><td style="padding: 5px;">${totalVat}</td></tr>
+                            <tr><td style="padding: 5px;"><strong>Do zapłaty:</strong></td><td style="padding: 5px;"><strong>${totalGross}</strong></td></tr>
+                        </table>
+                    </div>
+                     <div>
+                        <p>Sposób płatności: ${paymentMethod}</p>
+                        <p>Termin płatności: ${paymentDueDate}</p>
+                        <p>Nr konta: ${bankAccount}</p>
+                        <p>Uwagi: ${notes}</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 50px;">
+                        <p>Wystawił(a):<br>${issuer}</p>
+                        <p>Odebrał(a):</p>
+                    </div>
+                </div>
+            `;
+        }
     </script>
 </body>
 </html>
