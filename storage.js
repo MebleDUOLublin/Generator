@@ -44,6 +44,7 @@ const IndexedDBStore = (() => {
     const STORES = {
         profiles: 'profiles',
         offers: 'offers',
+        products: 'products',
         diablo: 'diablo',
         settings: 'settings',
         history: 'history',

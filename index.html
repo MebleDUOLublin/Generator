@@ -16,6 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.0/build/pdfmake.min.js"></script>
@@ -79,6 +80,10 @@
             <div class="desktop-icon" data-window="settings" tabindex="0" role="button" aria-label="Otwórz Ustawienia">
                 <div class="desktop-icon-image">⚙️</div>
                 <div class="desktop-icon-name">Ustawienia</div>
+            </div>
+            <div class="desktop-icon" data-window="snake" tabindex="0" role="button" aria-label="Otwórz Neon Snake">
+                <div class="desktop-icon-image">🐍</div>
+                <div class="desktop-icon-name">Neon Snake</div>
             </div>
         </div>
 
@@ -250,9 +255,14 @@
                     <div class="section">
                         <h2 class="section-title">
                             📦 Lista produktów
-                            <button class="btn btn-success" id="addProductBtn">
-                                <span>➕</span> Dodaj produkt
-                            </button>
+                            <div class="flex gap-2 ml-auto">
+                                <button class="btn btn-outline" id="loadProductBtn">
+                                    <span>📚</span> Wczytaj z bazy
+                                </button>
+                                <button class="btn btn-success" id="addProductBtn">
+                                    <span>➕</span> Dodaj produkt
+                                </button>
+                            </div>
                         </h2>
                         <div id="productsList">
                             <div class="empty-state">
@@ -367,11 +377,43 @@
                     <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
                 </div>
             </div>
-            <div class="window-content">
-                <div class="empty-state" style="padding: 6rem;">
-                    <div class="empty-state-icon">📊</div>
-                    <div class="empty-state-title">Dashboard w przygotowaniu</div>
-                    <div class="empty-state-desc">Panel analityczny będzie dostępny wkrótce</div>
+            <div class="window-content" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">Wystawione Oferty</div>
+                            <div class="stat-card-icon">📄</div>
+                        </div>
+                        <div class="stat-card-value" id="stats-total-offers">128</div>
+                        <div class="stat-card-change stat-card-change-positive">+12% vs. Poprzedni miesiąc</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">Wartość Ofert (Netto)</div>
+                            <div class="stat-card-icon">💰</div>
+                        </div>
+                        <div class="stat-card-value" id="stats-total-value">245,6K zł</div>
+                        <div class="stat-card-change stat-card-change-positive">+25.3% vs. Poprzedni miesiąc</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">Nowi Klienci</div>
+                            <div class="stat-card-icon">🏢</div>
+                        </div>
+                        <div class="stat-card-value" id="stats-new-clients">32</div>
+                        <div class="stat-card-change stat-card-change-negative">-5% vs. Poprzedni miesiąc</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">Współczynnik Konwersji</div>
+                            <div class="stat-card-icon">🎯</div>
+                        </div>
+                        <div class="stat-card-value" id="stats-conversion-rate">48%</div>
+                        <div class="stat-card-change stat-card-change-positive">+2.1% vs. Poprzedni miesiąc</div>
+                    </div>
+                </div>
+                <div class="dashboard-chart-container">
+                    <canvas id="offersChart"></canvas>
                 </div>
             </div>
         </div>
@@ -467,6 +509,34 @@
                         <span>🔄</span> Odśwież
                     </button>
                 </div>
+
+                <div class="section">
+                    <h2 class="section-title">🖼️ Tapeta Pulpitu</h2>
+                    <div class="wallpaper-selector">
+                        <div class="wallpaper-preview" data-wallpaper="default"></div>
+                        <div class="wallpaper-preview" data-wallpaper="wallpaper1"></div>
+                        <div class="wallpaper-preview" data-wallpaper="wallpaper2"></div>
+                        <div class="wallpaper-preview" data-wallpaper="wallpaper3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WINDOW: Neon Snake -->
+        <div class="window" id="window-snake" role="dialog" aria-labelledby="window-snake-title" style="top: 120px; left: 250px; width: 640px; height: 520px;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">🐍</span>
+                    <span id="window-snake-title">Neon Snake</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content" style="padding: 0; overflow: hidden; background: #0f172a;">
+                <canvas id="snakeCanvas"></canvas>
             </div>
         </div>
 
@@ -534,10 +604,26 @@
         </div>
     </div>
 
+    <!-- CONTEXT MENU -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" data-action="change-wallpaper">
+            <span>🖼️</span> Zmień tapetę
+        </div>
+        <div class="context-menu-item" data-action="add-icon">
+            <span>➕</span> Dodaj nową ikonę
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="logout">
+            <span>⏻</span> Wyloguj
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="storage.js"></script>
     <script src="ui.js"></script>
     <script src="pdf.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="snake.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

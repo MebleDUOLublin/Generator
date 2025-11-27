@@ -175,6 +175,11 @@ document.getElementById('desktop')?.addEventListener('click', (e) => {
         addProductBtn.addEventListener('click', addProduct);
     }
 
+    const loadProductBtn = document.getElementById('loadProductBtn');
+    if (loadProductBtn) {
+        loadProductBtn.addEventListener('click', loadProduct);
+    }
+
     const generatePdfBtn = document.getElementById('generatePdfBtn');
     if (generatePdfBtn) {
         generatePdfBtn.addEventListener('click', generatePDF);
@@ -231,6 +236,53 @@ document.getElementById('desktop')?.addEventListener('click', (e) => {
     // === GLOBAL MOUSE EVENTS FOR WINDOW DRAGGING ===
     document.addEventListener('mousemove', handleWindowDrag);
     document.addEventListener('mouseup', stopWindowDrag);
+
+    // === WALLPAPER SELECTOR ===
+    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
+        preview.addEventListener('click', () => {
+            const wallpaper = preview.dataset.wallpaper;
+            if (wallpaper) {
+                changeWallpaper(wallpaper);
+                document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+                preview.classList.add('active');
+            }
+        });
+    });
+
+    // === CONTEXT MENU ===
+    const desktop = document.getElementById('desktop');
+    const contextMenu = document.getElementById('contextMenu');
+
+    if (desktop && contextMenu) {
+        desktop.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.classList.add('active');
+        });
+
+        document.addEventListener('click', () => {
+            contextMenu.classList.remove('active');
+        });
+
+        contextMenu.addEventListener('click', (e) => {
+            const action = e.target.closest('.context-menu-item')?.dataset.action;
+            if (action) {
+                switch (action) {
+                    case 'change-wallpaper':
+                        openWindow('settings');
+                        break;
+                    case 'add-icon':
+                        showToast('Funkcja wkrótce dostępna!', 'info');
+                        break;
+                    case 'logout':
+                        logout();
+                        break;
+                }
+                contextMenu.classList.remove('active');
+            }
+        });
+    }
 
     // === KEYBOARD SHORTCUTS ===
     document.addEventListener('keydown', (e) => {
@@ -437,6 +489,16 @@ function openWindow(windowId) {
     if (windowId === 'settings') {
         loadProfileSettings();
     }
+
+    // If dashboard window, initialize it
+    if (windowId === 'dashboard') {
+        Dashboard.init();
+    }
+
+    // If snake window, initialize it
+    if (windowId === 'snake') {
+        NeonSnake.init('snakeCanvas');
+    }
 }
 
 function closeWindow(windowId) {
@@ -592,8 +654,9 @@ function addProduct() {
                 <textarea class="form-textarea" id="productDesc-${productId}" rows="2" placeholder="• Cecha 1&#10;• Cecha 2"></textarea>
             </div>
             <div class="product-actions">
+                <button class="btn btn-outline" onclick="saveProductToLibrary(${productId})">💾 Zapisz do bazy</button>
                 <button class="btn btn-outline" onclick="duplicateProduct(${productId})">📋 Duplikuj</button>
-                <button class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;" onclick="removeProduct(${productId})">🗑️ Usuń</button>
+                <button class="btn btn-danger" onclick="removeProduct(${productId})">🗑️ Usuń</button>
             </div>
         </div>
     `;
@@ -835,6 +898,103 @@ async function generatePDF() {
         showNotification('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
     }
 }
+
+// ============================================
+// PRODUCT DATABASE
+// ============================================
+
+async function saveProductToLibrary(productId) {
+    const productData = {
+        id: document.getElementById(`productCode-${productId}`)?.value || `prod_${Date.now()}`,
+        name: document.getElementById(`productName-${productId}`)?.value || '',
+        code: document.getElementById(`productCode-${productId}`)?.value || '',
+        price: document.getElementById(`productPrice-${productId}`)?.value || '0',
+        desc: document.getElementById(`productDesc-${productId}`)?.value || '',
+        image: productImages[productId] || null
+    };
+
+    if (!productData.name) {
+        showNotification('Błąd', 'Nazwa produktu jest wymagana.', 'error');
+        return;
+    }
+
+    try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.products, productData);
+        showNotification('Zapisano!', `Produkt ${productData.name} został zapisany w bazie.`, 'success');
+    } catch (error) {
+        console.error('Save product error:', error);
+        showNotification('Błąd zapisu', 'Nie udało się zapisać produktu.', 'error');
+    }
+}
+
+async function loadProduct() {
+    try {
+        const allProducts = await StorageSystem.db.getAll(StorageSystem.db.STORES.products);
+
+        if (allProducts.length === 0) {
+            showNotification('Informacja', 'Brak zapisanych produktów w bazie.', 'info');
+            return;
+        }
+
+        const listHTML = allProducts.map(product => `
+            <div class="product-library-item" onclick="addProductFromLibrary('${product.id}')">
+                <div class="product-library-name">${product.name}</div>
+                <div class="product-library-code">${product.code || ''}</div>
+                <div class="product-library-price">${product.price || 0} zł</div>
+            </div>
+        `).join('');
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="width: 800px;">
+                <h2 style="margin-bottom: 1.5rem;">Wczytaj produkt z bazy</h2>
+                <div class="product-library-list">${listHTML}</div>
+                <button class="btn btn-outline" style="margin-top: 1.5rem;" onclick="this.closest('.modal-overlay').remove()">Anuluj</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+    } catch (error) {
+        console.error('Load product error:', error);
+        showNotification('Błąd wczytywania', 'Nie udało się wczytać bazy produktów.', 'error');
+    }
+}
+
+async function addProductFromLibrary(productId) {
+    try {
+        const product = await StorageSystem.db.get(StorageSystem.db.STORES.products, productId);
+        if (!product) {
+            showNotification('Błąd', 'Nie znaleziono produktu.', 'error');
+            return;
+        }
+
+        addProduct();
+        const newId = products[products.length - 1];
+
+        document.getElementById(`productName-${newId}`).value = product.name;
+        document.getElementById(`productCode-${newId}`).value = product.code;
+        document.getElementById(`productPrice-${newId}`).value = product.price;
+        document.getElementById(`productDesc-${newId}`).value = product.desc;
+
+        if (product.image) {
+            productImages[newId] = product.image;
+            updateProductImage(newId);
+        }
+
+        updateSummary();
+
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) modal.remove();
+
+        showNotification('Dodano!', `Dodano produkt ${product.name} do oferty.`, 'success');
+
+    } catch (error) {
+        console.error('Add from library error:', error);
+        showNotification('Błąd', 'Nie udało się dodać produktu z bazy.', 'error');
+    }
+}
+
 
 // ============================================
 // DATA PERSISTENCE (SAVE/LOAD)
@@ -1170,5 +1330,44 @@ function setTodayDate() {
     const validUntilInput = document.getElementById('validUntil');
     if(validUntilInput) validUntilInput.value = validDate.toISOString().split('T')[0];
 }
+
+function changeWallpaper(wallpaper) {
+    const desktop = document.getElementById('desktop');
+    if (!desktop) return;
+
+    const wallpapers = {
+        default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
+        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
+        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+    };
+
+    if (wallpapers[wallpaper]) {
+        desktop.style.backgroundImage = wallpapers[wallpaper];
+        desktop.style.backgroundSize = 'cover';
+        desktop.style.backgroundPosition = 'center';
+        showToast(`🖼️ Zmieniono tapetę na ${wallpaper}`);
+        // Save wallpaper choice to localStorage
+        localStorage.setItem('pesteczkaOS_wallpaper', wallpaper);
+    }
+}
+
+// On load, check for saved wallpaper
+document.addEventListener('DOMContentLoaded', () => {
+    const savedWallpaper = localStorage.getItem('pesteczkaOS_wallpaper');
+    if (savedWallpaper) {
+        changeWallpaper(savedWallpaper);
+        const activePreview = document.querySelector(`.wallpaper-preview[data-wallpaper="${savedWallpaper}"]`);
+        if (activePreview) {
+            activePreview.classList.add('active');
+        }
+    } else {
+        const defaultPreview = document.querySelector('.wallpaper-preview[data-wallpaper="default"]');
+        if (defaultPreview) {
+            defaultPreview.classList.add('active');
+        }
+    }
+});
+
 
 console.log('✅ App.js loaded successfully');
