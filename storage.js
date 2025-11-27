@@ -38,9 +38,11 @@ const CompressionModule = (() => {
 // INDEXEDDB WRAPPER
 // ============================================
 const IndexedDBStore = (() => {
-    const DB_NAME = 'MebleDuoOffersDB';
-    const VERSION = 2;
+    const DB_NAME = 'PesteczkaOS_DB';
+    const VERSION = 4; // Incremented version to force upgrade
+
     const STORES = {
+        profiles: 'profiles',
         offers: 'offers',
         diablo: 'diablo',
         settings: 'settings',
@@ -64,16 +66,27 @@ const IndexedDBStore = (() => {
 
             request.onupgradeneeded = (e) => {
                 const upgradeDb = e.target.result;
+                const transaction = e.target.transaction;
                 
-                // Create object stores if they don't exist
+                console.log(`📦 Upgrading database from version ${e.oldVersion} to ${e.newVersion}`);
+
                 Object.values(STORES).forEach(storeName => {
                     if (!upgradeDb.objectStoreNames.contains(storeName)) {
-                        const store = upgradeDb.createObjectStore(storeName, { keyPath: 'id' });
-                        store.createIndex('timestamp', 'timestamp', { unique: false });
+                        console.log(`  - Creating store: ${storeName}`);
+                        upgradeDb.createObjectStore(storeName, { keyPath: 'id' });
                     }
                 });
-                
-                console.log('📦 Database schema upgraded');
+
+                // If upgrading from a version that might have stale profile data, clear it.
+                if (e.oldVersion < 4) {
+                    try {
+                        console.log('  - Clearing "profiles" store to refresh data...');
+                        transaction.objectStore('profiles').clear();
+                        console.log('  - "profiles" store cleared.');
+                    } catch (clearError) {
+                        console.error('  - Error clearing profiles store:', clearError);
+                    }
+                }
             };
         });
     };
@@ -482,12 +495,75 @@ const UtilsModule = (() => {
 })();
 
 // ============================================
+// PROFILE MANAGER
+// ============================================
+const ProfileManager = (() => {
+    const STORE_NAME = IndexedDBStore.STORES.profiles;
+
+    const initDefaultProfiles = async () => {
+        try {
+            console.log('1. Checking for existing profiles in DB...');
+            const profiles = await IndexedDBStore.getAll(STORE_NAME);
+            if (profiles && profiles.length > 0) {
+                console.log('📦 Profiles already exist in DB. Count:', profiles.length);
+                return;
+            }
+
+            console.log('2. No profiles in DB, fetching from profiles.json...');
+            const response = await fetch('profiles.json');
+            console.log('3. Fetch response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('4. Parsed profiles.json data:', data);
+            
+            if (data && data.profiles) {
+                const profilePromises = Object.values(data.profiles).map(p => {
+                    const profileWithId = { ...p, id: p.key };
+                    console.log('  - Storing profile:', profileWithId.id);
+                    return IndexedDBStore.set(STORE_NAME, profileWithId);
+                });
+                await Promise.all(profilePromises);
+                console.log('5. ✅ Default profiles successfully initialized in DB.');
+            } else {
+                console.warn('5. ⚠️ No "profiles" key found in profiles.json');
+            }
+        } catch (error) {
+            console.error('❌ Failed to initialize default profiles:', error);
+        }
+    };
+
+    const getProfile = async (key) => {
+        return await IndexedDBStore.get(STORE_NAME, key);
+    };
+
+    const getAllProfiles = async () => {
+        return await IndexedDBStore.getAll(STORE_NAME);
+    };
+
+    const saveProfile = async (profileData) => {
+        const profileWithId = { ...profileData, id: profileData.key };
+        return await IndexedDBStore.set(STORE_NAME, profileWithId);
+    };
+
+    return {
+        initDefaultProfiles,
+        getProfile,
+        getAllProfiles,
+        saveProfile,
+    };
+})();
+
+
+// ============================================
 // INITIALIZE ON PAGE LOAD
 // ============================================
 (async () => {
     try {
         if (IndexedDBStore.isAvailable) {
             await IndexedDBStore.initDB();
+            await ProfileManager.initDefaultProfiles();
             console.log('✅ Storage system initialized with IndexedDB');
         } else {
             console.warn('⚠️ IndexedDB not available, using localStorage fallback');
@@ -500,6 +576,7 @@ const UtilsModule = (() => {
 // Export for global use
 window.StorageSystem = {
     db: IndexedDBStore,
+    ProfileManager: ProfileManager,
     state: AppState,
     validator: ValidatorModule,
     utils: UtilsModule,
