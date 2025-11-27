@@ -162,10 +162,11 @@ const PDFManager = (() => {
             quality = 0.85,
             templateType = TEMPLATE_TYPES.OFFER,
             seller = {},
-            buyer = {},
             products = [],
             offerData = {}
         } = options;
+
+        const { buyer = {} } = offerData;
 
         try {
             // Validate input
@@ -225,7 +226,7 @@ const PDFManager = (() => {
             }
 
             // Set metadata
-            setMetadata(pdf, offerData);
+            setMetadata(pdf, offerData, seller);
 
             return pdf;
         } catch (error) {
@@ -272,6 +273,11 @@ const PDFManager = (() => {
         if (isLastPage) {
             const totals = calculatePageTotals(pageProducts);
             pageHTML += buildSummary(totals, template);
+
+            if (offerData.notes) {
+                pageHTML += buildNotes(offerData.notes);
+            }
+
             pageHTML += buildFooter(template, seller, offerData, pageNum, totalPages);
         } else {
             pageHTML += `<div style="text-align: center; margin-top: 20px; color: #999;">
@@ -432,7 +438,20 @@ const PDFManager = (() => {
         `;
     };
 
+    const buildNotes = (notes) => {
+        return `
+            <div style="margin: 20px 0; padding: 15px; border-radius: 8px; background: #fefce8; border: 1px solid #facc15;">
+                <div style="font-weight: 700; font-size: 12px; color: #a16207; margin-bottom: 8px;">DODATKOWE UWAGI:</div>
+                <div style="font-size: 10px; color: #ca8a04; white-space: pre-wrap;">${notes}</div>
+            </div>
+        `;
+    };
+
     const buildFooter = (template, seller, offerData, pageNum, totalPages) => {
+        const year = new Date().getFullYear();
+        const website = seller.website || 'www.example.com';
+        const companyName = seller.name || 'Twoja Firma';
+
         return `
             <footer style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px;">
@@ -447,26 +466,27 @@ const PDFManager = (() => {
                     </div>
                     <div style="background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 10px; min-width: 250px;">
                         <div style="font-weight: 700; margin-bottom: 8px;">DANE DO PRZELEWU:</div>
-                        <div style="margin-bottom: 6px;"><span style="color: #666;">Odbiorca:</span> ${seller.bankName || 'MEBLE DUO PIOTR NIEDŹWIADEK'}</div>
+                        <div style="margin-bottom: 6px;"><span style="color: #666;">Odbiorca:</span> ${seller.bankName || seller.fullName}</div>
                         <div style="margin-bottom: 6px;"><span style="color: #666;">Nr konta:</span> <strong>${seller.bankAccount || ''}</strong></div>
                         <div><span style="color: #666;">Tytuł:</span> ${offerData.number || 'Oferta'}</div>
                     </div>
                 </div>
                 <div style="text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #e5e7eb;">
                     <div style="margin-bottom: 4px;">Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')}</div>
-                    <div>www.mebleduo.com | © ${new Date().getFullYear()} MEBLE DUO | Strona ${pageNum} z ${totalPages}</div>
+                    <div>${website} | © ${year} ${companyName} | Strona ${pageNum} z ${totalPages}</div>
                 </div>
             </footer>
         `;
     };
 
-    const setMetadata = (pdf, offerData) => {
+    const setMetadata = (pdf, offerData, seller) => {
+        const buyerName = (offerData.buyer && offerData.buyer.name) ? ` dla ${offerData.buyer.name}` : '';
         pdf.setProperties({
-            title: `Oferta ${offerData.number || 'bez numeru'}`,
-            subject: 'Oferta cenowa - MEBLE DUO',
-            author: 'MEBLE DUO PIOTR NIEDŹWIADEK',
-            keywords: 'oferta, meble, mebleduo',
-            creator: 'Centrum Dowodzenia Justy v3.0'
+            title: `Oferta ${offerData.number || 'bez numeru'}${buyerName}`,
+            subject: `Oferta cenowa - ${seller.name || 'Pesteczka OS'}`,
+            author: seller.fullName || 'Pesteczka OS',
+            keywords: `oferta, ${seller.name || ''}`,
+            creator: 'Pesteczka OS - Centrum Dowodzenia Justy'
         });
     };
 
