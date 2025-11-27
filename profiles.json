@@ -1,0 +1,42 @@
+{
+  "profiles": {
+    "mebleduo": {
+      "key": "mebleduo",
+      "name": "Meble Duo",
+      "fullName": "MEBLE DUO PIOTR NIEDŹWIADEK",
+      "nip": "9461016794",
+      "address": "ul. Łęczyńska 52\n20-309 Lublin",
+      "phone": "+48 81 745 10 20",
+      "email": "biuro@mebleduo.com",
+      "bankAccount": "84 1870 1045 2078 1088 4238 0001",
+      "bankName": "Nest Bank",
+      "color": "#dc2626",
+      "logo": "logos/Meble_Duo/logo.png",
+      "logoData": null,
+      "sellerName": "Justyna Gancarz",
+      "sellerPosition": "Kierownik Sprzedaży",
+      "sellerPhone": "+48 515 189 107",
+      "sellerEmail": "justyna@mebleduo.com",
+      "website": "www.mebleduo.com"
+    },
+    "alekrzesla": {
+      "key": "alekrzesla",
+      "name": "Alekrzesła",
+      "fullName": "ALE KRZESŁA",
+      "nip": "9462244592",
+      "address": "ul. Lwowska 30/62\n20-128 Lublin",
+      "phone": "+48 12 234 56 78",
+      "email": "biuro@alekrzesla.pl",
+      "bankAccount": "12 3456 7890 1234 5678 9012 3457",
+      "bankName": "Ale Krzesła",
+      "color": "#dc2626",
+      "logo": "logos/Alekrzesla/logo.png",
+      "logoData": null,
+      "sellerName": "Joanna Niedźwiadek",
+      "sellerPosition": "Właściciel",
+      "sellerPhone": "+48 515 189 107",
+      "sellerEmail": "joanna@alekrzesla.pl",
+      "website": "www.alekrzesla.pl"
+    }
+  }
+}
