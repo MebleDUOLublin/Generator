@@ -232,6 +232,53 @@ document.getElementById('desktop')?.addEventListener('click', (e) => {
     document.addEventListener('mousemove', handleWindowDrag);
     document.addEventListener('mouseup', stopWindowDrag);
 
+    // === WALLPAPER SELECTOR ===
+    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
+        preview.addEventListener('click', () => {
+            const wallpaper = preview.dataset.wallpaper;
+            if (wallpaper) {
+                changeWallpaper(wallpaper);
+                document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+                preview.classList.add('active');
+            }
+        });
+    });
+
+    // === CONTEXT MENU ===
+    const desktop = document.getElementById('desktop');
+    const contextMenu = document.getElementById('contextMenu');
+
+    if (desktop && contextMenu) {
+        desktop.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.classList.add('active');
+        });
+
+        document.addEventListener('click', () => {
+            contextMenu.classList.remove('active');
+        });
+
+        contextMenu.addEventListener('click', (e) => {
+            const action = e.target.closest('.context-menu-item')?.dataset.action;
+            if (action) {
+                switch (action) {
+                    case 'change-wallpaper':
+                        openWindow('settings');
+                        break;
+                    case 'add-icon':
+                        showToast('Funkcja wkrótce dostępna!', 'info');
+                        break;
+                    case 'logout':
+                        logout();
+                        break;
+                }
+                contextMenu.classList.remove('active');
+            }
+        });
+    }
+
     // === KEYBOARD SHORTCUTS ===
     document.addEventListener('keydown', (e) => {
         // Ctrl+S - save offer
@@ -436,6 +483,16 @@ function openWindow(windowId) {
     // If settings window, load profile settings
     if (windowId === 'settings') {
         loadProfileSettings();
+    }
+
+    // If dashboard window, initialize it
+    if (windowId === 'dashboard') {
+        Dashboard.init();
+    }
+
+    // If snake window, initialize it
+    if (windowId === 'snake') {
+        NeonSnake.init('snakeCanvas');
     }
 }
 
@@ -1170,5 +1227,44 @@ function setTodayDate() {
     const validUntilInput = document.getElementById('validUntil');
     if(validUntilInput) validUntilInput.value = validDate.toISOString().split('T')[0];
 }
+
+function changeWallpaper(wallpaper) {
+    const desktop = document.getElementById('desktop');
+    if (!desktop) return;
+
+    const wallpapers = {
+        default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
+        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
+        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+    };
+
+    if (wallpapers[wallpaper]) {
+        desktop.style.backgroundImage = wallpapers[wallpaper];
+        desktop.style.backgroundSize = 'cover';
+        desktop.style.backgroundPosition = 'center';
+        showToast(`🖼️ Zmieniono tapetę na ${wallpaper}`);
+        // Save wallpaper choice to localStorage
+        localStorage.setItem('pesteczkaOS_wallpaper', wallpaper);
+    }
+}
+
+// On load, check for saved wallpaper
+document.addEventListener('DOMContentLoaded', () => {
+    const savedWallpaper = localStorage.getItem('pesteczkaOS_wallpaper');
+    if (savedWallpaper) {
+        changeWallpaper(savedWallpaper);
+        const activePreview = document.querySelector(`.wallpaper-preview[data-wallpaper="${savedWallpaper}"]`);
+        if (activePreview) {
+            activePreview.classList.add('active');
+        }
+    } else {
+        const defaultPreview = document.querySelector('.wallpaper-preview[data-wallpaper="default"]');
+        if (defaultPreview) {
+            defaultPreview.classList.add('active');
+        }
+    }
+});
+
 
 console.log('✅ App.js loaded successfully');
