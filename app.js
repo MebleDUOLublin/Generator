@@ -351,6 +351,7 @@ async function loginAs(profileKey) {
         setTodayDate();
         
         document.getElementById('loginScreen').classList.add('hidden');
+        document.body.classList.remove('login-page');
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
@@ -442,12 +443,16 @@ function openWindow(windowId) {
 function closeWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (win) {
-        win.classList.remove('active', 'focused');
-        win.style.display = 'none';
+        win.classList.add('closing');
+        win.addEventListener('animationend', () => {
+            win.classList.remove('active', 'focused', 'closing');
+            win.style.display = 'none';
+        }, { once: true });
     }
-    
-    const taskbarIcon = document.getElementById(`taskbar-${windowId}`);
-    if(taskbarIcon) taskbarIcon.classList.remove('active');
+    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+    if (taskbarIcon) {
+        taskbarIcon.classList.remove('active');
+    }
 }
 
 function minimizeWindow(windowId) {

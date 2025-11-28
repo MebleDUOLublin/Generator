@@ -109,10 +109,14 @@ body {
     font-family: var(--font-sans);
     line-height: 1.6;
     color: var(--gray-900);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    background-attachment: fixed;
+    background: #F5F5F5;
     min-height: 100vh;
     overflow: hidden;
+}
+
+body.login-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-attachment: fixed;
 }
 
 /* ===== SCROLLBAR ===== */
@@ -303,6 +307,7 @@ body {
 .desktop {
     position: fixed;
     inset: 0;
+    background: url('https://i.imgur.com/83S8Z98.png') no-repeat center center/cover;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.5s ease;
@@ -378,6 +383,10 @@ body {
     min-height: 360px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.window.hidden {
+    display: none;
 }
 
 .window.active {
