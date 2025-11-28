@@ -241,6 +241,30 @@ class DuplicateProductCommand {
     }
 }
 
+class UpdateProductImageCommand {
+    constructor(productId, newImage, oldImage) {
+        this.productId = productId;
+        this.newImage = newImage;
+        this.oldImage = oldImage;
+    }
+
+    execute() {
+        productImages[this.productId] = this.newImage;
+        updateProductImage(this.productId);
+        UI.Feedback.toast('🖼️ Zaktualizowano obraz produktu', 'success');
+    }
+
+    undo() {
+        if (this.oldImage) {
+            productImages[this.productId] = this.oldImage;
+        } else {
+            delete productImages[this.productId];
+        }
+        updateProductImage(this.productId);
+        UI.Feedback.toast('Cofnięto zmianę obrazu produktu', 'info');
+    }
+}
+
 class FieldChangeCommand {
     constructor(fieldId, oldValue, newValue) {
         this.fieldId = fieldId;

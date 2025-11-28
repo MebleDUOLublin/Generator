@@ -1760,3 +1760,31 @@ body.login-page {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+.paste-image-preview {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.paste-image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+}
+
+.paste-image-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.paste-to-existing {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.paste-to-existing .form-select {
+    flex-grow: 1;
+}
