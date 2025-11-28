@@ -245,7 +245,20 @@ function showPasteImageModal(imageData) {
 
     select.addEventListener('change', () => {
         pasteToExistingBtn.disabled = !select.value;
+
+function setupSettings() {
+    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
+    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
+    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
+
+    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
+        preview.addEventListener('click', () => {
+            changeWallpaper(preview.dataset.wallpaper);
+            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+            preview.classList.add('active');
+        });
     });
+}
 
     pasteToNewProductBtn.addEventListener('click', () => {
         addProduct({ image: imageData });
@@ -261,6 +274,19 @@ function showPasteImageModal(imageData) {
             modal.remove();
         }
     });
+function setupGlobalEventListeners() {
+    document.addEventListener('click', (e) => {
+        const startMenu = document.getElementById('startMenu');
+        const startBtn = document.getElementById('startBtn');
+        if (startMenu?.classList.contains('active') && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+            startMenu.classList.remove('active');
+        }
+        document.getElementById('contextMenu')?.classList.remove('active');
+    });
+
+    document.addEventListener('mousemove', handleWindowDrag);
+    document.addEventListener('mouseup', stopWindowDrag);
+    document.addEventListener('keydown', handleGlobalHotkeys);
 }
 
 function handleContextMenuAction(action) {
