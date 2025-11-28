@@ -155,6 +155,28 @@ function setupOfferGenerator() {
             UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
         }
     });
+}
+
+function setupOfferGenerator() {
+    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
+    document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
+    document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
+    document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
+
+    document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
+        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
+            products = [];
+            productImages = {};
+            updateProductView();
+            generateOfferNumber();
+            setTodayDate();
+            updateSummary();
+            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
+        }
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
+    });
+}
 
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
@@ -245,7 +267,104 @@ function showPasteImageModal(imageData) {
 
     select.addEventListener('change', () => {
         pasteToExistingBtn.disabled = !select.value;
+function setupSettings() {
+    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
+    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
+    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
+
+    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
+        preview.addEventListener('click', () => {
+            changeWallpaper(preview.dataset.wallpaper);
+            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+            preview.classList.add('active');
+        });
     });
+}
+
+function setupGlobalEventListeners() {
+    document.addEventListener('click', (e) => {
+        const startMenu = document.getElementById('startMenu');
+        const startBtn = document.getElementById('startBtn');
+        if (startMenu?.classList.contains('active') && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+            startMenu.classList.remove('active');
+        }
+        document.getElementById('contextMenu')?.classList.remove('active');
+    });
+
+    document.addEventListener('mousemove', handleWindowDrag);
+    document.addEventListener('mouseup', stopWindowDrag);
+    document.addEventListener('keydown', handleGlobalHotkeys);
+    document.addEventListener('paste', handlePaste);
+}
+
+function handlePaste(event) {
+    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+    for (const item of items) {
+        if (item.type.indexOf('image') === 0) {
+            const file = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                pastedImageData = e.target.result;
+                showPasteImageModal(pastedImageData);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+function showPasteImageModal(imageData) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'pasteImageModal';
+
+    const productOptions = products.map(id => {
+        const name = document.getElementById(`productName-${id}`)?.value || `Produkt #${id}`;
+        return `<option value="${id}">${name}</option>`;
+    }).join('');
+
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 500px;">
+            <h2>Wklejony obraz</h2>
+            <p>Co chcesz zrobić z tym obrazem?</p>
+            <div class="paste-image-preview">
+                <img src="${imageData}" alt="Pasted image preview">
+            </div>
+            <div class="paste-image-actions">
+                <button class="btn btn-primary" id="pasteToNewProductBtn">Utwórz nowy produkt</button>
+                <div class="paste-to-existing">
+                    <select class="form-select" id="pasteProductSelect">
+                        <option value="">Wybierz produkt...</option>
+                        ${productOptions}
+                    </select>
+                    <button class="btn btn-secondary" id="pasteToExistingProductBtn" disabled>Wklej do istniejącego</button>
+                </div>
+            </div>
+            <button class="btn btn-outline" style="margin-top: 1rem;" onclick="this.closest('.modal-overlay').remove()">Anuluj</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const select = modal.querySelector('#pasteProductSelect');
+    const pasteToExistingBtn = modal.querySelector('#pasteToExistingProductBtn');
+    const pasteToNewProductBtn = modal.querySelector('#pasteToNewProductBtn');
+
+    select.addEventListener('change', () => {
+        pasteToExistingBtn.disabled = !select.value;
+
+function setupSettings() {
+    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
+    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
+    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
+
+    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
+        preview.addEventListener('click', () => {
+            changeWallpaper(preview.dataset.wallpaper);
+            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+            preview.classList.add('active');
+        });
+    });
+}
 
     pasteToNewProductBtn.addEventListener('click', () => {
         addProduct({ image: imageData });
@@ -275,6 +394,51 @@ function handleContextMenuAction(action) {
             logout();
             break;
     }
+}
+
+function handleWindowAction(action, windowId) {
+    switch (action) {
+        case 'minimize':
+            minimizeWindow(windowId);
+            break;
+        case 'maximize':
+            maximizeWindow(windowId);
+            break;
+        case 'close':
+            closeWindow(windowId);
+function setupGlobalEventListeners() {
+    document.addEventListener('click', (e) => {
+        const startMenu = document.getElementById('startMenu');
+        const startBtn = document.getElementById('startBtn');
+        if (startMenu?.classList.contains('active') && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+            startMenu.classList.remove('active');
+        }
+        document.getElementById('contextMenu')?.classList.remove('active');
+    });
+
+    document.addEventListener('mousemove', handleWindowDrag);
+    document.addEventListener('mouseup', stopWindowDrag);
+    document.addEventListener('keydown', handleGlobalHotkeys);
+}
+
+function handleContextMenuAction(action) {
+    switch (action) {
+        case 'change-wallpaper':
+            openWindow('settings');
+            break;
+        case 'add-icon':
+            UI.Feedback.toast('Funkcja wkrótce dostępna!', 'info');
+            break;
+        case 'logout':
+            logout();
+            break;
+    }
+}
+
+function focusWindow(win) {
+    document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
+    win.classList.add('focused');
+    win.style.zIndex = ++zIndexCounter;
 }
 
 function handleWindowAction(action, windowId) {
