@@ -83,8 +83,188 @@ const CommandManager = (() => {
 })();
 
 // ============================================
-// FIELD CHANGE COMMAND
+// HELPER FUNCTIONS
 // ============================================
+function _createProductCard(productId) {
+    const createEl = (tag, props = {}, children = []) => {
+        const el = document.createElement(tag);
+        Object.assign(el, props);
+        children.forEach(child => el.appendChild(child));
+        return el;
+    };
+
+    const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
+    const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
+    const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
+
+    const productCard = createEl('div', {
+        id: `product-${productId}`,
+        className: 'product-card',
+        draggable: true,
+        ondragstart: (e) => dragStart(e, productId),
+        ondragover: dragOver,
+        ondrop: (e) => drop(e, productId)
+    });
+
+    const imageZone = createEl('div', { className: 'product-image-zone' }, [
+        createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
+        createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
+    ]);
+    imageZone.onclick = () => document.getElementById(`productImage-${productId}`).click();
+
+    const productDetails = createEl('div', { className: 'product-details' }, [
+        createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
+        createEl('div', { className: 'form-grid-inner' }, [
+            createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
+            createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
+            createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
+            createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
+        ])
+    ]);
+
+    productCard.append(
+        createEl('div', { className: 'drag-handle', textContent: '☰' }),
+        createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
+        createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
+        createEl('div', { className: 'product-actions' }, [
+            createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
+            createButton('🗑️ Usuń', () => removeProduct(productId), 'btn btn-outline btn-danger')
+        ])
+    );
+
+    return productCard;
+}
+
+
+// ============================================
+// PRODUCT COMMANDS
+// ============================================
+class ProductCommand {
+    constructor(action, productData) {
+        this.action = action;
+        this.productData = productData;
+    }
+
+    execute() {
+        switch (this.action) {
+            case 'add':
+                this._addProduct();
+                break;
+            case 'remove':
+                this._removeProduct();
+                break;
+        }
+    }
+
+    undo() {
+        switch (this.action) {
+            case 'add':
+                this._removeProduct();
+                break;
+            case 'remove':
+                this._addProduct();
+                break;
+        }
+    }
+
+    _addProduct() {
+        const productId = this.productData.id || Date.now() + productIdCounter++;
+        this.productData.id = productId;
+        products.push(productId);
+        const productCard = _createProductCard(productId);
+        document.getElementById('productsList').appendChild(productCard);
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('➕ Dodano produkt', 'success');
+    }
+
+    _removeProduct() {
+        const { id } = this.productData;
+        const el = document.getElementById(`product-${id}`);
+        if (el) el.remove();
+        products = products.filter(pId => pId !== id);
+        delete productImages[id];
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('🗑️ Usunięto produkt', 'info');
+    }
+}
+
+class DuplicateProductCommand {
+    constructor(originalProductId) {
+        this.originalProductId = originalProductId;
+        this.newProductId = null;
+    }
+
+    execute() {
+        const originalData = {
+            name: document.getElementById(`productName-${this.originalProductId}`)?.value || '',
+            code: document.getElementById(`productCode-${this.originalProductId}`)?.value || '',
+            qty: document.getElementById(`productQty-${this.originalProductId}`)?.value || '1',
+            price: document.getElementById(`productPrice-${this.originalProductId}`)?.value || '0',
+            discount: document.getElementById(`productDiscount-${this.originalProductId}`)?.value || '0',
+            desc: document.getElementById(`productDesc-${this.originalProductId}`)?.value || '',
+            image: productImages[this.originalProductId]
+        };
+
+        this.newProductId = Date.now() + productIdCounter++;
+        products.push(this.newProductId);
+
+        const productCard = _createProductCard(this.newProductId);
+        document.getElementById('productsList').appendChild(productCard);
+
+        document.getElementById(`productName-${this.newProductId}`).value = originalData.name + " (Kopia)";
+        document.getElementById(`productCode-${this.newProductId}`).value = originalData.code;
+        document.getElementById(`productQty-${this.newProductId}`).value = originalData.qty;
+        document.getElementById(`productPrice-${this.newProductId}`).value = originalData.price;
+        document.getElementById(`productDiscount-${this.newProductId}`).value = originalData.discount;
+        document.getElementById(`productDesc-${this.newProductId}`).value = originalData.desc;
+
+        if (originalData.image) {
+            productImages[this.newProductId] = originalData.image;
+            updateProductImage(this.newProductId);
+        }
+
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('📋 Produkt zduplikowany', 'info');
+    }
+
+    undo() {
+        const el = document.getElementById(`product-${this.newProductId}`);
+        if (el) el.remove();
+        products = products.filter(pId => pId !== this.newProductId);
+        delete productImages[this.newProductId];
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('Cofnięto duplikację', 'info');
+    }
+}
+
+class UpdateProductImageCommand {
+    constructor(productId, newImage, oldImage) {
+        this.productId = productId;
+        this.newImage = newImage;
+        this.oldImage = oldImage;
+    }
+
+    execute() {
+        productImages[this.productId] = this.newImage;
+        updateProductImage(this.productId);
+        UI.Feedback.toast('🖼️ Zaktualizowano obraz produktu', 'success');
+    }
+
+    undo() {
+        if (this.oldImage) {
+            productImages[this.productId] = this.oldImage;
+        } else {
+            delete productImages[this.productId];
+        }
+        updateProductImage(this.productId);
+        UI.Feedback.toast('Cofnięto zmianę obrazu produktu', 'info');
+    }
+}
+
 class FieldChangeCommand {
     constructor(fieldId, oldValue, newValue) {
         this.fieldId = fieldId;
@@ -495,6 +675,41 @@ const UIFeedback = (() => {
 // ============================================
 // INITIALIZE UI SYSTEM
 // ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Add Undo/Redo buttons
+    const actionsBar = document.querySelector('.actions-bar');
+    if (actionsBar) {
+        const undoBtn = document.createElement('button');
+        undoBtn.id = 'undoBtn';
+        undoBtn.className = 'btn btn-outline';
+        undoBtn.textContent = '↩️ Cofnij';
+        undoBtn.disabled = true;
+        undoBtn.onclick = () => CommandManager.undo();
+        actionsBar.appendChild(undoBtn);
+
+        const redoBtn = document.createElement('button');
+        redoBtn.id = 'redoBtn';
+        redoBtn.className = 'btn btn-outline';
+        redoBtn.textContent = '↪️ Ponów';
+        redoBtn.disabled = true;
+        redoBtn.onclick = () => CommandManager.redo();
+        actionsBar.appendChild(redoBtn);
+
+        CommandManager.subscribe(({ canUndo, canRedo }) => {
+            undoBtn.disabled = !canUndo;
+            redoBtn.disabled = !canRedo;
+        });
+    }
+
+    // Initialize reactive fields
+    ReactiveForm.createField('offerNumber', {
+        onValidate: (value) => value.trim() ? null : 'Numer oferty jest wymagany.'
+    });
+    ReactiveForm.createField('buyerName', {
+        onValidate: (value) => value.trim() ? null : 'Nazwa nabywcy jest wymagana.'
+    });
+});
+
 window.UI = {
     Form: ReactiveForm,
     Observer: FormObserver,
