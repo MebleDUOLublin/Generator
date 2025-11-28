@@ -44,8 +44,6 @@
         </div>
     </div>
 
-    <div class="toast" id="toast">Akcja wykonana</div>
-
     <!-- LOGIN SCREEN -->
     <div class="login-screen" id="loginScreen">
         <div class="login-logo">🌰</div>
@@ -84,6 +82,162 @@
             <div class="desktop-icon" data-window="snake" tabindex="0" role="button" aria-label="Otwórz Neon Snake">
                 <div class="desktop-icon-image">🐍</div>
                 <div class="desktop-icon-name">Neon Snake</div>
+            </div>
+            <div class="desktop-icon" data-window="domator" tabindex="0" role="button" aria-label="Otwórz Zamówienia Domator" style="display: none;">
+                <div class="desktop-icon-image">🚚</div>
+                <div class="desktop-icon-name">Zamówienie Domator</div>
+            </div>
+        </div>
+
+        <!-- WINDOW: Zamówienie Domator -->
+        <div class="window" id="window-domator" role="dialog" aria-labelledby="window-domator-title" style="top: 60px; left: 120px; width: 85vw; height: 80vh;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">🚚</span>
+                    <span id="window-domator-title">Generator Zamówień Domator</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content domator-container" id="domator-app">
+                <div class="domator-card">
+                    <div class="domator-header">
+                        <h2>
+                            <span>🪑</span>
+                            Generator Zamówień Domator
+                        </h2>
+                        <div class="domator-actions">
+                            <button class="domator-btn domator-btn-secondary" id="loadDomatorTemplateBtn">
+                                📋 Szablon
+                            </button>
+                            <button class="domator-btn domator-btn-primary" id="exportDomatorToEmailBtn">
+                                ✉️ Eksportuj do maila
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="domator-content">
+                        <!-- STATYSTYKI -->
+                        <div class="domator-stats">
+                            <div class="stat-card">
+                                <div class="stat-label">Produktów</div>
+                                <div class="stat-value" id="domatorProductCount">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Suma Netto</div>
+                                <div class="stat-value" id="domatorSumNetto">0,00 zł</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Suma Brutto</div>
+                                <div class="stat-value" id="domatorSumBrutto">0,00 zł</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Status</div>
+                                <div class="stat-value" id="domatorStatus">📝 Edycja</div>
+                            </div>
+                        </div>
+
+                        <!-- PASEK NARZĘDZI -->
+                        <div class="domator-toolbar">
+                            <button class="toolbar-btn toolbar-btn-export" id="domatorExportEmailBtn">
+                                ✉️ Eksport do maila
+                            </button>
+                            <button class="toolbar-btn toolbar-btn-pdf" id="domatorExportPdfBtn">
+                                📄 Generuj PDF
+                            </button>
+                            <button class="toolbar-btn toolbar-btn-copy" id="domatorCopyHtmlBtn">
+                                📋 Kopiuj HTML
+                            </button>
+                            <button class="toolbar-btn toolbar-btn-save" id="domatorSaveBtn">
+                                💾 Zapisz
+                            </button>
+                            <button class="toolbar-btn toolbar-btn-clear" id="domatorClearBtn">
+                                🗑️ Wyczyść
+                            </button>
+                        </div>
+
+                        <!-- DANE ADRESOWE -->
+                        <div class="domator-section">
+                            <h3 class="domator-section-title">
+                                <span>📍</span>
+                                Adres dostawy
+                            </h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Nazwa / Imię i Nazwisko</label>
+                                    <input type="text" class="form-input" id="domatorClientName">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Ulica z numerem</label>
+                                    <input type="text" class="form-input" id="domatorStreet">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Kod pocztowy</label>
+                                    <input type="text" class="form-input" id="domatorPostCode">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Miasto</label>
+                                    <input type="text" class="form-input" id="domatorCity">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Numer telefonu</label>
+                                    <input type="tel" class="form-input" id="domatorPhone">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Adres mailowy</label>
+                                    <input type="email" class="form-input" id="domatorEmail">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA PRODUKTÓW -->
+                        <div class="domator-section">
+                            <h3 class="domator-section-title">
+                                <span>📦</span>
+                                Lista produktów
+                                <button class="btn btn-success" id="addDomatorProductBtn" style="margin-left: auto;">
+                                    <span>➕</span> Dodaj produkt
+                                </button>
+                            </h3>
+                            <table class="domator-table" id="domatorProductsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px; text-align: center;">#</th>
+                                        <th style="min-width: 120px;">SKU / EAN</th>
+                                        <th style="min-width: 250px;">Nazwa produktu</th>
+                                        <th style="width: 80px; text-align: center;">Ilość</th>
+                                        <th style="min-width: 120px; text-align: right;">Cena netto</th>
+                                        <th style="min-width: 130px; text-align: right;">Cena brutto</th>
+                                        <th style="width: 80px; text-align: center;">Akcje</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="domatorProductsBody">
+                                    <!-- Produkty będą dodawane dynamicznie -->
+                                </tbody>
+                                <tfoot>
+                                    <tr style="background: #f3f4f6; font-weight: 600;">
+                                        <td colspan="4" style="text-align: right;">SUMA:</td>
+                                        <td style="text-align: right;" id="domatorTotalNetto">0,00 zł</td>
+                                        <td style="text-align: right;" id="domatorTotalBrutto">0,00 zł</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- DODATKOWE INFORMACJE -->
+                        <div class="domator-section">
+                            <h3 class="domator-section-title">
+                                <span>📝</span>
+                                Dodatkowe informacje
+                            </h3>
+                            <textarea id="domatorNotes" class="form-textarea" rows="3" placeholder="Uwagi do zamówienia, specjalne instrukcje dostawy..."></textarea>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -595,6 +749,9 @@
                 <button class="power-btn" id="logoutBtn">
                     <span>⏻</span> Wyloguj
                 </button>
+                <button class="power-btn shutdown-btn" id="closeAppBtn" style="margin-top: 5px;">
+                    <span>&#10006;</span> Zamknij
+                </button>
             </div>
         </div>
     </div>
@@ -619,6 +776,7 @@
     <script src="pdf.js"></script>
     <script src="dashboard.js"></script>
     <script src="snake.js"></script>
+    <script src="domator.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
  */
 const NeonSnake = (() => {
     let canvas, ctx;
-    let snake, food, score, direction, gridSize, intervalId;
+    let snake, food, score, direction, gridSize, intervalId, isPaused;
     const TILE_SIZE = 20;
 
     const init = (canvasId) => {
@@ -28,6 +28,7 @@ const NeonSnake = (() => {
         snake = [{ x: 10, y: 10 }];
         direction = 'right';
         score = 0;
+        isPaused = false;
         spawnFood();
 
         if (intervalId) clearInterval(intervalId);
@@ -35,6 +36,7 @@ const NeonSnake = (() => {
     };
 
     const gameLoop = () => {
+        if (isPaused) return;
         update();
         draw();
     };
@@ -105,6 +107,11 @@ const NeonSnake = (() => {
     };
 
     const handleKeyPress = (e) => {
+        if (e.key === ' ') {
+            isPaused = !isPaused;
+            return;
+        }
+
         const keyMap = {
             'ArrowUp': 'up', 'w': 'up',
             'ArrowDown': 'down', 's': 'down',
