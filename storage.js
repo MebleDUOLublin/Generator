@@ -502,32 +502,35 @@ const ProfileManager = (() => {
 
     const initDefaultProfiles = async () => {
         try {
-            console.log('1. Checking for existing profiles in DB...');
             const profiles = await IndexedDBStore.getAll(STORE_NAME);
             if (profiles && profiles.length > 0) {
-                console.log('📦 Profiles already exist in DB. Count:', profiles.length);
+                console.log('📦 Profiles already exist in DB.');
                 return;
             }
 
-            console.log('2. No profiles in DB, fetching from profiles.json...');
             const response = await fetch('profiles.json');
-            console.log('3. Fetch response status:', response.status);
             if (!response.ok) {
+                if (response.status === 404) {
+                    console.warn('`profiles.json` not found. Skipping default profiles.');
+                    return;
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+
             const data = await response.json();
-            console.log('4. Parsed profiles.json data:', data);
-            
             if (data && data.profiles) {
                 const profilePromises = Object.values(data.profiles).map(p => {
-                    const profileWithId = { ...p, id: p.key };
-                    console.log('  - Storing profile:', profileWithId.id);
-                    return IndexedDBStore.set(STORE_NAME, profileWithId);
-                });
+                    if (!p.key) {
+                        console.warn('Skipping profile with no key:', p);
+                        return null;
+                    }
+                    return IndexedDBStore.set(STORE_NAME, { ...p, id: p.key });
+                }).filter(Boolean);
+
                 await Promise.all(profilePromises);
-                console.log('5. ✅ Default profiles successfully initialized in DB.');
+                console.log('✅ Default profiles initialized.');
             } else {
-                console.warn('5. ⚠️ No "profiles" key found in profiles.json');
+                console.warn('⚠️ No "profiles" key found in profiles.json');
             }
         } catch (error) {
             console.error('❌ Failed to initialize default profiles:', error);
@@ -543,6 +546,22 @@ const ProfileManager = (() => {
     };
 
     const saveProfile = async (profileData) => {
+        if (!profileData || !profileData.key) {
+            throw new Error('Profile data must have a key.');
+        }
+
+        const validationSchema = {
+            name: { required: true },
+            email: { type: 'email' },
+            nip: { type: 'nip' },
+        };
+
+        const { isValid, errors } = ValidatorModule.validate(profileData, validationSchema);
+        if (!isValid) {
+            const errorMessages = Object.entries(errors).map(([key, msg]) => `${key}: ${msg}`);
+            throw new Error(`Invalid profile data: ${errorMessages.join(', ')}`);
+        }
+
         const profileWithId = { ...profileData, id: profileData.key };
         return await IndexedDBStore.set(STORE_NAME, profileWithId);
     };

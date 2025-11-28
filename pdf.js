@@ -155,83 +155,54 @@ const PDFManager = (() => {
         return breaks;
     };
 
-    const generatePDF = async (options) => {
-        const {
-            orientation = 'portrait',
-            format = 'a4',
-            quality = 0.85,
-            templateType = TEMPLATE_TYPES.OFFER,
-            seller = {},
-            products = [],
-            offerData = {}
-        } = options;
+    const _preparePdfData = (options) => {
+        const { products = [], orientation = 'portrait', templateType = TEMPLATE_TYPES.OFFER } = options;
 
-        const { buyer = {} } = offerData;
+        const validation = validateProductData(products);
+        if (!validation.isValid) {
+            throw new Error(`Invalid product data: ${validation.errors.join(', ')}`);
+        }
+
+        const enrichedProducts = enrichProductData(products);
+        return {
+            enrichedProducts,
+            pageBreaks: createPageBreakPoints(enrichedProducts, orientation),
+            template: createPDFTemplate(templateType),
+        };
+    };
+
+    const generatePDF = async (options) => {
+        const { orientation = 'portrait', format = 'a4', seller = {}, offerData = {} } = options;
 
         try {
-            // Validate input
-            const validation = validateProductData(products);
-            if (!validation.isValid) {
-                throw new Error(`Błędy w danych produktów: ${validation.errors.join(', ')}`);
-            }
+            const { pageBreaks, template } = _preparePdfData(options);
+            console.log(`📄 Generating PDF: ${pageBreaks.length} pages`);
 
-            // Enrich data
-            const enrichedProducts = enrichProductData(products);
-            const pageBreaks = createPageBreakPoints(enrichedProducts, orientation);
-            const template = createPDFTemplate(templateType);
-
-            console.log(`📄 Generating PDF: ${pageBreaks.length} pages, ${enrichedProducts.length} products`);
-
-            // Create PDF
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation,
-                unit: 'mm',
-                format
-            });
+            const pdf = new jsPDF({ orientation, unit: 'mm', format });
+            const { width: pageWidth, height: pageHeight } = pdf.internal.pageSize;
 
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
+            for (let i = 0; i < pageBreaks.length; i++) {
+                if (i > 0) pdf.addPage();
 
-            // Add pages
-            for (let pageIdx = 0; pageIdx < pageBreaks.length; pageIdx++) {
-                if (pageIdx > 0) {
-                    pdf.addPage();
-                }
-
-                const pageProducts = pageBreaks[pageIdx];
-                const pageNum = pageIdx + 1;
-                const totalPages = pageBreaks.length;
-                const isFirstPage = pageIdx === 0;
-                const isLastPage = pageIdx === pageBreaks.length - 1;
-
-                await renderPDFPage(
-                    pdf,
-                    pageWidth,
-                    pageHeight,
-                    {
-                        pageProducts,
-                        pageNum,
-                        totalPages,
-                        isFirstPage,
-                        isLastPage,
-                        orientation,
-                        quality,
-                        template,
-                        seller,
-                        buyer,
-                        offerData
-                    }
-                );
+                const pageOptions = {
+                    ...options,
+                    pageProducts: pageBreaks[i],
+                    pageNum: i + 1,
+                    totalPages: pageBreaks.length,
+                    isFirstPage: i === 0,
+                    isLastPage: i === pageBreaks.length - 1,
+                    template,
+                };
+                await renderPDFPage(pdf, pageWidth, pageHeight, pageOptions);
             }
 
-            // Set metadata
             setMetadata(pdf, offerData, seller);
-
             return pdf;
+
         } catch (error) {
-            console.error('❌ PDF generation error:', error);
-            throw error;
+            console.error('❌ PDF generation failed:', error);
+            throw new Error(`PDF generation failed: ${error.message}`);
         }
     };
 
