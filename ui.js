@@ -708,6 +708,25 @@ document.addEventListener('DOMContentLoaded', () => {
     ReactiveForm.createField('buyerName', {
         onValidate: (value) => value.trim() ? null : 'Nazwa nabywcy jest wymagana.'
     });
+
+    // Shutdown logic
+    const closeAppBtn = document.getElementById('closeAppBtn');
+    if (closeAppBtn) {
+        closeAppBtn.addEventListener('click', async () => {
+            const confirmed = await UIFeedback.confirm('Czy na pewno chcesz zamknąć aplikację?');
+            if (confirmed) {
+                try {
+                    await fetch('/shutdown', { method: 'POST' });
+                    UIFeedback.toast('Aplikacja została zamknięta.', 'info');
+                    // Give a moment for the toast to show
+                    setTimeout(() => window.close(), 1000);
+                } catch (error) {
+                    console.error('Shutdown request failed:', error);
+                    UIFeedback.toast('Serwer nie odpowiada. Zamknij okno ręcznie.', 'error');
+                }
+            }
+        });
+    }
 });
 
 window.UI = {

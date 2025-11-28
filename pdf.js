@@ -266,6 +266,7 @@ const PDFManager = (() => {
         document.body.appendChild(tempContainer);
 
         try {
+            const height = tempContainer.scrollHeight;
             // Render with html2canvas
             const canvas = await html2canvas(tempContainer, {
                 scale: 2,
@@ -274,7 +275,7 @@ const PDFManager = (() => {
                 backgroundColor: '#ffffff',
                 logging: false,
                 windowWidth: orientation === 'portrait' ? 794 : 1123,
-                windowHeight: orientation === 'portrait' ? 1123 : 794
+                windowHeight: height
             });
 
             const imgData = canvas.toDataURL('image/jpeg', quality);
@@ -442,7 +443,10 @@ const PDFManager = (() => {
                         <div><span style="color: #666;">Tytuł:</span> ${offerData.number || 'Oferta'}</div>
                     </div>
                 </div>
-                <div style="text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                    <div style="font-style: italic; color: #555;">Dziękujemy za zainteresowanie naszą ofertą. W razie pytań jesteśmy do dyspozycji.</div>
+                </div>
+                <div style="text-align: center; font-size: 9px; color: #999; padding-top: 10px; margin-top: 15px; border-top: 1px solid #e5e7eb;">
                     <div style="margin-bottom: 4px;">Oferta wygenerowana: ${new Date().toLocaleString('pl-PL')}</div>
                     <div>${website} | © ${year} ${companyName} | Strona ${pageNum} z ${totalPages}</div>
                 </div>

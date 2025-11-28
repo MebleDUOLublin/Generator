@@ -810,6 +810,15 @@ body.login-page {
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
+.shutdown-btn {
+    background: var(--gray-600);
+}
+
+.shutdown-btn:hover {
+    background: var(--gray-700);
+    box-shadow: 0 8px 20px rgba(75, 85, 99, 0.3);
+}
+
 /* ===== TABS ===== */
 .tabs {
     display: flex;
