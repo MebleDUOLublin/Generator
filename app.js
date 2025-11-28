@@ -43,255 +43,199 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// SETUP UI - WSZYSTKIE EVENT LISTENERY
+// UI SETUP
 // ============================================
 function setupUI() {
     console.log('🎨 Setting up UI event listeners...');
     
-    // === ZEGAR ===
     updateClock();
     setInterval(updateClock, 1000);
 
-// === DESKTOP ICONS - podwójne kliknięcie otwiera okno ===
-document.querySelectorAll('.desktop-icon').forEach(icon => {
-    // Tylko double click otwiera
-    icon.addEventListener('dblclick', () => {
-        const windowId = icon.dataset.window;
-        if (windowId) openWindow(windowId);
-    });
-    
-    // Single click - tylko zaznacza ikonę
-    icon.addEventListener('click', () => {
-        document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
-        icon.classList.add('selected');
-    });
-});
+    setupDesktopInteractions();
+    setupTaskbarAndStartMenu();
+    setupWindowManagement();
+    setupOfferGenerator();
+    setupSettings();
+    setupGlobalEventListeners();
 
-// Kliknięcie na pusty pulpit odznacza ikony
-document.getElementById('desktop')?.addEventListener('click', (e) => {
-    if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
-        document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
-    }
-});
+    console.log('✅ All UI event listeners attached!');
+}
 
-    // === TASKBAR ICONS ===
-    document.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => {
-        icon.addEventListener('click', () => {
+function setupDesktopInteractions() {
+    document.querySelectorAll('.desktop-icon').forEach(icon => {
+        icon.addEventListener('dblclick', () => {
             const windowId = icon.dataset.window;
-            if (windowId) toggleWindow(windowId);
+            if (windowId) openWindow(windowId);
+        });
+        icon.addEventListener('click', () => {
+            document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+            icon.classList.add('selected');
         });
     });
 
-    // === START BUTTON ===
-    const startBtn = document.getElementById('startBtn');
-    if (startBtn) {
-        startBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleStartMenu();
-        });
-    }
+    document.getElementById('desktop')?.addEventListener('click', (e) => {
+        if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
+            document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+        }
+    });
 
-    // === START MENU APPS ===
+    const contextMenu = document.getElementById('contextMenu');
+    document.getElementById('desktop')?.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        contextMenu.style.top = `${e.clientY}px`;
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.classList.add('active');
+    });
+
+    contextMenu?.addEventListener('click', (e) => {
+        const action = e.target.closest('.context-menu-item')?.dataset.action;
+        if (action) {
+            handleContextMenuAction(action);
+            contextMenu.classList.remove('active');
+        }
+    });
+}
+
+function setupTaskbarAndStartMenu() {
+    document.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => {
+        icon.addEventListener('click', () => toggleWindow(icon.dataset.window));
+    });
+
+    document.getElementById('startBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleStartMenu();
+    });
+
     document.querySelectorAll('.start-app').forEach(app => {
         app.addEventListener('click', () => {
-            const windowId = app.dataset.window;
-            if (windowId) {
-                openWindow(windowId);
-                document.getElementById('startMenu')?.classList.remove('active');
-            }
+            openWindow(app.dataset.window);
+            document.getElementById('startMenu')?.classList.remove('active');
         });
     });
 
-    // === LOGOUT BUTTON ===
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+}
 
-    // === ZAMYKANIE START MENU przy kliknięciu poza ===
-    document.addEventListener('click', (e) => {
-        const startMenu = document.getElementById('startMenu');
-        const startBtn = document.getElementById('startBtn');
-        if (startMenu && startBtn && 
-            !startMenu.contains(e.target) && 
-            !startBtn.contains(e.target)) {
-            startMenu.classList.remove('active');
-        }
-    });
-
-    // === WINDOW CONTROLS (minimize, maximize, close) ===
+function setupWindowManagement() {
     document.querySelectorAll('.window').forEach(win => {
         const windowId = win.id.replace('window-', '');
-        
-        // Window header - drag
         const header = win.querySelector('.window-header');
-        if (header) {
-            header.addEventListener('mousedown', (e) => {
-                // Nie rozpoczynaj przeciągania jeśli kliknięto przycisk
-                if (e.target.closest('.window-control-btn')) return;
-                startDrag(e, windowId);
-            });
-        }
 
-        // Control buttons
+        header?.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('.window-control-btn')) {
+                startDrag(e, windowId);
+            }
+        });
+
         win.querySelectorAll('.window-control-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const action = btn.dataset.action;
-                
-                switch(action) {
-                    case 'minimize':
-                        minimizeWindow(windowId);
-                        break;
-                    case 'maximize':
-                        maximizeWindow(windowId);
-                        break;
-                    case 'close':
-                        closeWindow(windowId);
-                        break;
-                }
+                handleWindowAction(btn.dataset.action, windowId);
             });
         });
 
-        // Focus window on click
-        win.addEventListener('mousedown', () => {
-            document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
-            win.classList.add('focused');
-            win.style.zIndex = ++zIndexCounter;
-        });
+        win.addEventListener('mousedown', () => focusWindow(win));
+    });
+}
+
+function setupOfferGenerator() {
+    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
+    document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
+    document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
+    document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
+
+    document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
+        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
+            products = [];
+            productImages = {};
+            updateProductView();
+            generateOfferNumber();
+            setTodayDate();
+            updateSummary();
+            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
+        }
     });
 
-    // === TABS ===
     document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            const tabId = tab.dataset.tab;
-            if (tabId) switchTab(tabId, e);
-        });
+        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
     });
+}
 
-    // === GENERATOR OFERT - PRZYCISKI ===
-    const addProductBtn = document.getElementById('addProductBtn');
-    if (addProductBtn) {
-        addProductBtn.addEventListener('click', addProduct);
-    }
+function setupSettings() {
+    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
+    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
+    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
 
-    const generatePdfBtn = document.getElementById('generatePdfBtn');
-    if (generatePdfBtn) {
-        generatePdfBtn.addEventListener('click', generatePDF);
-    }
-
-    const saveOfferBtn = document.getElementById('saveOfferBtn');
-    if (saveOfferBtn) {
-        saveOfferBtn.addEventListener('click', saveOffer);
-    }
-
-    const loadOfferBtn = document.getElementById('loadOfferBtn');
-    if (loadOfferBtn) {
-        loadOfferBtn.addEventListener('click', loadOffer);
-    }
-
-    const clearFormBtn = document.getElementById('clearFormBtn');
-    if (clearFormBtn) {
-        clearFormBtn.addEventListener('click', () => {
-            if (confirm('Czy na pewno chcesz wyczyścić formularz?')) {
-                // Reset form
-                products = [];
-                productImages = {};
-                updateProductView();
-                generateOfferNumber();
-                setTodayDate();
-                updateSummary();
-                showToast('🗑️ Formularz wyczyszczony');
-            }
-        });
-    }
-
-    // === SETTINGS WINDOW ===
-    const saveProfileSettingsBtn = document.getElementById('saveProfileSettingsBtn');
-    if (saveProfileSettingsBtn) {
-        saveProfileSettingsBtn.addEventListener('click', saveProfileSettings);
-    }
-
-    const loadProfileSettingsBtn = document.getElementById('loadProfileSettingsBtn');
-    if (loadProfileSettingsBtn) {
-        loadProfileSettingsBtn.addEventListener('click', loadProfileSettings);
-    }
-
-    const logoUploadInput = document.getElementById('logoUploadInput');
-    if (logoUploadInput) {
-        logoUploadInput.addEventListener('change', uploadLogoFromSettings);
-    }
-
-    // === GLOBAL MOUSE EVENTS FOR WINDOW DRAGGING ===
-    document.addEventListener('mousemove', handleWindowDrag);
-    document.addEventListener('mouseup', stopWindowDrag);
-
-    // === WALLPAPER SELECTOR ===
     document.querySelectorAll('.wallpaper-preview').forEach(preview => {
         preview.addEventListener('click', () => {
-            const wallpaper = preview.dataset.wallpaper;
-            if (wallpaper) {
-                changeWallpaper(wallpaper);
-                document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
-                preview.classList.add('active');
-            }
+            changeWallpaper(preview.dataset.wallpaper);
+            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+            preview.classList.add('active');
         });
     });
+}
 
-    // === CONTEXT MENU ===
-    const desktop = document.getElementById('desktop');
-    const contextMenu = document.getElementById('contextMenu');
+function setupGlobalEventListeners() {
+    document.addEventListener('click', (e) => {
+        const startMenu = document.getElementById('startMenu');
+        const startBtn = document.getElementById('startBtn');
+        if (startMenu?.classList.contains('active') && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+            startMenu.classList.remove('active');
+        }
+        document.getElementById('contextMenu')?.classList.remove('active');
+    });
 
-    if (desktop && contextMenu) {
-        desktop.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            contextMenu.style.top = `${e.clientY}px`;
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.classList.add('active');
-        });
+    document.addEventListener('mousemove', handleWindowDrag);
+    document.addEventListener('mouseup', stopWindowDrag);
+    document.addEventListener('keydown', handleGlobalHotkeys);
+}
 
-        document.addEventListener('click', () => {
-            contextMenu.classList.remove('active');
-        });
-
-        contextMenu.addEventListener('click', (e) => {
-            const action = e.target.closest('.context-menu-item')?.dataset.action;
-            if (action) {
-                switch (action) {
-                    case 'change-wallpaper':
-                        openWindow('settings');
-                        break;
-                    case 'add-icon':
-                        showToast('Funkcja wkrótce dostępna!', 'info');
-                        break;
-                    case 'logout':
-                        logout();
-                        break;
-                }
-                contextMenu.classList.remove('active');
-            }
-        });
+function handleContextMenuAction(action) {
+    switch (action) {
+        case 'change-wallpaper':
+            openWindow('settings');
+            break;
+        case 'add-icon':
+            UI.Feedback.toast('Funkcja wkrótce dostępna!', 'info');
+            break;
+        case 'logout':
+            logout();
+            break;
     }
+}
 
-    // === KEYBOARD SHORTCUTS ===
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+S - save offer
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            saveOffer();
-        }
-        // Ctrl+P - generate PDF
-        if (e.ctrlKey && e.key === 'p') {
-            e.preventDefault();
-            generatePDF();
-        }
-        // Escape - close start menu
-        if (e.key === 'Escape') {
-            document.getElementById('startMenu')?.classList.remove('active');
-        }
-    });
+function handleWindowAction(action, windowId) {
+    switch (action) {
+        case 'minimize':
+            minimizeWindow(windowId);
+            break;
+        case 'maximize':
+            maximizeWindow(windowId);
+            break;
+        case 'close':
+            closeWindow(windowId);
+            break;
+    }
+}
 
-    console.log('✅ All UI event listeners attached!');
+function focusWindow(win) {
+    document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
+    win.classList.add('focused');
+    win.style.zIndex = ++zIndexCounter;
+}
+
+function handleGlobalHotkeys(e) {
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveOffer();
+    }
+    if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        generatePDF();
+    }
+    if (e.key === 'Escape') {
+        document.getElementById('startMenu')?.classList.remove('active');
+    }
 }
 // ============================================
 // PROFILE MANAGEMENT & LOGIN
@@ -345,52 +289,42 @@ async function loginAs(profileKey) {
     try {
         console.log('🔐 Logging in as:', profileKey);
         currentProfile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
-        
+
         if (!currentProfile) {
             showNotification('Błąd', 'Profil nie znaleziony', 'error');
             return;
         }
-        
+
         console.log('✅ Profile loaded:', currentProfile);
-        
-        // Fill seller data from profile
-        const sellerNameEl = document.getElementById('sellerName');
-        const sellerNIPEl = document.getElementById('sellerNIP');
-        const sellerAddressEl = document.getElementById('sellerAddress');
-        const sellerPhoneEl = document.getElementById('sellerPhone');
-        const sellerEmailEl = document.getElementById('sellerEmail');
-        const sellerBankEl = document.getElementById('sellerBank');
-        const sellerContactEl = document.getElementById('sellerContact');
-        
-        if (sellerNameEl) sellerNameEl.value = currentProfile.fullName || '';
-        if (sellerNIPEl) sellerNIPEl.value = currentProfile.nip || '';
-        if (sellerAddressEl) sellerAddressEl.value = currentProfile.address || '';
-        if (sellerPhoneEl) sellerPhoneEl.value = currentProfile.phone || '';
-        if (sellerEmailEl) sellerEmailEl.value = currentProfile.email || '';
-        if (sellerBankEl) sellerBankEl.value = currentProfile.bankAccount || '';
-        if (sellerContactEl) sellerContactEl.value = currentProfile.sellerName || '';
 
-        // Update UI
-        const userNameEl = document.getElementById('userName');
-        const userEmailEl = document.getElementById('userEmail');
-        const userAvatarEl = document.getElementById('userAvatar');
-        
-        if (userNameEl) userNameEl.textContent = currentProfile.name || 'Użytkownik';
-        if (userEmailEl) userEmailEl.textContent = currentProfile.email || '';
-        if (userAvatarEl) userAvatarEl.textContent = (currentProfile.name || 'U').substring(0, 2).toUpperCase();
+        const fieldMap = {
+            sellerName: currentProfile.fullName,
+            sellerNIP: currentProfile.nip,
+            sellerAddress: currentProfile.address,
+            sellerPhone: currentProfile.phone,
+            sellerEmail: currentProfile.email,
+            sellerBank: currentProfile.bankAccount,
+            sellerContact: currentProfile.sellerName,
+        };
 
-        // Load logo
-        if (currentProfile.logoData) {
-            console.log('Logo already in base64');
-        } else if (currentProfile.logo) {
+        for (const [id, value] of Object.entries(fieldMap)) {
+            const el = document.getElementById(id);
+            if (el) el.value = value || '';
+        }
+
+        document.getElementById('userName').textContent = currentProfile.name || 'Użytkownik';
+        document.getElementById('userEmail').textContent = currentProfile.email || '';
+        document.getElementById('userAvatar').textContent = (currentProfile.name || 'U').substring(0, 2).toUpperCase();
+
+        if (!currentProfile.logoData && currentProfile.logo) {
             await loadLogoAsBase64(currentProfile.logo);
-        } else {
+        } else if (!currentProfile.logoData) {
             setLogoPlaceholder();
         }
-        
+
         generateOfferNumber();
         setTodayDate();
-        
+
         document.getElementById('loginScreen').classList.add('hidden');
         document.body.classList.remove('login-page');
         setTimeout(() => {
@@ -624,58 +558,15 @@ function updateProductView() {
     }
 }
 
-function addProduct() {
-    const productId = Date.now() + productIdCounter++;
-    products.push(productId);
-    
-    const html = `
-        <div class="product-card" id="product-${productId}" draggable="true" ondragstart="dragStart(event, ${productId})" ondragover="dragOver(event)" ondrop="drop(event, ${productId})">
-            <div class="drag-handle">☰</div>
-            <div class="product-content-wrapper">
-                <div class="product-image-zone" id="productImageZone-${productId}" onclick="document.getElementById('productImage-${productId}').click()">
-                    <div id="productImagePreview-${productId}" class="product-image-preview">📷</div>
-                    <input type="file" id="productImage-${productId}" accept="image/*" style="display: none;" onchange="uploadProductImage(${productId}, event)">
-                </div>
-                <div class="product-details">
-                    <div class="form-group">
-                        <label class="form-label">Nazwa produktu</label>
-                        <input type="text" class="form-input" id="productName-${productId}" oninput="updateSummary()">
-                    </div>
-                    <div class="form-grid-inner">
-                        <div class="form-group">
-                            <label class="form-label">Kod</label>
-                            <input type="text" class="form-input" id="productCode-${productId}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Ilość</label>
-                            <input type="number" class="form-input" id="productQty-${productId}" value="1" min="1" oninput="updateSummary()">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Cena netto</label>
-                            <input type="number" class="form-input" id="productPrice-${productId}" value="0" step="0.01" min="0" oninput="updateSummary()">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Rabat (%)</label>
-                            <input type="number" class="form-input" id="productDiscount-${productId}" value="0" min="0" max="100" oninput="updateSummary()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label class="form-label">Opis produktu</label>
-                <textarea class="form-textarea" id="productDesc-${productId}" rows="2" placeholder="• Cecha 1&#10;• Cecha 2"></textarea>
-            </div>
-            <div class="product-actions">
-                <button class="btn btn-outline" onclick="duplicateProduct(${productId})">📋 Duplikuj</button>
-                <button class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;" onclick="removeProduct(${productId})">🗑️ Usuń</button>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('productsList').insertAdjacentHTML('beforeend', html);
-    updateProductView();
-    updateSummary();
-    showToast('➕ Dodano produkt');
+function addProduct(productData) {
+    const command = new ProductCommand('add', productData);
+    UI.Command.execute(command);
+}
+
+function removeProduct(productId) {
+    const productData = { id: productId };
+    const command = new ProductCommand('remove', productData);
+    UI.Command.execute(command);
 }
 
 function updateProductImage(productId) {
@@ -686,45 +577,13 @@ function updateProductImage(productId) {
 }
 
 function duplicateProduct(productId) {
-    const original = {
-        name: document.getElementById(`productName-${productId}`)?.value || '',
-        code: document.getElementById(`productCode-${productId}`)?.value || '',
-        qty: document.getElementById(`productQty-${productId}`)?.value || '1',
-        price: document.getElementById(`productPrice-${productId}`)?.value || '0',
-        discount: document.getElementById(`productDiscount-${productId}`)?.value || '0',
-        desc: document.getElementById(`productDesc-${productId}`)?.value || '',
-        image: productImages[productId]
-    };
-
-    addProduct();
-    const newId = products[products.length - 1];
-    
-    document.getElementById(`productName-${newId}`).value = original.name + " (Kopia)";
-    document.getElementById(`productCode-${newId}`).value = original.code;
-    document.getElementById(`productQty-${newId}`).value = original.qty;
-    document.getElementById(`productPrice-${newId}`).value = original.price;
-    document.getElementById(`productDiscount-${newId}`).value = original.discount;
-    document.getElementById(`productDesc-${newId}`).value = original.desc;
-    
-    if (original.image) {
-        productImages[newId] = original.image;
-        updateProductImage(newId);
-    }
-    
-    updateSummary();
-    showToast('📋 Produkt zduplikowany');
+    const command = new DuplicateProductCommand(productId);
+    UI.Command.execute(command);
 }
 
 function removeProduct(productId) {
-    if (confirm('Usunąć produkt?')) {
-        const el = document.getElementById(`product-${productId}`);
-        if (el) el.remove();
-        products = products.filter(id => id !== productId);
-        delete productImages[productId];
-        updateProductView();
-        updateSummary();
-        showToast('🗑️ Usunięto produkt');
-    }
+    const command = new ProductCommand('remove', { id: productId });
+    UI.Command.execute(command);
 }
 
 function uploadProductImage(productId, event) {
@@ -735,7 +594,7 @@ function uploadProductImage(productId, event) {
     reader.onload = (e) => {
         productImages[productId] = e.target.result;
         updateProductImage(productId);
-        showToast('📸 Zdjęcie załadowane');
+        UI.Feedback.toast('📸 Zdjęcie załadowane', 'success');
     };
     reader.readAsDataURL(file);
 }
@@ -888,8 +747,8 @@ async function generatePDF() {
     }));
 
     const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) loadingOverlay.classList.add('show');
-    
+    loadingOverlay?.classList.add('show');
+
     try {
         const pdf = await PDFManager.generatePDF({
             orientation: document.getElementById('pdfOrientation')?.value || 'portrait',
@@ -902,13 +761,12 @@ async function generatePDF() {
         const filename = `Oferta_${offerData.number.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.pdf`;
         PDFManager.savePDF(pdf, filename);
         
-        if (loadingOverlay) loadingOverlay.classList.remove('show');
         showNotification('Sukces', 'PDF został pomyślnie wygenerowany!', 'success');
-
     } catch (error) {
-        if (loadingOverlay) loadingOverlay.classList.remove('show');
         console.error('PDF Generation Error:', error);
         showNotification('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
+    } finally {
+        loadingOverlay?.classList.remove('show');
     }
 }
 
@@ -1166,7 +1024,7 @@ function uploadLogoFromSettings(event) {
         if (preview) {
             preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain;">`;
         }
-        showToast('📸 Logo gotowe do zapisania');
+        UI.Feedback.toast('📸 Logo gotowe do zapisania', 'info');
     };
     reader.readAsDataURL(file);
 }
@@ -1211,20 +1069,6 @@ function showNotification(title, message, type = 'info') {
     }, 4000);
 }
 
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (!toast) {
-        console.log('[TOAST]', message);
-        return;
-    }
-    
-    toast.textContent = message;
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 2500);
-}
 
 function generateOfferNumber() {
     const date = new Date();
@@ -1262,7 +1106,7 @@ function changeWallpaper(wallpaper) {
         desktop.style.backgroundImage = wallpapers[wallpaper];
         desktop.style.backgroundSize = 'cover';
         desktop.style.backgroundPosition = 'center';
-        showToast(`🖼️ Zmieniono tapetę na ${wallpaper}`);
+        UI.Feedback.toast(`🖼️ Zmieniono tapetę na ${wallpaper}`, 'info');
         // Save wallpaper choice to localStorage
         localStorage.setItem('pesteczkaOS_wallpaper', wallpaper);
     }
