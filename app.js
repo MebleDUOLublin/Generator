@@ -197,13 +197,7 @@ document.getElementById('desktop')?.addEventListener('click', (e) => {
                 // Reset form
                 products = [];
                 productImages = {};
-                document.getElementById('productsList').innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📦</div>
-                        <div class="empty-state-title">Brak produktów</div>
-                        <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
-                    </div>
-                `;
+                updateProductView();
                 generateOfferNumber();
                 setTodayDate();
                 updateSummary();
@@ -351,6 +345,7 @@ async function loginAs(profileKey) {
         setTodayDate();
         
         document.getElementById('loginScreen').classList.add('hidden');
+        document.body.classList.remove('login-page');
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
@@ -442,12 +437,16 @@ function openWindow(windowId) {
 function closeWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (win) {
-        win.classList.remove('active', 'focused');
-        win.style.display = 'none';
+        win.classList.add('closing');
+        win.addEventListener('animationend', () => {
+            win.classList.remove('active', 'focused', 'closing');
+            win.style.display = 'none';
+        }, { once: true });
     }
-    
-    const taskbarIcon = document.getElementById(`taskbar-${windowId}`);
-    if(taskbarIcon) taskbarIcon.classList.remove('active');
+    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+    if (taskbarIcon) {
+        taskbarIcon.classList.remove('active');
+    }
 }
 
 function minimizeWindow(windowId) {
@@ -550,6 +549,24 @@ function toggleStartMenu() {
 // PRODUCT MANAGEMENT
 // ============================================
 
+function updateProductView() {
+    const productsListEl = document.getElementById('productsList');
+    if (!productsListEl) return;
+    const emptyStateEl = productsListEl.querySelector('.empty-state');
+
+    if (products.length > 0 && emptyStateEl) {
+        emptyStateEl.remove();
+    } else if (products.length === 0 && !emptyStateEl) {
+        productsListEl.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <div class="empty-state-title">Brak produktów</div>
+                <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
+            </div>
+        `;
+    }
+}
+
 function addProduct() {
     const productId = Date.now() + productIdCounter++;
     products.push(productId);
@@ -599,6 +616,7 @@ function addProduct() {
     `;
     
     document.getElementById('productsList').insertAdjacentHTML('beforeend', html);
+    updateProductView();
     updateSummary();
     showToast('➕ Dodano produkt');
 }
@@ -646,6 +664,7 @@ function removeProduct(productId) {
         if (el) el.remove();
         products = products.filter(id => id !== productId);
         delete productImages[productId];
+        updateProductView();
         updateSummary();
         showToast('🗑️ Usunięto produkt');
     }
