@@ -810,6 +810,15 @@ body.login-page {
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
+.shutdown-btn {
+    background: var(--gray-600);
+}
+
+.shutdown-btn:hover {
+    background: var(--gray-700);
+    box-shadow: 0 8px 20px rgba(75, 85, 99, 0.3);
+}
+
 /* ===== TABS ===== */
 .tabs {
     display: flex;
@@ -1759,4 +1768,32 @@ body.login-page {
     .start-apps-grid {
         grid-template-columns: repeat(3, 1fr);
     }
+}
+
+.paste-image-preview {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.paste-image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+}
+
+.paste-image-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.paste-to-existing {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.paste-to-existing .form-select {
+    flex-grow: 1;
 }
