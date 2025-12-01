@@ -29,6 +29,9 @@ const DomatorApp = (() => {
         document.getElementById('domatorClearBtn').addEventListener('click', clearForm);
         document.getElementById('domatorSaveBtn').addEventListener('click', saveToStorage);
         document.getElementById('loadDomatorTemplateBtn').addEventListener('click', loadTemplate);
+        document.getElementById('domatorExportEmailBtn').addEventListener('click', exportToEmail);
+        document.getElementById('domatorExportPdfBtn').addEventListener('click', exportToPdf);
+        document.getElementById('domatorCopyHtmlBtn').addEventListener('click', copyHtml);
 
         // Add input event listeners to all form fields for auto-saving
         domatorApp.querySelectorAll('input, textarea').forEach(el => {
@@ -200,6 +203,142 @@ const DomatorApp = (() => {
         renderProducts();
         updateStats();
         UI.Feedback.toast('📋 Szablon wczytany', 'success');
+    };
+
+    const generateHtmlOrder = (data) => {
+        let productRows = data.products.map((p, index) => `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${p.sku}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${p.name}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.qty}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${p.netto.toFixed(2)} zł</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${p.brutto.toFixed(2)} zł</td>
+            </tr>
+        `).join('');
+
+        let totalNetto = data.products.reduce((sum, p) => sum + p.netto * p.qty, 0);
+        let totalBrutto = data.products.reduce((sum, p) => sum + p.brutto * p.qty, 0);
+
+        return `
+            <p>Dzień dobry,</p>
+            <p>przesyłam zamówienie.</p>
+            <br>
+            <h3 style="color: #333;">Adres dostawy:</h3>
+            <p>
+                ${data.client.name}<br>
+                ${data.client.street}<br>
+                ${data.client.postCode} ${data.client.city}<br>
+                Tel: ${data.client.phone}<br>
+                Email: ${data.client.email}
+            </p>
+            <br>
+            <h3 style="color: #333;">Zamówione produkty:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">#</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${productRows}
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight: bold;">
+                        <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <br>
+            <h3 style="color: #333;">Dodatkowe informacje:</h3>
+            <p>${data.notes || 'Brak uwag.'}</p>
+            <br>
+            <p>Pozdrawiam</p>
+        `;
+    };
+
+    const exportToEmail = () => {
+        const data = collectData();
+        if (!data.client.name || data.products.length === 0) {
+            UI.Feedback.toast('Wypełnij dane klienta i dodaj produkty.', 'error');
+            return;
+        }
+
+        const subject = `Zamówienie ${data.client.name}`;
+        const body = generateHtmlOrder(data);
+
+        const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailtoLink, '_blank');
+        UI.Feedback.toast('✉️ Przygotowano maila', 'success');
+    };
+
+    const exportToPdf = () => {
+        const data = collectData();
+        if (!data.client.name || data.products.length === 0) {
+            UI.Feedback.toast('Wypełnij dane klienta i dodaj produkty.', 'error');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.setFontSize(18);
+        doc.text('Zamówienie', 14, 22);
+
+        doc.setFontSize(12);
+        doc.text('Adres dostawy:', 14, 32);
+        doc.text(data.client.name, 14, 38);
+        doc.text(data.client.street, 14, 44);
+        doc.text(`${data.client.postCode} ${data.client.city}`, 14, 50);
+        doc.text(`Tel: ${data.client.phone}`, 14, 56);
+        doc.text(`Email: ${data.client.email}`, 14, 62);
+
+        const tableColumn = ["#", "SKU", "Nazwa produktu", "Ilość", "Cena netto", "Cena brutto"];
+        const tableRows = [];
+
+        data.products.forEach((p, index) => {
+            const productData = [
+                index + 1,
+                p.sku,
+                p.name,
+                p.qty,
+                `${p.netto.toFixed(2)} zł`,
+                `${p.brutto.toFixed(2)} zł`
+            ];
+            tableRows.push(productData);
+        });
+
+        doc.autoTable(tableColumn, tableRows, { startY: 75 });
+
+        let finalY = doc.lastAutoTable.finalY || 75;
+        doc.setFontSize(12);
+        doc.text('Dodatkowe informacje:', 14, finalY + 10);
+        doc.text(data.notes || 'Brak uwag.', 14, finalY + 16);
+
+        doc.save(`Zamowienie_${data.client.name.replace(/ /g, '_')}.pdf`);
+        UI.Feedback.toast('📄 Wygenerowano PDF', 'success');
+    };
+
+    const copyHtml = () => {
+        const data = collectData();
+        if (!data.client.name || data.products.length === 0) {
+            UI.Feedback.toast('Wypełnij dane klienta i dodaj produkty.', 'error');
+            return;
+        }
+
+        const html = generateHtmlOrder(data);
+        navigator.clipboard.writeText(html).then(() => {
+            UI.Feedback.toast('📋 Skopiowano HTML do schowka', 'success');
+        }, () => {
+            UI.Feedback.toast('Nie udało się skopiować HTML', 'error');
+        });
     };
 
     return {

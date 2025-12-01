@@ -24,7 +24,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         console.log('1. Awaiting Storage System initialization...');
-        await new Promise(resolve => setTimeout(resolve, 200)); 
+        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
+            await window.StorageSystem.init();
+        }
         
         console.log('2. Populating profile selector...');
         await populateProfileSelector();
@@ -640,8 +642,6 @@ function handleGlobalHotkeys(e) {
 async function populateProfileSelector() {
     console.log('2a. Inside populateProfileSelector');
     try {
-        await new Promise(resolve => setTimeout(resolve, 100)); 
-        
         const profiles = await StorageSystem.ProfileManager.getAllProfiles();
         console.log('2b. Profiles fetched from DB:', profiles);
 
