@@ -44,6 +44,7 @@ const DomatorApp = (() => {
         const newProduct = {
             id: productIdCounter,
             sku: '',
+            ean: '',
             name: '',
             qty: 1,
             netto: 0,
@@ -71,6 +72,7 @@ const DomatorApp = (() => {
             row.innerHTML = `
                 <td style="text-align: center; font-weight: 600;">${index + 1}</td>
                 <td><input type="text" class="form-input" value="${product.sku}" data-id="${product.id}" data-field="sku"></td>
+                <td><input type="text" class="form-input" value="${product.ean || ''}" data-id="${product.id}" data-field="ean"></td>
                 <td><input type="text" class="form-input" value="${product.name}" data-id="${product.id}" data-field="name"></td>
                 <td><input type="number" class="form-input" value="${product.qty}" data-id="${product.id}" data-field="qty" style="text-align: center;"></td>
                 <td><input type="number" class="form-input" value="${product.netto.toFixed(2)}" data-id="${product.id}" data-field="netto" style="text-align: right;"></td>
@@ -198,8 +200,8 @@ const DomatorApp = (() => {
         document.getElementById('domatorEmail').value = 'jan.kowalski@example.com';
 
         products = [
-            { id: 1, sku: 'DIABLO-X-RAY-2.0', name: 'Fotel gamingowy Diablo X-Ray 2.0 Normal Size', qty: 2, netto: 899.00, brutto: 1105.77 },
-            { id: 2, sku: 'DIABLO-V-COMMANDER', name: 'Fotel biurowy Diablo V-Commander', qty: 1, netto: 1299.00, brutto: 1597.77 },
+            { id: 1, sku: 'DIABLO-X-RAY-2.0', ean: '5902560334231', name: 'Fotel gamingowy Diablo X-Ray 2.0 Normal Size', qty: 2, netto: 899.00, brutto: 1105.77 },
+            { id: 2, sku: 'DIABLO-V-COMMANDER', ean: '5902560334248', name: 'Fotel biurowy Diablo V-Commander', qty: 1, netto: 1299.00, brutto: 1597.77 },
         ];
         productIdCounter = 2;
 
@@ -211,8 +213,9 @@ const DomatorApp = (() => {
     const generateHtmlOrder = (data) => {
         let productRows = data.products.map((p, index) => `
             <tr>
-                <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${p.sku}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${p.ean || ''}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${p.name}</td>
                 <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.qty}</td>
                 <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${p.netto.toFixed(2)} zł</td>
@@ -224,46 +227,58 @@ const DomatorApp = (() => {
         let totalBrutto = data.products.reduce((sum, p) => sum + p.brutto * p.qty, 0);
 
         return `
-            <p>Dzień dobry,</p>
-            <p>przesyłam zamówienie.</p>
-            <br>
-            <h3 style="color: #333;">Adres dostawy:</h3>
-            <p>
-                ${data.client.name}<br>
-                ${data.client.street}<br>
-                ${data.client.postCode} ${data.client.city}<br>
-                Tel: ${data.client.phone}<br>
-                Email: ${data.client.email}
-            </p>
-            <br>
-            <h3 style="color: #333;">Zamówione produkty:</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">#</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${productRows}
-                </tbody>
-                <tfoot>
-                    <tr style="font-weight: bold;">
-                        <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
-                    </tr>
-                </tfoot>
-            </table>
-            <br>
-            <h3 style="color: #333;">Dodatkowe informacje:</h3>
-            <p>${data.notes || 'Brak uwag.'}</p>
-            <br>
-            <p>Pozdrawiam</p>
+        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+            <tbody>
+                <tr>
+                    <td style="padding: 12px; vertical-align: top;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 4px; font-weight: bold;">Nazwa odbiorcy:</td><td style="padding: 4px;">${data.client.name}</td></tr>
+                            <tr><td style="padding: 4px; font-weight: bold;">Adres odbiorcy:</td><td style="padding: 4px;">${data.client.street}</td></tr>
+                            <tr><td style="padding: 4px; font-weight: bold;">Kod pocztowy:</td><td style="padding: 4px;">${data.client.postCode}</td></tr>
+                            <tr><td style="padding: 4px; font-weight: bold;">Miasto:</td><td style="padding: 4px;">${data.client.city}</td></tr>
+                            <tr><td style="padding: 4px; font-weight: bold;">Numer telefonu:</td><td style="padding: 4px;">${data.client.phone}</td></tr>
+                            <tr><td style="padding: 4px; font-weight: bold;">Adres mailowy:</td><td style="padding: 4px;">${data.client.email}</td></tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px;">
+                        <h3 style="margin-top: 16px; margin-bottom: 8px; color: #333;">📦 Lista produktów:</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f8f8f8;">
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">#</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">EAN</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${productRows}
+                            </tbody>
+                            <tfoot>
+                                <tr style="font-weight: bold; background-color: #f8f8f8;">
+                                    <td colspan="5" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px;">
+                        <h3 style="margin-top: 0; color: #333;">Dodatkowe informacje:</h3>
+                        <p style="margin: 0; border: 1px solid #ddd; padding: 8px; background-color: #fdfdfd;">
+                            ${data.notes || 'Brak uwag.'}
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
         `;
     };
 
