@@ -4,6 +4,7 @@
 const NeonSnake = (() => {
     let canvas, ctx;
     let snake, food, score, highScore, direction, gridSize, intervalId, isPaused, isGameOver, isShaking, shakeIntervalId;
+    let snake, food, score, highScore, direction, gridSize, intervalId, isPaused, isGameOver;
     const TILE_SIZE = 20;
     const HIGH_SCORE_KEY = 'neonSnakeHighScore';
 
@@ -122,6 +123,7 @@ const NeonSnake = (() => {
             clearInterval(shakeIntervalId);
             draw();
         }, 500);
+        draw(); // One final draw to show the game over screen
     };
 
     const drawGameOver = () => {
@@ -139,6 +141,11 @@ const NeonSnake = (() => {
         }
 
         ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '48px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
         ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2 - 60);
 
         ctx.font = '24px "JetBrains Mono", monospace';
