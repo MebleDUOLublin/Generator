@@ -3,6 +3,7 @@
  */
 const NeonSnake = (() => {
     let canvas, ctx;
+    let snake, food, score, highScore, direction, gridSize, intervalId, isPaused, isGameOver, isShaking, shakeIntervalId;
     let snake, food, score, highScore, direction, gridSize, intervalId, isPaused, isGameOver;
     const TILE_SIZE = 20;
     const HIGH_SCORE_KEY = 'neonSnakeHighScore';
@@ -11,6 +12,7 @@ const NeonSnake = (() => {
         canvas = document.getElementById(canvasId);
         if (!canvas) return;
         ctx = canvas.getContext('2d');
+        if (shakeIntervalId) clearInterval(shakeIntervalId);
 
         // Set canvas size based on its container
         const container = canvas.parentElement;
@@ -33,6 +35,8 @@ const NeonSnake = (() => {
         score = 0;
         isPaused = false;
         isGameOver = false;
+        isShaking = false;
+        if (shakeIntervalId) clearInterval(shakeIntervalId);
         spawnFood();
 
         if (intervalId) clearInterval(intervalId);
@@ -72,9 +76,15 @@ const NeonSnake = (() => {
     };
 
     const draw = () => {
+        ctx.save();
+        if (isShaking) {
+            const shakeX = Math.random() * 10 - 5;
+            const shakeY = Math.random() * 10 - 5;
+            ctx.translate(shakeX, shakeY);
+        }
         // Clear canvas
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
 
         // Draw food
         drawRect(food.x, food.y, '#f43f5e', '#f43f5e');
@@ -94,6 +104,7 @@ const NeonSnake = (() => {
         if (isGameOver) {
             drawGameOver();
         }
+        ctx.restore();
     };
 
     const gameOver = () => {
@@ -103,11 +114,33 @@ const NeonSnake = (() => {
             highScore = score;
             localStorage.setItem(HIGH_SCORE_KEY, highScore);
         }
+        isShaking = true;
+        if (shakeIntervalId) clearInterval(shakeIntervalId);
+        shakeIntervalId = setInterval(draw, 30);
+
+        setTimeout(() => {
+            isShaking = false;
+            clearInterval(shakeIntervalId);
+            draw();
+        }, 500);
         draw(); // One final draw to show the game over screen
     };
 
     const drawGameOver = () => {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+
+        ctx.font = '48px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+
+        if (isShaking) {
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+            ctx.fillText('Game Over', canvas.width / 2 + Math.random() * 6 - 3, canvas.height / 2 - 60);
+            ctx.fillStyle = 'rgba(255, 0, 255, 0.7)';
+            ctx.fillText('Game Over', canvas.width / 2 + Math.random() * 6 - 3, canvas.height / 2 - 60);
+        }
+
+        ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = '#fff';
@@ -133,11 +166,17 @@ const NeonSnake = (() => {
     };
 
     const drawRect = (x, y, fillStyle, strokeStyle) => {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = fillStyle;
+
         ctx.fillStyle = fillStyle;
         ctx.strokeStyle = strokeStyle;
         ctx.lineWidth = 2;
         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
     };
 
     const spawnFood = () => {
