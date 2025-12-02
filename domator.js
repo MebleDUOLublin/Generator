@@ -211,7 +211,7 @@ const DomatorApp = (() => {
     const generateHtmlOrder = (data) => {
         let productRows = data.products.map((p, index) => `
             <tr>
-                <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${p.sku}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${p.name}</td>
                 <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.qty}</td>
@@ -224,46 +224,74 @@ const DomatorApp = (() => {
         let totalBrutto = data.products.reduce((sum, p) => sum + p.brutto * p.qty, 0);
 
         return `
-            <p>Dzień dobry,</p>
-            <p>przesyłam zamówienie.</p>
-            <br>
-            <h3 style="color: #333;">Adres dostawy:</h3>
-            <p>
-                ${data.client.name}<br>
-                ${data.client.street}<br>
-                ${data.client.postCode} ${data.client.city}<br>
-                Tel: ${data.client.phone}<br>
-                Email: ${data.client.email}
-            </p>
-            <br>
-            <h3 style="color: #333;">Zamówione produkty:</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">#</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${productRows}
-                </tbody>
-                <tfoot>
-                    <tr style="font-weight: bold;">
-                        <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
-                    </tr>
-                </tfoot>
-            </table>
-            <br>
-            <h3 style="color: #333;">Dodatkowe informacje:</h3>
-            <p>${data.notes || 'Brak uwag.'}</p>
-            <br>
-            <p>Pozdrawiam</p>
+        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+            <thead>
+                <tr>
+                    <th colspan="6" style="background-color: #f2f2f2; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">
+                        <h2 style="margin: 0; font-size: 1.5em;">Zamówienie</h2>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="3" style="padding: 12px; vertical-align: top;">
+                        <h3 style="margin-top: 0; color: #333;">Adres dostawy:</h3>
+                        <p style="margin: 0;">
+                            <strong>${data.client.name}</strong><br>
+                            ${data.client.street}<br>
+                            ${data.client.postCode} ${data.client.city}<br>
+                            Tel: ${data.client.phone}<br>
+                            Email: ${data.client.email}
+                        </p>
+                    </td>
+                    <td colspan="3" style="padding: 12px; vertical-align: top; text-align: right;">
+                        <h3 style="margin-top: 0; color: #333;">Data zamówienia:</h3>
+                        <p style="margin: 0;">${new Date().toLocaleDateString('pl-PL')}</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="6" style="padding: 12px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f8f8f8;">
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">#</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${productRows}
+                            </tbody>
+                            <tfoot>
+                                <tr style="font-weight: bold; background-color: #f8f8f8;">
+                                    <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="6" style="padding: 12px;">
+                        <h3 style="margin-top: 0; color: #333;">Dodatkowe informacje:</h3>
+                        <p style="margin: 0; border: 1px solid #ddd; padding: 8px; background-color: #fdfdfd;">
+                            ${data.notes || 'Brak uwag.'}
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" style="padding: 12px; text-align: center; font-size: 0.9em; color: #777;">
+                        <p>Dziękujemy za złożenie zamówienia!</p>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
         `;
     };
 
