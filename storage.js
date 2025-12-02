@@ -579,7 +579,7 @@ const ProfileManager = (() => {
 // ============================================
 // INITIALIZE ON PAGE LOAD
 // ============================================
-(async () => {
+const init = async () => {
     try {
         if (IndexedDBStore.isAvailable) {
             await IndexedDBStore.initDB();
@@ -591,10 +591,11 @@ const ProfileManager = (() => {
     } catch (e) {
         console.error('❌ Storage initialization failed:', e);
     }
-})();
+};
 
 // Export for global use
 window.StorageSystem = {
+    init,
     db: IndexedDBStore,
     ProfileManager: ProfileManager,
     state: AppState,
