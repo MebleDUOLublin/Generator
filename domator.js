@@ -144,24 +144,17 @@ const DomatorApp = (() => {
 
     const collectData = () => {
         const data = {
-            client: {},
-            products: [],
-            notes: ''
+            client: {
+                name: document.getElementById('domatorClientName').value,
+                street: document.getElementById('domatorStreet').value,
+                postCode: document.getElementById('domatorPostCode').value,
+                city: document.getElementById('domatorCity').value,
+                phone: document.getElementById('domatorPhone').value,
+                email: document.getElementById('domatorEmail').value,
+            },
+            products: products,
+            notes: document.getElementById('domatorNotes').value,
         };
-        domatorApp.querySelectorAll('input, textarea').forEach(el => {
-            if (el.id.startsWith('domator')) {
-                const keyPart = el.id.substring('domator'.length); // e.g., 'ClientName', 'Notes'
-                if (keyPart.startsWith('Client')) {
-                    const clientField = keyPart.substring('Client'.length); // 'Name'
-                    const finalKey = clientField.charAt(0).toLowerCase() + clientField.slice(1); // 'name'
-                    data.client[finalKey] = el.value;
-                } else {
-                    const finalKey = keyPart.charAt(0).toLowerCase() + keyPart.slice(1); // 'notes'
-                    data[finalKey] = el.value;
-                }
-            }
-        });
-        data.products = products;
         return data;
     };
 
