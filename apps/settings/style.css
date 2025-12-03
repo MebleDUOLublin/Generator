@@ -1,0 +1,43 @@
+/* Settings Specific Styles */
+.wallpaper-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-4);
+}
+
+.wallpaper-preview {
+    width: 100%;
+    height: 80px;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all var(--transition-base);
+    background-size: cover;
+    background-position: center;
+}
+
+.wallpaper-preview:hover {
+    transform: scale(1.05);
+}
+
+.wallpaper-preview.active {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-200);
+}
+
+/* Wallpaper options */
+.wallpaper-preview[data-wallpaper="default"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+}
+
+.wallpaper-preview[data-wallpaper="wallpaper1"] {
+    background-image: url('https://source.unsplash.com/random/800x600?nature');
+}
+
+.wallpaper-preview[data-wallpaper="wallpaper2"] {
+    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+}
+
+.wallpaper-preview[data-wallpaper="wallpaper3"] {
+    background-image: url('https://source.unsplash.com/random/800x600?space');
+}

@@ -4,7 +4,6 @@
 const NeonSnake = (() => {
     let canvas, ctx;
     let snake, food, score, highScore, direction, gridSize, intervalId, isPaused, isGameOver, isShaking, shakeIntervalId;
-    let snake, food, score, highScore, direction, gridSize, intervalId, isPaused, isGameOver;
     const TILE_SIZE = 20;
     const HIGH_SCORE_KEY = 'neonSnakeHighScore';
 
