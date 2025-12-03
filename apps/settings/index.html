@@ -1,0 +1,103 @@
+<!-- WINDOW: Settings -->
+<div class="window" id="window-settings" role="dialog" aria-labelledby="window-settings-title" style="top: 80px; left: 200px; width: 800px; height: 650px;">
+    <div class="window-header">
+        <div class="window-title">
+            <span class="window-title-icon">⚙️</span>
+            <span id="window-settings-title">Ustawienia Profilu</span>
+        </div>
+        <div class="window-controls">
+            <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+            <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+            <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+        </div>
+    </div>
+    <div class="window-content" style="padding: 2rem; overflow-y: auto;">
+        <div class="section">
+            <h2 class="section-title">📋 Dane Firmy</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="settingsName">Nazwa firmy</label>
+                    <input type="text" class="form-input" id="settingsName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsFullName">Pełna nazwa</label>
+                    <input type="text" class="form-input" id="settingsFullName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsNIP">NIP</label>
+                    <input type="text" class="form-input" id="settingsNIP">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsPhone">Telefon</label>
+                    <input type="tel" class="form-input" id="settingsPhone">
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label" for="settingsAddress">Adres</label>
+                    <textarea class="form-textarea" id="settingsAddress" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsEmail">Email</label>
+                    <input type="email" class="form-input" id="settingsEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsBankAccount">Nr konta</label>
+                    <input type="text" class="form-input" id="settingsBankAccount">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">👤 Dane Sprzedawcy</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="settingsSellerName">Imię i nazwisko</label>
+                    <input type="text" class="form-input" id="settingsSellerName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsSellerPosition">Stanowisko</label>
+                    <input type="text" class="form-input" id="settingsSellerPosition">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsSellerPhone">Telefon</label>
+                    <input type="tel" class="form-input" id="settingsSellerPhone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="settingsSellerEmail">Email</label>
+                    <input type="email" class="form-input" id="settingsSellerEmail">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🖼️ Logo Firmy</h2>
+            <div style="display: flex; gap: 2rem; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <input type="file" accept="image/*" id="logoUploadInput" class="form-input">
+                    <p class="text-small text-muted mt-2">Maksymalny rozmiar: 5MB. Formaty: PNG, JPG, SVG</p>
+                </div>
+                <div id="logoPreview" style="width: 120px; height: 120px; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; background: var(--gray-50); font-size: 3rem;">
+                    📋
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-4 mt-6">
+            <button class="btn btn-primary" id="saveProfileSettingsBtn">
+                <span>💾</span> Zapisz zmiany
+            </button>
+            <button class="btn btn-outline" id="loadProfileSettingsBtn">
+                <span>🔄</span> Odśwież
+            </button>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🖼️ Tapeta Pulpitu</h2>
+            <div class="wallpaper-selector">
+                <div class="wallpaper-preview" data-wallpaper="default"></div>
+                <div class="wallpaper-preview" data-wallpaper="wallpaper1"></div>
+                <div class="wallpaper-preview" data-wallpaper="wallpaper2"></div>
+                <div class="wallpaper-preview" data-wallpaper="wallpaper3"></div>
+            </div>
+        </div>
+    </div>
+</div>
