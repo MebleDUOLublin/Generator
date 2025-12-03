@@ -581,6 +581,8 @@ async function openWindow(windowId) {
             console.error(`Window element #${windowElementId} not found after loading app.`);
             return;
         }
+        // Setup tabs for the newly loaded window
+        setupTabs(win);
     }
     
     win.style.display = 'flex';
@@ -706,31 +708,37 @@ function stopWindowDrag() {
 // ============================================
 // TAB SWITCHING
 // ============================================
+function setupTabs(windowElement) {
+    const tabs = windowElement.querySelectorAll('.tab');
+    const tabContents = windowElement.querySelectorAll('.tab-content');
 
-function switchTab(tabId, event) {
-    const tabButton = event.currentTarget;
-    const windowContent = tabButton.closest('.window-content');
-
-    // Deactivate all tab buttons
-    windowContent.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-
-    // Hide all tab content divs
-    windowContent.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-        content.style.display = 'none'; // Force hide
+    // Hide all tab contents initially, except for the active one
+    tabContents.forEach(content => {
+        if (!content.classList.contains('active')) {
+            content.style.display = 'none';
+        }
     });
 
-    // Activate the clicked tab button
-    tabButton.classList.add('active');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (event) => {
+            const tabId = event.currentTarget.dataset.tab;
 
-    // Show the corresponding tab content div
-    const activeTabContent = windowContent.querySelector(`#${tabId}`);
-    if (activeTabContent) {
-        activeTabContent.classList.add('active');
-        activeTabContent.style.display = 'block'; // Force show
-    } else {
-        console.error(`Tab content with ID #${tabId} not found.`);
-    }
+            // Deactivate all tabs and hide all content
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                content.style.display = 'none';
+            });
+
+            // Activate the clicked tab and its content
+            event.currentTarget.classList.add('active');
+            const activeContent = windowElement.querySelector(`#${tabId}`);
+            if (activeContent) {
+                activeContent.classList.add('active');
+                activeContent.style.display = 'block';
+            }
+        });
+    });
 }
 
 function toggleStartMenu() {
