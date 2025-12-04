@@ -1,0 +1,88 @@
+<!-- WINDOW: Dashboard -->
+<div
+  class="window"
+  id="window-dashboard"
+  role="dialog"
+  aria-labelledby="window-dashboard-title"
+  style="top: 100px; left: 150px; width: 900px; height: 600px"
+>
+  <div class="window-header">
+    <div class="window-title">
+      <span class="window-title-icon">📊</span>
+      <span id="window-dashboard-title">Dashboard</span>
+    </div>
+    <div class="window-controls">
+      <button
+        class="window-control-btn minimize"
+        data-action="minimize"
+        aria-label="Minimalizuj"
+      >
+        −
+      </button>
+      <button
+        class="window-control-btn maximize"
+        data-action="maximize"
+        aria-label="Maksymalizuj"
+      >
+        □
+      </button>
+      <button
+        class="window-control-btn close"
+        data-action="close"
+        aria-label="Zamknij"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+  <div
+    class="window-content"
+    style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem"
+  >
+    <div class="dashboard-grid">
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-card-title">Wystawione Oferty</div>
+          <div class="stat-card-icon">📄</div>
+        </div>
+        <div class="stat-card-value" id="stats-total-offers">128</div>
+        <div class="stat-card-change stat-card-change-positive">
+          +12% vs. Poprzedni miesiąc
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-card-title">Wartość Ofert (Netto)</div>
+          <div class="stat-card-icon">💰</div>
+        </div>
+        <div class="stat-card-value" id="stats-total-value">245,6K zł</div>
+        <div class="stat-card-change stat-card-change-positive">
+          +25.3% vs. Poprzedni miesiąc
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-card-title">Nowi Klienci</div>
+          <div class="stat-card-icon">🏢</div>
+        </div>
+        <div class="stat-card-value" id="stats-new-clients">32</div>
+        <div class="stat-card-change stat-card-change-negative">
+          -5% vs. Poprzedni miesiąc
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-card-title">Współczynnik Konwersji</div>
+          <div class="stat-card-icon">🎯</div>
+        </div>
+        <div class="stat-card-value" id="stats-conversion-rate">48%</div>
+        <div class="stat-card-change stat-card-change-positive">
+          +2.1% vs. Poprzedni miesiąc
+        </div>
+      </div>
+    </div>
+    <div class="dashboard-chart-container">
+      <canvas id="offersChart"></canvas>
+    </div>
+  </div>
+</div>
