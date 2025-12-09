@@ -7,8 +7,12 @@
 
 #window-offers .tab-content {
     flex-grow: 1;
-    display: flex;
+    display: none; /* Hide inactive tabs by default */
     flex-direction: column;
+}
+
+#window-offers .tab-content.active {
+    display: flex; /* Show active tab */
 }
 
 #window-offers .actions-bar {
