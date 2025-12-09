@@ -1,4 +1,4 @@
-window.OfferGenerator = (() => {
+window.offers = (() => {
     let products = [];
     let productImages = {};
     let productIdCounter = 0;
