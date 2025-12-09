@@ -140,11 +140,9 @@ function _createProductCard(productId) {
 // PRODUCT COMMANDS
 // ============================================
 class ProductCommand {
-    constructor(action, productData, products, productImages) {
+    constructor(action, productData) {
         this.action = action;
         this.productData = productData;
-        this.products = products;
-        this.productImages = productImages;
     }
 
     execute() {
@@ -172,7 +170,7 @@ class ProductCommand {
     _addProduct() {
         const productId = this.productData.id || Date.now() + productIdCounter++;
         this.productData.id = productId;
-        this.products.push(productId);
+        products.push(productId);
         const productCard = _createProductCard(productId);
         document.getElementById('productsList').appendChild(productCard);
         updateProductView();
@@ -184,8 +182,8 @@ class ProductCommand {
         const { id } = this.productData;
         const el = document.getElementById(`product-${id}`);
         if (el) el.remove();
-        this.products = this.products.filter(pId => pId !== id);
-        delete this.productImages[id];
+        products = products.filter(pId => pId !== id);
+        delete productImages[id];
         updateProductView();
         updateSummary();
         UI.Feedback.toast('🗑️ Usunięto produkt', 'info');
@@ -193,11 +191,9 @@ class ProductCommand {
 }
 
 class DuplicateProductCommand {
-    constructor(originalProductId, products, productImages) {
+    constructor(originalProductId) {
         this.originalProductId = originalProductId;
         this.newProductId = null;
-        this.products = products;
-        this.productImages = productImages;
     }
 
     execute() {
@@ -208,11 +204,11 @@ class DuplicateProductCommand {
             price: document.getElementById(`productPrice-${this.originalProductId}`)?.value || '0',
             discount: document.getElementById(`productDiscount-${this.originalProductId}`)?.value || '0',
             desc: document.getElementById(`productDesc-${this.originalProductId}`)?.value || '',
-            image: this.productImages[this.originalProductId]
+            image: productImages[this.originalProductId]
         };
 
         this.newProductId = Date.now() + productIdCounter++;
-        this.products.push(this.newProductId);
+        products.push(this.newProductId);
 
         const productCard = _createProductCard(this.newProductId);
         document.getElementById('productsList').appendChild(productCard);
@@ -225,7 +221,7 @@ class DuplicateProductCommand {
         document.getElementById(`productDesc-${this.newProductId}`).value = originalData.desc;
 
         if (originalData.image) {
-            this.productImages[this.newProductId] = originalData.image;
+            productImages[this.newProductId] = originalData.image;
             updateProductImage(this.newProductId);
         }
 
@@ -237,8 +233,8 @@ class DuplicateProductCommand {
     undo() {
         const el = document.getElementById(`product-${this.newProductId}`);
         if (el) el.remove();
-        this.products = this.products.filter(pId => pId !== this.newProductId);
-        delete this.productImages[this.newProductId];
+        products = products.filter(pId => pId !== this.newProductId);
+        delete productImages[this.newProductId];
         updateProductView();
         updateSummary();
         UI.Feedback.toast('Cofnięto duplikację', 'info');
@@ -246,24 +242,23 @@ class DuplicateProductCommand {
 }
 
 class UpdateProductImageCommand {
-    constructor(productId, newImage, oldImage, productImages) {
+    constructor(productId, newImage, oldImage) {
         this.productId = productId;
         this.newImage = newImage;
         this.oldImage = oldImage;
-        this.productImages = productImages;
     }
 
     execute() {
-        this.productImages[this.productId] = this.newImage;
+        productImages[this.productId] = this.newImage;
         updateProductImage(this.productId);
         UI.Feedback.toast('🖼️ Zaktualizowano obraz produktu', 'success');
     }
 
     undo() {
         if (this.oldImage) {
-            this.productImages[this.productId] = this.oldImage;
+            productImages[this.productId] = this.oldImage;
         } else {
-            delete this.productImages[this.productId];
+            delete productImages[this.productId];
         }
         updateProductImage(this.productId);
         UI.Feedback.toast('Cofnięto zmianę obrazu produktu', 'info');

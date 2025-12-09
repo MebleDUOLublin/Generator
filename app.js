@@ -56,6 +56,8 @@ function setupUI() {
     setupDesktopInteractions();
     setupTaskbarAndStartMenu();
     setupWindowManagement();
+    setupOfferGenerator();
+    setupSettings();
     setupGlobalEventListeners();
 
     console.log('✅ All UI event listeners attached!');
@@ -117,31 +119,62 @@ function setupTaskbarAndStartMenu() {
 }
 
 function setupWindowManagement() {
-    document.getElementById('desktop').addEventListener('mousedown', (e) => {
-        const win = e.target.closest('.window');
-        if (!win) return;
+    document.querySelectorAll('.window').forEach(win => {
+        const windowId = win.id.replace('window-', '');
+        const header = win.querySelector('.window-header');
 
-        focusWindow(win);
+        header?.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('.window-control-btn')) {
+                startDrag(e, windowId);
+            }
+        });
 
-        const header = e.target.closest('.window-header');
-        if (header && !e.target.closest('.window-control-btn')) {
-            const windowId = win.id.replace('window-', '');
-            startDrag(e, windowId);
-        }
-    });
+        win.querySelectorAll('.window-control-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleWindowAction(btn.dataset.action, windowId);
+            });
+        });
 
-    document.getElementById('desktop').addEventListener('click', (e) => {
-        const controlBtn = e.target.closest('.window-control-btn');
-        if (controlBtn) {
-            e.stopPropagation();
-            const win = controlBtn.closest('.window');
-            const windowId = win.id.replace('window-', '');
-            handleWindowAction(controlBtn.dataset.action, windowId);
-        }
+        win.addEventListener('mousedown', () => focusWindow(win));
     });
 }
 
+function setupOfferGenerator() {
+    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
+    document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
+    document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
+    document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
 
+    document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
+        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
+            products = [];
+            productImages = {};
+            updateProductView();
+            generateOfferNumber();
+            setTodayDate();
+            updateSummary();
+            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
+        }
+    });
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
+    });
+}
+
+function setupSettings() {
+    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
+    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
+    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
+
+    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
+        preview.addEventListener('click', () => {
+            changeWallpaper(preview.dataset.wallpaper);
+            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+            preview.classList.add('active');
+        });
+    });
+}
 
 function setupGlobalEventListeners() {
     document.addEventListener('click', (e) => {
@@ -224,7 +257,7 @@ function showPasteImageModal(imageData) {
         const productId = select.value;
         if (productId) {
             const oldImage = productImages[productId];
-            const command = new UpdateProductImageCommand(productId, imageData, oldImage, productImages);
+            const command = new UpdateProductImageCommand(productId, imageData, oldImage);
             UI.Command.execute(command);
             modal.remove();
         }
@@ -520,96 +553,39 @@ function setLogoPlaceholder() {
 // WINDOW MANAGEMENT - PEŁNA IMPLEMENTACJA
 // ============================================
 
-const AppLoader = (() => {
-    const loadedApps = new Set();
-
-    const load = async (appName) => {
-        if (loadedApps.has(appName)) {
-            console.log(`App "${appName}" already loaded.`);
-            return true;
-        }
-
-        try {
-            const appPath = `apps/${appName}`;
-            const htmlPath = `${appPath}/index.html`;
-            const cssPath = `${appPath}/style.css`;
-            const jsPath = `${appPath}/app.js`;
-
-            // Fetch HTML
-            const htmlResponse = await fetch(htmlPath);
-            if (!htmlResponse.ok) throw new Error(`Could not load ${htmlPath}`);
-            const htmlContent = await htmlResponse.text();
-            document.getElementById('desktop').insertAdjacentHTML('beforeend', htmlContent);
-
-            // Load CSS
-            const cssLink = document.createElement('link');
-            cssLink.rel = 'stylesheet';
-            cssLink.href = cssPath;
-            document.head.appendChild(cssLink);
-
-            // Load JS
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = jsPath;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.body.appendChild(script);
-            });
-
-            loadedApps.add(appName);
-            console.log(`✅ App "${appName}" loaded successfully.`);
-            return true;
-        } catch (error) {
-            console.error(`❌ Failed to load app "${appName}":`, error);
-            UI.Feedback.toast(`Błąd ładowania aplikacji: ${appName}`, 'error');
-            return false;
-        }
-    };
-
-    return { load };
-})();
-
-async function openWindow(windowId) {
-    const windowElementId = `window-${windowId}`;
-    let win = document.getElementById(windowElementId);
-
-    if (!win) {
-        const loaded = await AppLoader.load(windowId);
-        if (!loaded) return;
-        win = document.getElementById(windowElementId);
-        if (!win) {
-            console.error(`Window element #${windowElementId} not found after loading app.`);
-            return;
-        }
-    }
+function openWindow(windowId) {
+    const win = document.getElementById(`window-${windowId}`);
+    if (!win) return;
     
     win.style.display = 'flex';
     win.classList.add('active');
     win.classList.remove('minimized');
     win.style.zIndex = ++zIndexCounter;
     
+    // Focus the window
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
     
-    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+    const taskbarIcon = document.getElementById(`taskbar-${windowId}`);
     if(taskbarIcon) taskbarIcon.classList.add('active');
     
-    switch (windowId) {
-        case 'settings':
-            if (window.SettingsApp) SettingsApp.init();
-            break;
-        case 'dashboard':
-            if (window.Dashboard) Dashboard.init();
-            break;
-        case 'snake':
-            if (window.NeonSnake) NeonSnake.init('snakeCanvas');
-            break;
-        case 'domator':
-            if (window.DomatorApp) DomatorApp.init();
-            break;
-        case 'offers':
-            if (window.OfferGenerator) OfferGenerator.init();
-            break;
+    // If settings window, load profile settings
+    if (windowId === 'settings') {
+        loadProfileSettings();
+    }
+
+    // If dashboard window, initialize it
+    if (windowId === 'dashboard') {
+        Dashboard.init();
+    }
+
+    // If snake window, initialize it
+    if (windowId === 'snake') {
+        NeonSnake.init('snakeCanvas');
+    }
+
+    if (windowId === 'domator') {
+        DomatorApp.init();
     }
 }
 
@@ -708,21 +684,15 @@ function stopWindowDrag() {
 // ============================================
 
 function switchTab(tabId, event) {
-    const tabButton = event.currentTarget;
-    const windowContent = tabButton.closest('.window-content');
+    const tabsContainer = event.target.parentElement;
+    const windowContent = tabsContainer.parentElement;
 
-    // Deactivate all tabs and content within the same window
-    windowContent.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    tabsContainer.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+
     windowContent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-    // Activate the clicked tab and its corresponding content
-    tabButton.classList.add('active');
-    const activeTabContent = windowContent.querySelector(`#${tabId}`);
-    if (activeTabContent) {
-        activeTabContent.classList.add('active');
-    } else {
-        console.error(`Tab content with ID #${tabId} not found.`);
-    }
+    const activeTabContent = windowContent.querySelector(`#${tabId}-tab`);
+    if(activeTabContent) activeTabContent.classList.add('active');
 }
 
 function toggleStartMenu() {
@@ -730,7 +700,504 @@ function toggleStartMenu() {
     if(menu) menu.classList.toggle('active');
 }
 
+// ============================================
+// PRODUCT MANAGEMENT
+// ============================================
 
+function updateProductView() {
+    const productsListEl = document.getElementById('productsList');
+    if (!productsListEl) return;
+    const emptyStateEl = productsListEl.querySelector('.empty-state');
+
+    if (products.length > 0 && emptyStateEl) {
+        emptyStateEl.remove();
+    } else if (products.length === 0 && !emptyStateEl) {
+        productsListEl.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <div class="empty-state-title">Brak produktów</div>
+                <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
+            </div>
+        `;
+    }
+}
+
+function addProduct(productData) {
+    const command = new ProductCommand('add', productData);
+    UI.Command.execute(command);
+
+    if (productData.image) {
+        const newId = products[products.length - 1];
+        productImages[newId] = productData.image;
+        updateProductImage(newId);
+    }
+}
+
+function removeProduct(productId) {
+    const productData = { id: productId };
+    const command = new ProductCommand('remove', productData);
+    UI.Command.execute(command);
+}
+
+function updateProductImage(productId) {
+    const preview = document.getElementById(`productImagePreview-${productId}`);
+    if (preview && productImages[productId]) {
+        preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+    }
+}
+
+function duplicateProduct(productId) {
+    const command = new DuplicateProductCommand(productId);
+    UI.Command.execute(command);
+}
+
+function removeProduct(productId) {
+    const command = new ProductCommand('remove', { id: productId });
+    UI.Command.execute(command);
+}
+
+function uploadProductImage(productId, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        productImages[productId] = e.target.result;
+        updateProductImage(productId);
+        UI.Feedback.toast('📸 Zdjęcie załadowane', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Product drag & drop
+function dragStart(event, productId) {
+    draggedElement = document.getElementById(`product-${productId}`);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', productId);
+    setTimeout(() => {
+        if (draggedElement) draggedElement.classList.add('dragging');
+    }, 0);
+}
+
+function dragOver(event) {
+    event.preventDefault();
+    const container = document.getElementById('productsList');
+    if (!container) return;
+    
+    const afterElement = getDragAfterElement(container, event.clientY);
+    const dragging = document.querySelector('.dragging');
+    if (!dragging) return;
+    
+    if (afterElement == null) {
+        container.appendChild(dragging);
+    } else {
+        container.insertBefore(dragging, afterElement);
+    }
+}
+
+function drop(event, productId) {
+    event.preventDefault();
+    const draggedId = parseInt(event.dataTransfer.getData('text/plain'));
+    const targetId = productId;
+
+    if (draggedId !== targetId) {
+        const draggedIndex = products.indexOf(draggedId);
+        const targetIndex = products.indexOf(targetId);
+        const [removed] = products.splice(draggedIndex, 1);
+        products.splice(targetIndex, 0, removed);
+    }
+    
+    if(draggedElement) {
+        draggedElement.classList.remove('dragging');
+    }
+    draggedElement = null;
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.product-card:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updateSummary() {
+    const tbody = document.getElementById('summaryTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    
+    let totalNet = 0;
+    let validIdx = 1;
+    
+    products.forEach(productId => {
+        const nameEl = document.getElementById(`productName-${productId}`);
+        const name = nameEl?.value;
+        if (!name || !name.trim()) return;
+        
+        const qty = parseFloat(document.getElementById(`productQty-${productId}`)?.value) || 0;
+        const price = parseFloat(document.getElementById(`productPrice-${productId}`)?.value) || 0;
+        const discount = parseFloat(document.getElementById(`productDiscount-${productId}`)?.value) || 0;
+        
+        const discountedPrice = price * (1 - discount / 100);
+        const total = qty * discountedPrice;
+        totalNet += total;
+        
+        tbody.innerHTML += `
+            <tr>
+                <td>${validIdx++}</td>
+                <td>${name}</td>
+                <td>${qty}</td>
+                <td>${price.toFixed(2)} zł</td>
+                <td>${discount}%</td>
+                <td>${total.toFixed(2)} zł</td>
+            </tr>
+        `;
+    });
+    
+    if (validIdx === 1) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 2rem;">Brak produktów</td></tr>';
+    }
+    
+    const vat = totalNet * 0.23;
+    const gross = totalNet + vat;
+    
+    const totalNetEl = document.getElementById('totalNet');
+    const totalVatEl = document.getElementById('totalVat');
+    const totalGrossEl = document.getElementById('totalGross');
+    
+    if (totalNetEl) totalNetEl.textContent = totalNet.toFixed(2) + ' zł';
+    if (totalVatEl) totalVatEl.textContent = vat.toFixed(2) + ' zł';
+    if (totalGrossEl) totalGrossEl.textContent = gross.toFixed(2) + ' zł';
+}
+
+// ============================================
+// PDF GENERATION
+// ============================================
+
+async function generatePDF() {
+    if (!currentProfile) {
+        showNotification('Błąd', 'Brak aktywnego profilu.', 'error');
+        return;
+    }
+
+    const offerData = {
+        number: document.getElementById('offerNumber')?.value || '',
+        date: document.getElementById('offerDate')?.value || '',
+        validUntil: document.getElementById('validUntil')?.value || '',
+        currency: document.getElementById('currency')?.value || 'PLN',
+        paymentTerms: document.getElementById('paymentTerms')?.value || '',
+        deliveryTime: document.getElementById('deliveryTime')?.value || '',
+        warranty: document.getElementById('warranty')?.value || '',
+        deliveryMethod: document.getElementById('deliveryMethod')?.value || '',
+        buyer: {
+            name: document.getElementById('buyerName')?.value || '',
+            nip: document.getElementById('buyerNIP')?.value || '',
+            address: document.getElementById('buyerAddress')?.value || '',
+            phone: document.getElementById('buyerPhone')?.value || '',
+            email: document.getElementById('buyerEmail')?.value || '',
+        },
+        notes: document.getElementById('orderNotes')?.value || ''
+    };
+
+    const pdfProducts = products.map(id => ({
+        id: id,
+        name: document.getElementById(`productName-${id}`)?.value || '',
+        code: document.getElementById(`productCode-${id}`)?.value || '',
+        qty: document.getElementById(`productQty-${id}`)?.value || '1',
+        price: document.getElementById(`productPrice-${id}`)?.value || '0',
+        discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
+        desc: document.getElementById(`productDesc-${id}`)?.value || '',
+        image: productImages[id] || null,
+    }));
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    loadingOverlay?.classList.add('show');
+
+    try {
+        const pdf = await PDFManager.generatePDF({
+            orientation: document.getElementById('pdfOrientation')?.value || 'portrait',
+            format: document.getElementById('pdfFormat')?.value || 'a4',
+            seller: currentProfile,
+            products: pdfProducts,
+            offerData: offerData
+        });
+        
+        const filename = `Oferta_${offerData.number.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        PDFManager.savePDF(pdf, filename);
+        
+        showNotification('Sukces', 'PDF został pomyślnie wygenerowany!', 'success');
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        showNotification('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
+    } finally {
+        loadingOverlay?.classList.remove('show');
+    }
+}
+
+// ============================================
+// DATA PERSISTENCE (SAVE/LOAD)
+// ============================================
+
+async function saveOffer() {
+    if (!currentProfile) {
+        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        return;
+    }
+    
+    const offerData = {
+        id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
+        profileKey: currentProfile.key,
+        offer: {
+            number: document.getElementById('offerNumber')?.value || '',
+            date: document.getElementById('offerDate')?.value || '',
+            validUntil: document.getElementById('validUntil')?.value || '',
+            currency: document.getElementById('currency')?.value || 'PLN'
+        },
+        buyer: {
+            name: document.getElementById('buyerName')?.value || '',
+            nip: document.getElementById('buyerNIP')?.value || '',
+            address: document.getElementById('buyerAddress')?.value || '',
+            phone: document.getElementById('buyerPhone')?.value || '',
+            email: document.getElementById('buyerEmail')?.value || ''
+        },
+        terms: {
+            payment: document.getElementById('paymentTerms')?.value || '',
+            delivery: document.getElementById('deliveryTime')?.value || '',
+            warranty: document.getElementById('warranty')?.value || '',
+            deliveryMethod: document.getElementById('deliveryMethod')?.value || ''
+        },
+        products: products.map(id => ({
+            id,
+            name: document.getElementById(`productName-${id}`)?.value || '',
+            code: document.getElementById(`productCode-${id}`)?.value || '',
+            qty: document.getElementById(`productQty-${id}`)?.value || '1',
+            price: document.getElementById(`productPrice-${id}`)?.value || '0',
+            discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
+            desc: document.getElementById(`productDesc-${id}`)?.value || '',
+            image: productImages[id] || null
+        })),
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+        showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+    } catch (error) {
+        console.error('Save offer error:', error);
+        showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+    }
+}
+
+async function loadOffer() {
+    if (!currentProfile) {
+        showNotification('Błąd', 'Zaloguj się, aby wczytać oferty.', 'error');
+        return;
+    }
+
+    try {
+        const allOffers = await StorageSystem.db.getAll(StorageSystem.db.STORES.offers);
+        const profileOffers = allOffers
+            .filter(o => o.profileKey === currentProfile.key)
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        if (profileOffers.length === 0) {
+            showNotification('Informacja', 'Brak zapisanych ofert dla tego profilu.', 'info');
+            return;
+        }
+
+        const listHTML = profileOffers.map(offer => `
+            <div class="offer-history-item" onclick="loadOfferFromHistory('${offer.id}')">
+                <div class="offer-number">${offer.offer?.number || offer.id}</div>
+                <div class="offer-buyer">${offer.buyer?.name || 'Brak nabywcy'}</div>
+                <div class="offer-date">${new Date(offer.timestamp).toLocaleString('pl-PL')}</div>
+                <div class="offer-products">${offer.products?.length || 0} prod.</div>
+            </div>
+        `).join('');
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="width: 600px;">
+                <h2 style="margin-bottom: 1.5rem;">Wczytaj ofertę</h2>
+                <div class="offers-history-list" style="max-height: 60vh; overflow-y: auto;">${listHTML}</div>
+                <button class="btn btn-outline" style="margin-top: 1.5rem;" onclick="this.closest('.modal-overlay').remove()">Anuluj</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+    } catch (error) {
+        console.error('Load offer error:', error);
+        showNotification('Błąd wczytywania', 'Nie udało się wczytać historii ofert.', 'error');
+    }
+}
+
+async function loadOfferFromHistory(offerId) {
+    try {
+        const offer = await StorageSystem.db.get(StorageSystem.db.STORES.offers, offerId);
+        if (!offer) {
+            showNotification('Błąd', 'Nie znaleziono oferty.', 'error');
+            return;
+        }
+
+        // Clear current form
+        products = [];
+        productImages = {};
+        const productsList = document.getElementById('productsList');
+        if (productsList) productsList.innerHTML = '';
+
+        // Load data
+        const fields = {
+            'offerNumber': offer.offer?.number,
+            'offerDate': offer.offer?.date,
+            'validUntil': offer.offer?.validUntil,
+            'currency': offer.offer?.currency,
+            'buyerName': offer.buyer?.name,
+            'buyerNIP': offer.buyer?.nip,
+            'buyerAddress': offer.buyer?.address,
+            'buyerPhone': offer.buyer?.phone,
+            'buyerEmail': offer.buyer?.email,
+            'paymentTerms': offer.terms?.payment,
+            'deliveryTime': offer.terms?.delivery,
+            'warranty': offer.terms?.warranty,
+            'deliveryMethod': offer.terms?.deliveryMethod
+        };
+        
+        Object.entries(fields).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el && value) el.value = value;
+        });
+
+        // Load products
+        if (offer.products && offer.products.length > 0) {
+            offer.products.forEach(p => {
+                addProduct();
+                const newId = products[products.length - 1];
+                
+                const productFields = {
+                    [`productName-${newId}`]: p.name,
+                    [`productCode-${newId}`]: p.code,
+                    [`productQty-${newId}`]: p.qty,
+                    [`productPrice-${newId}`]: p.price,
+                    [`productDiscount-${newId}`]: p.discount,
+                    [`productDesc-${newId}`]: p.desc
+                };
+                
+                Object.entries(productFields).forEach(([id, value]) => {
+                    const el = document.getElementById(id);
+                    if (el && value) el.value = value;
+                });
+                
+                if (p.image) {
+                    productImages[newId] = p.image;
+                    updateProductImage(newId);
+                }
+            });
+        }
+
+        updateSummary();
+        
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) modal.remove();
+        
+        showNotification('Wczytano!', `Załadowano ofertę ${offer.id}.`, 'success');
+
+    } catch (error) {
+        console.error('Load from history error:', error);
+        showNotification('Błąd', 'Nie udało się wczytać wybranej oferty.', 'error');
+    }
+}
+
+// ============================================
+// SETTINGS WINDOW
+// ============================================
+
+function loadProfileSettings() {
+    if (!currentProfile) return;
+    
+    const fields = {
+        'settingsName': currentProfile.name,
+        'settingsFullName': currentProfile.fullName,
+        'settingsNIP': currentProfile.nip,
+        'settingsPhone': currentProfile.phone,
+        'settingsAddress': currentProfile.address,
+        'settingsEmail': currentProfile.email,
+        'settingsBankAccount': currentProfile.bankAccount,
+        'settingsSellerName': currentProfile.sellerName,
+        'settingsSellerPosition': currentProfile.sellerPosition,
+        'settingsSellerPhone': currentProfile.sellerPhone,
+        'settingsSellerEmail': currentProfile.sellerEmail
+    };
+    
+    Object.entries(fields).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value || '';
+    });
+    
+    const preview = document.getElementById('logoPreview');
+    if (preview) {
+        if (currentProfile.logoData) {
+            preview.innerHTML = `<img src="${currentProfile.logoData}" style="width: 100%; height: 100%; object-fit: contain;">`;
+        } else {
+            preview.innerHTML = '📋';
+        }
+    }
+}
+
+async function saveProfileSettings() {
+    if (!currentProfile) return;
+
+    const updatedProfile = {
+        ...currentProfile,
+        name: document.getElementById('settingsName')?.value || currentProfile.name,
+        fullName: document.getElementById('settingsFullName')?.value || '',
+        nip: document.getElementById('settingsNIP')?.value || '',
+        phone: document.getElementById('settingsPhone')?.value || '',
+        address: document.getElementById('settingsAddress')?.value || '',
+        email: document.getElementById('settingsEmail')?.value || '',
+        bankAccount: document.getElementById('settingsBankAccount')?.value || '',
+        sellerName: document.getElementById('settingsSellerName')?.value || '',
+        sellerPosition: document.getElementById('settingsSellerPosition')?.value || '',
+        sellerPhone: document.getElementById('settingsSellerPhone')?.value || '',
+        sellerEmail: document.getElementById('settingsSellerEmail')?.value || '',
+    };
+    
+    try {
+        await StorageSystem.ProfileManager.saveProfile(updatedProfile);
+        currentProfile = updatedProfile;
+        
+        // Update seller fields
+        const sellerNameEl = document.getElementById('sellerName');
+        if (sellerNameEl) sellerNameEl.value = currentProfile.fullName || '';
+        
+        showNotification('Zapisano!', 'Ustawienia profilu zostały zaktualizowane.', 'success');
+        closeWindow('settings');
+    } catch (error) {
+        console.error('Save profile error:', error);
+        showNotification('Błąd', 'Nie udało się zapisać ustawień.', 'error');
+    }
+}
+
+function uploadLogoFromSettings(event) {
+    const file = event.target.files[0];
+    if (!file || !currentProfile) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        currentProfile.logoData = e.target.result;
+        const preview = document.getElementById('logoPreview');
+        if (preview) {
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain;">`;
+        }
+        UI.Feedback.toast('📸 Logo gotowe do zapisania', 'info');
+    };
+    reader.readAsDataURL(file);
+}
 
 // ============================================
 // UTILITY & UI HELPER FUNCTIONS
