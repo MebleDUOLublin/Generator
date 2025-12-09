@@ -4,6 +4,7 @@ test('Pesteczka OS Frontend Verification', async ({ page }) => {
   await page.goto('http://localhost:8080');
 
   // Login
+  await page.waitForSelector('.profile-card');
   await page.click('.profile-card');
 
   // Wait for desktop to be active
