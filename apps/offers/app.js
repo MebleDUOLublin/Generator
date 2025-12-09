@@ -1,4 +1,4 @@
-const OfferGenerator = (() => {
+window.OfferGenerator = (() => {
     let products = [];
     let productImages = {};
     let productIdCounter = 0;
@@ -66,6 +66,7 @@ const OfferGenerator = (() => {
     }
 
     function addProduct(productData) {
+        console.log('Adding product:', productData);
         const command = new ProductCommand('add', productData, products, productImages);
         UI.Command.execute(command);
 

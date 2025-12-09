@@ -36,7 +36,6 @@ function setupUI() {
     updateClock();
     setInterval(updateClock, 1000);
 
-    setupDesktopInteractions();
     setupTaskbarAndStartMenu();
     setupWindowManagement();
     setupGlobalEventListeners();

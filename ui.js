@@ -170,9 +170,9 @@ class ProductCommand {
     }
 
     _addProduct() {
-        const productId = this.productData.id || Date.now() + productIdCounter++;
+        const productId = this.productData.id || Date.now() + state.productIdCounter++;
         this.productData.id = productId;
-        this.products.push(productId);
+        state.products.push(productId);
         const productCard = _createProductCard(productId);
         document.getElementById('productsList').appendChild(productCard);
         updateProductView();
@@ -184,8 +184,8 @@ class ProductCommand {
         const { id } = this.productData;
         const el = document.getElementById(`product-${id}`);
         if (el) el.remove();
-        this.products = this.products.filter(pId => pId !== id);
-        delete this.productImages[id];
+        state.products = state.products.filter(pId => pId !== id);
+        delete state.productImages[id];
         updateProductView();
         updateSummary();
         UI.Feedback.toast('🗑️ Usunięto produkt', 'info');

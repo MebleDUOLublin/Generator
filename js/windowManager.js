@@ -52,6 +52,7 @@ const AppLoader = (() => {
 })();
 
 export async function openWindow(windowId) {
+    console.log(`Opening window: ${windowId}`);
     const windowElementId = `window-${windowId}`;
     let win = document.getElementById(windowElementId);
 
@@ -177,4 +178,18 @@ export function focusWindow(win) {
     win.classList.add('focused');
     state.zIndexCounter++;
     win.style.zIndex = state.zIndexCounter;
+}
+
+export function handleWindowAction(action, windowId) {
+    switch (action) {
+        case 'minimize':
+            minimizeWindow(windowId);
+            break;
+        case 'maximize':
+            maximizeWindow(windowId);
+            break;
+        case 'close':
+            closeWindow(windowId);
+            break;
+    }
 }

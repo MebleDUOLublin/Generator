@@ -1,6 +1,7 @@
 
 import { state } from './state.js';
 import { generateOfferNumber, setTodayDate, showNotification } from './utils.js';
+import { setupDesktopInteractions } from './uiManager.js';
 
 export async function populateProfileSelector() {
     console.log('2a. Inside populateProfileSelector');
@@ -184,4 +185,6 @@ function renderDesktop() {
         `;
         startMenuAppsContainer.appendChild(itemEl);
     });
+
+    setupDesktopInteractions();
 }
