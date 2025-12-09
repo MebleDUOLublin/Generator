@@ -12,7 +12,7 @@
 }
 
 #window-offers .tab-content.active {
-    display: flex; /* Show active tab */
+    display: flex !important; /* Show active tab */
 }
 
 #window-offers .actions-bar {
