@@ -29,6 +29,9 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             # Fallback to default behavior for other POST requests if any
             super().do_POST()
 
+# Setting allow_reuse_address to True
+socketserver.TCPServer.allow_reuse_address = True
+
 with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
     print(f"Serving at port {PORT}")
     # In a real-world scenario, you might want to open the browser automatically.
