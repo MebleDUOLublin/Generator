@@ -36,5 +36,5 @@ with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
     print(f"Serving at port {PORT}")
     # In a real-world scenario, you might want to open the browser automatically.
     # For automated environments, this is often disabled.
-    webbrowser.open_new_tab(f'http://localhost:{PORT}')
+    # webbrowser.open_new_tab(f'http://localhost:{PORT}')
     httpd.serve_forever()
