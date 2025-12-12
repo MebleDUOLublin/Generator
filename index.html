@@ -15,13 +15,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <!-- External Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.0/build/pdfmake.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.0/build/vfs_fonts.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Vendor Libraries -->
+    <script src="vendor/chart.min.js"></script>
+    <script src="vendor/jspdf.umd.min.js"></script>
+    <script src="vendor/jspdf.plugin.autotable.min.js"></script>
+    <script src="vendor/pdfmake.min.js"></script>
+    <script src="vendor/vfs_fonts.js"></script>
+    <script src="vendor/html2canvas.min.js"></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -50,13 +50,7 @@
         <h1 class="login-title">Pesteczka OS</h1>
         <p class="login-subtitle">Profesjonalny system dla biznesu</p>
         
-        <div class="profile-selector" id="profileSelector">
-            <!-- Profiles will be loaded dynamically -->
-            <div class="loading-content" style="background: transparent; box-shadow: none;">
-                <div class="loading-spinner"></div>
-                <div class="loading-text" style="color: white;">Ładowanie profili...</div>
-            </div>
-        </div>
+        <div class="profile-selector" id="profileSelector"></div>
         
         <div class="login-footer">
             Made with ❤️ by <a href="https://pesteczka.com" target="_blank">Pesteczka</a>
@@ -65,627 +59,11 @@
 
     <!-- DESKTOP -->
     <div class="desktop" id="desktop">
-        <!-- Desktop Icons -->
-        <div class="desktop-icons">
-            <div class="desktop-icon" data-window="offers" tabindex="0" role="button" aria-label="Otwórz Generator Ofert">
-                <div class="desktop-icon-image">📄</div>
-                <div class="desktop-icon-name">Generator Ofert</div>
-            </div>
-            <div class="desktop-icon" data-window="dashboard" tabindex="0" role="button" aria-label="Otwórz Dashboard">
-                <div class="desktop-icon-image">📊</div>
-                <div class="desktop-icon-name">Dashboard</div>
-            </div>
-            <div class="desktop-icon" data-window="settings" tabindex="0" role="button" aria-label="Otwórz Ustawienia">
-                <div class="desktop-icon-image">⚙️</div>
-                <div class="desktop-icon-name">Ustawienia</div>
-            </div>
-            <div class="desktop-icon" data-window="snake" tabindex="0" role="button" aria-label="Otwórz Neon Snake">
-                <div class="desktop-icon-image">🐍</div>
-                <div class="desktop-icon-name">Neon Snake</div>
-            </div>
-            <div class="desktop-icon" data-window="domator" tabindex="0" role="button" aria-label="Otwórz Zamówienia Domator" style="display: none;">
-                <div class="desktop-icon-image">🚚</div>
-                <div class="desktop-icon-name">Zamówienie Domator</div>
-            </div>
-        </div>
+        <!-- App Windows Container -->
+        <div id="windowsContainer"></div>
 
-        <!-- WINDOW: Zamówienie Domator -->
-        <div class="window" id="window-domator" role="dialog" aria-labelledby="window-domator-title" style="top: 60px; left: 120px; width: 85vw; height: 80vh;">
-            <div class="window-header">
-                <div class="window-title">
-                    <span class="window-title-icon">🚚</span>
-                    <span id="window-domator-title">Generator Zamówień Domator</span>
-                </div>
-                <div class="window-controls">
-                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
-                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
-                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
-                </div>
-            </div>
-            <div class="window-content domator-container" id="domator-app">
-                <div class="domator-card">
-                    <div class="domator-header">
-                        <h2>
-                            <span>🪑</span>
-                            Generator Zamówień Domator
-                        </h2>
-                        <div class="domator-actions">
-                            <button class="btn btn-outline" id="loadDomatorTemplateBtn">
-                                <span>📋</span> Szablon
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="domator-content">
-                        <!-- STATYSTYKI -->
-                        <div class="domator-stats">
-                            <div class="stat-card">
-                                <div class="stat-label">Produktów</div>
-                                <div class="stat-value" id="domatorProductCount">0</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">Suma Netto</div>
-                                <div class="stat-value" id="domatorSumNetto">0,00 zł</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">Suma Brutto</div>
-                                <div class="stat-value" id="domatorSumBrutto">0,00 zł</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">Status</div>
-                                <div class="stat-value" id="domatorStatus">📝 Edycja</div>
-                            </div>
-                        </div>
-
-                        <!-- PASEK NARZĘDZI -->
-                        <div class="domator-toolbar">
-                            <button class="btn btn-secondary" id="domatorExportEmailBtn">
-                                <span>✉️</span> Eksport do maila
-                            </button>
-                            <button class="btn btn-secondary" id="domatorExportPdfBtn">
-                                <span>📄</span> Generuj PDF
-                            </button>
-                            <button class="btn btn-secondary" id="domatorCopyHtmlBtn">
-                                <span>📋</span> Kopiuj HTML
-                            </button>
-                            <button class="btn btn-secondary" id="domatorSaveBtn">
-                                <span>💾</span> Zapisz
-                            </button>
-                            <button class="btn btn-danger" id="domatorClearBtn">
-                                <span>🗑️</span> Wyczyść
-                            </button>
-                        </div>
-
-                        <!-- DANE ADRESOWE -->
-                        <div class="domator-section">
-                            <h3 class="domator-section-title">
-                                <span>📍</span>
-                                Adres dostawy
-                            </h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Nazwa / Imię i Nazwisko</label>
-                                    <input type="text" class="form-input" id="domatorClientName">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Ulica z numerem</label>
-                                    <input type="text" class="form-input" id="domatorStreet">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Kod pocztowy</label>
-                                    <input type="text" class="form-input" id="domatorPostCode">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Miasto</label>
-                                    <input type="text" class="form-input" id="domatorCity">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Numer telefonu</label>
-                                    <input type="tel" class="form-input" id="domatorPhone">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Adres mailowy</label>
-                                    <input type="email" class="form-input" id="domatorEmail">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- LISTA PRODUKTÓW -->
-                        <div class="domator-section">
-                            <h3 class="domator-section-title">
-                                <span>📦</span>
-                                Lista produktów
-                                <button class="btn btn-success" id="addDomatorProductBtn" style="margin-left: auto;">
-                                    <span>➕</span> Dodaj produkt
-                                </button>
-                            </h3>
-                            <table class="domator-table" id="domatorProductsTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40px; text-align: center;">#</th>
-                                        <th style="min-width: 120px;">SKU</th>
-                                        <th style="min-width: 120px;">EAN</th>
-                                        <th style="min-width: 250px;">Nazwa produktu</th>
-                                        <th style="width: 80px; text-align: center;">Ilość</th>
-                                        <th style="min-width: 120px; text-align: right;">Cena netto</th>
-                                        <th style="min-width: 130px; text-align: right;">Cena brutto</th>
-                                        <th style="width: 80px; text-align: center;">Akcje</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="domatorProductsBody">
-                                    <!-- Produkty będą dodawane dynamicznie -->
-                                </tbody>
-                                <tfoot>
-                                    <tr style="background: #f3f4f6; font-weight: 600;">
-                                        <td colspan="5" style="text-align: right;">SUMA:</td>
-                                        <td style="text-align: right;" id="domatorTotalNetto">0,00 zł</td>
-                                        <td style="text-align: right;" id="domatorTotalBrutto">0,00 zł</td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        <!-- DODATKOWE INFORMACJE -->
-                        <div class="domator-section">
-                            <h3 class="domator-section-title">
-                                <span>📝</span>
-                                Dodatkowe informacje
-                            </h3>
-                            <textarea id="domatorNotes" class="form-textarea" rows="3" placeholder="Uwagi do zamówienia, specjalne instrukcje dostawy..."></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- WINDOW: Generator Ofert -->
-        <div class="window" id="window-offers" role="dialog" aria-labelledby="window-offers-title" style="top: 40px; left: 80px; width: 92vw; height: 88vh;">
-            <div class="window-header">
-                <div class="window-title">
-                    <span class="window-title-icon">📄</span>
-                    <span id="window-offers-title">Generator Ofert Premium</span>
-                </div>
-                <div class="window-controls">
-                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
-                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
-                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
-                </div>
-            </div>
-            <div class="window-content">
-                <div class="tabs" role="tablist">
-                    <button class="tab active" role="tab" aria-selected="true" data-tab="offer">
-                        <span>📋</span> Dane oferty
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" data-tab="products">
-                        <span>📦</span> Produkty
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" data-tab="summary">
-                        <span>💰</span> Podsumowanie
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" data-tab="pdf-settings">
-                        <span>⚙️</span> Ustawienia PDF
-                    </button>
-                </div>
-
-                <!-- TAB: Dane oferty -->
-                <div id="offer-tab" class="tab-content active" role="tabpanel">
-                    <div class="section">
-                        <h2 class="section-title">📋 Informacje o ofercie</h2>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="offerNumber">
-                                    Numer oferty <span class="required">*</span>
-                                </label>
-                                <input type="text" class="form-input" id="offerNumber" required placeholder="OF/2025/01/001">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="offerDate">Data wystawienia</label>
-                                <input type="date" class="form-input" id="offerDate">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="validUntil">Ważna do</label>
-                                <input type="date" class="form-input" id="validUntil">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="currency">Waluta</label>
-                                <select class="form-select" id="currency">
-                                    <option value="PLN">PLN - Polski złoty</option>
-                                    <option value="EUR">EUR - Euro</option>
-                                    <option value="USD">USD - Dolar amerykański</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <h2 class="section-title">🏢 Sprzedawca</h2>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="sellerName">Nazwa firmy</label>
-                                <input type="text" class="form-input" id="sellerName" placeholder="Nazwa Twojej firmy">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="sellerNIP">NIP</label>
-                                <input type="text" class="form-input" id="sellerNIP" placeholder="000-000-00-00">
-                            </div>
-                            <div class="form-group full-width">
-                                <label class="form-label" for="sellerAddress">Adres</label>
-                                <textarea class="form-textarea" id="sellerAddress" rows="2" placeholder="ul. Przykładowa 1&#10;00-000 Miasto"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="sellerPhone">Telefon</label>
-                                <input type="tel" class="form-input" id="sellerPhone" placeholder="+48 000 000 000">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="sellerEmail">Email</label>
-                                <input type="email" class="form-input" id="sellerEmail" placeholder="kontakt@firma.pl">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="sellerContact">Osoba kontaktowa</label>
-                                <input type="text" class="form-input" id="sellerContact" placeholder="Imię Nazwisko">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="sellerBank">Nr konta bankowego</label>
-                                <input type="text" class="form-input" id="sellerBank" placeholder="00 0000 0000 0000 0000 0000 0000">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <h2 class="section-title">🛒 Nabywca</h2>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="buyerName">
-                                    Nazwa firmy/Klient <span class="required">*</span>
-                                </label>
-                                <input type="text" class="form-input" id="buyerName" required placeholder="Nazwa klienta">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="buyerNIP">NIP</label>
-                                <input type="text" class="form-input" id="buyerNIP" placeholder="000-000-00-00">
-                            </div>
-                            <div class="form-group full-width">
-                                <label class="form-label" for="buyerAddress">Adres</label>
-                                <textarea class="form-textarea" id="buyerAddress" rows="2" placeholder="ul. Przykładowa 1&#10;00-000 Miasto"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="buyerPhone">Telefon</label>
-                                <input type="tel" class="form-input" id="buyerPhone" placeholder="+48 000 000 000">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="buyerEmail">Email</label>
-                                <input type="email" class="form-input" id="buyerEmail" placeholder="kontakt@klient.pl">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <h2 class="section-title">📝 Warunki handlowe</h2>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="paymentTerms">Termin płatności</label>
-                                <select class="form-select" id="paymentTerms">
-                                    <option value="Przedpłata 100%">Przedpłata 100%</option>
-                                    <option value="Przedpłata 50%">Przedpłata 50%</option>
-                                    <option value="7 dni">7 dni</option>
-                                    <option value="14 dni">14 dni</option>
-                                    <option value="30 dni" selected>30 dni</option>
-                                    <option value="60 dni">60 dni</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="deliveryTime">Termin realizacji</label>
-                                <input type="text" class="form-input" id="deliveryTime" value="14-21 dni roboczych">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="warranty">Gwarancja</label>
-                                <input type="text" class="form-input" id="warranty" value="24 miesiące">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="deliveryMethod">Sposób dostawy</label>
-                                <select class="form-select" id="deliveryMethod">
-                                    <option value="Kurier">Kurier</option>
-                                    <option value="Transport własny">Transport własny</option>
-                                    <option value="Odbiór osobisty">Odbiór osobisty</option>
-                                    <option value="Do uzgodnienia" selected>Do uzgodnienia</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <h2 class="section-title">🗒️ Dodatkowe uwagi</h2>
-                        <div class="form-group">
-                            <textarea class="form-textarea" id="orderNotes" rows="4" placeholder="Wpisz dodatkowe informacje, które pojawią się na dokumencie..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB: Produkty -->
-                <div id="products-tab" class="tab-content" role="tabpanel">
-                    <div class="section">
-                        <h2 class="section-title">
-                            📦 Lista produktów
-                            <button class="btn btn-success" id="addProductBtn">
-                                <span>➕</span> Dodaj produkt
-                            </button>
-                        </h2>
-                        <div id="productsList">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">📦</div>
-                                <div class="empty-state-title">Brak produktów</div>
-                                <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB: Podsumowanie -->
-                <div id="summary-tab" class="tab-content" role="tabpanel">
-                    <div class="section">
-                        <h2 class="section-title">💰 Podsumowanie finansowe</h2>
-                        <table class="summary-table">
-                            <thead>
-                                <tr>
-                                    <th>Lp.</th>
-                                    <th>Nazwa produktu</th>
-                                    <th>Ilość</th>
-                                    <th>Cena jedn. netto</th>
-                                    <th>Rabat</th>
-                                    <th>Wartość netto</th>
-                                </tr>
-                            </thead>
-                            <tbody id="summaryTableBody">
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted" style="padding: 3rem;">
-                                        Brak produktów - dodaj produkty w zakładce "Produkty"
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="5" class="text-right font-bold">Suma netto:</td>
-                                    <td id="totalNet" class="font-bold">0,00 zł</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="5" class="text-right font-bold">VAT 23%:</td>
-                                    <td id="totalVat" class="font-bold">0,00 zł</td>
-                                </tr>
-                                <tr class="final-row">
-                                    <td colspan="5" class="text-right">SUMA BRUTTO:</td>
-                                    <td id="totalGross">0,00 zł</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- TAB: Ustawienia PDF -->
-                <div id="pdf-settings-tab" class="tab-content" role="tabpanel">
-                    <div class="section">
-                        <h2 class="section-title">⚙️ Ustawienia dokumentu PDF</h2>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="pdfOrientation">Orientacja strony</label>
-                                <select class="form-select" id="pdfOrientation">
-                                    <option value="portrait">Pionowa (Portrait)</option>
-                                    <option value="landscape">Pozioma (Landscape)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="pdfFormat">Format papieru</label>
-                                <select class="form-select" id="pdfFormat">
-                                    <option value="a4">A4</option>
-                                    <option value="letter">Letter</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="vatRate">Stawka VAT</label>
-                                <select class="form-select" id="vatRate">
-                                    <option value="23">23%</option>
-                                    <option value="8">8%</option>
-                                    <option value="5">5%</option>
-                                    <option value="0">0% (zw.)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Actions Bar -->
-                <div class="actions-bar">
-                    <button class="btn btn-primary btn-lg" id="generatePdfBtn">
-                        <span>📄</span> Generuj PDF
-                    </button>
-                    <button class="btn btn-secondary" id="saveOfferBtn">
-                        <span>💾</span> Zapisz ofertę
-                    </button>
-                    <button class="btn btn-outline" id="loadOfferBtn">
-                        <span>📂</span> Wczytaj ofertę
-                    </button>
-                    <button class="btn btn-ghost" id="clearFormBtn">
-                        <span>🗑️</span> Wyczyść
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- WINDOW: Dashboard -->
-        <div class="window" id="window-dashboard" role="dialog" aria-labelledby="window-dashboard-title" style="top: 100px; left: 150px; width: 900px; height: 600px;">
-            <div class="window-header">
-                <div class="window-title">
-                    <span class="window-title-icon">📊</span>
-                    <span id="window-dashboard-title">Dashboard</span>
-                </div>
-                <div class="window-controls">
-                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
-                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
-                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
-                </div>
-            </div>
-            <div class="window-content" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
-                <div class="dashboard-grid">
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-card-title">Wystawione Oferty</div>
-                            <div class="stat-card-icon">📄</div>
-                        </div>
-                        <div class="stat-card-value" id="stats-total-offers">128</div>
-                        <div class="stat-card-change stat-card-change-positive">+12% vs. Poprzedni miesiąc</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-card-title">Wartość Ofert (Netto)</div>
-                            <div class="stat-card-icon">💰</div>
-                        </div>
-                        <div class="stat-card-value" id="stats-total-value">245,6K zł</div>
-                        <div class="stat-card-change stat-card-change-positive">+25.3% vs. Poprzedni miesiąc</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-card-title">Nowi Klienci</div>
-                            <div class="stat-card-icon">🏢</div>
-                        </div>
-                        <div class="stat-card-value" id="stats-new-clients">32</div>
-                        <div class="stat-card-change stat-card-change-negative">-5% vs. Poprzedni miesiąc</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-card-title">Współczynnik Konwersji</div>
-                            <div class="stat-card-icon">🎯</div>
-                        </div>
-                        <div class="stat-card-value" id="stats-conversion-rate">48%</div>
-                        <div class="stat-card-change stat-card-change-positive">+2.1% vs. Poprzedni miesiąc</div>
-                    </div>
-                </div>
-                <div class="dashboard-chart-container">
-                    <canvas id="offersChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- WINDOW: Settings -->
-        <div class="window" id="window-settings" role="dialog" aria-labelledby="window-settings-title" style="top: 80px; left: 200px; width: 800px; height: 650px;">
-            <div class="window-header">
-                <div class="window-title">
-                    <span class="window-title-icon">⚙️</span>
-                    <span id="window-settings-title">Ustawienia Profilu</span>
-                </div>
-                <div class="window-controls">
-                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
-                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
-                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
-                </div>
-            </div>
-            <div class="window-content" style="padding: 2rem; overflow-y: auto;">
-                <div class="section">
-                    <h2 class="section-title">📋 Dane Firmy</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label" for="settingsName">Nazwa firmy</label>
-                            <input type="text" class="form-input" id="settingsName">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsFullName">Pełna nazwa</label>
-                            <input type="text" class="form-input" id="settingsFullName">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsNIP">NIP</label>
-                            <input type="text" class="form-input" id="settingsNIP">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsPhone">Telefon</label>
-                            <input type="tel" class="form-input" id="settingsPhone">
-                        </div>
-                        <div class="form-group full-width">
-                            <label class="form-label" for="settingsAddress">Adres</label>
-                            <textarea class="form-textarea" id="settingsAddress" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsEmail">Email</label>
-                            <input type="email" class="form-input" id="settingsEmail">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsBankAccount">Nr konta</label>
-                            <input type="text" class="form-input" id="settingsBankAccount">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h2 class="section-title">👤 Dane Sprzedawcy</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label" for="settingsSellerName">Imię i nazwisko</label>
-                            <input type="text" class="form-input" id="settingsSellerName">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsSellerPosition">Stanowisko</label>
-                            <input type="text" class="form-input" id="settingsSellerPosition">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsSellerPhone">Telefon</label>
-                            <input type="tel" class="form-input" id="settingsSellerPhone">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settingsSellerEmail">Email</label>
-                            <input type="email" class="form-input" id="settingsSellerEmail">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h2 class="section-title">🖼️ Logo Firmy</h2>
-                    <div style="display: flex; gap: 2rem; align-items: flex-start;">
-                        <div style="flex: 1;">
-                            <input type="file" accept="image/*" id="logoUploadInput" class="form-input">
-                            <p class="text-small text-muted mt-2">Maksymalny rozmiar: 5MB. Formaty: PNG, JPG, SVG</p>
-                        </div>
-                        <div id="logoPreview" style="width: 120px; height: 120px; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; background: var(--gray-50); font-size: 3rem;">
-                            📋
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex gap-4 mt-6">
-                    <button class="btn btn-primary" id="saveProfileSettingsBtn">
-                        <span>💾</span> Zapisz zmiany
-                    </button>
-                    <button class="btn btn-outline" id="loadProfileSettingsBtn">
-                        <span>🔄</span> Odśwież
-                    </button>
-                </div>
-
-                <div class="section">
-                    <h2 class="section-title">🖼️ Tapeta Pulpitu</h2>
-                    <div class="wallpaper-selector">
-                        <div class="wallpaper-preview" data-wallpaper="default"></div>
-                        <div class="wallpaper-preview" data-wallpaper="wallpaper1"></div>
-                        <div class="wallpaper-preview" data-wallpaper="wallpaper2"></div>
-                        <div class="wallpaper-preview" data-wallpaper="wallpaper3"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- WINDOW: Neon Snake -->
-        <div class="window" id="window-snake" role="dialog" aria-labelledby="window-snake-title" style="top: 120px; left: 250px; width: 640px; height: 520px;">
-            <div class="window-header">
-                <div class="window-title">
-                    <span class="window-title-icon">🐍</span>
-                    <span id="window-snake-title">Neon Snake</span>
-                </div>
-                <div class="window-controls">
-                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
-                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
-                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
-                </div>
-            </div>
-            <div class="window-content" style="padding: 0; overflow: hidden; background: #0f172a;">
-                <canvas id="snakeCanvas"></canvas>
-            </div>
-        </div>
+        <!-- Desktop Icons (will be rendered by profileManager) -->
+        <div class="desktop-icons" id="desktopIcons"></div>
 
         <!-- TASKBAR -->
         <div class="taskbar">
@@ -693,15 +71,7 @@
                 <div class="taskbar-icon" id="startBtn" tabindex="0" role="button" aria-label="Menu Start" aria-haspopup="true">
                     🌰
                 </div>
-                <div class="taskbar-icon" data-window="offers" tabindex="0" role="button" aria-label="Generator Ofert">
-                    📄
-                </div>
-                <div class="taskbar-icon" data-window="dashboard" tabindex="0" role="button" aria-label="Dashboard">
-                    📊
-                </div>
-                <div class="taskbar-icon" data-window="settings" tabindex="0" role="button" aria-label="Ustawienia">
-                    ⚙️
-                </div>
+                <!-- Active app icons will be added here -->
             </div>
             
             <div class="taskbar-right">
@@ -710,7 +80,7 @@
                     <span class="system-icon" title="Dźwięk">🔊</span>
                     <span class="system-icon" title="Bateria">🔋</span>
                 </div>
-                <div class="clock" id="clock" tabindex="0" role="button" aria-label="Data i godzina">
+                <div class="clock" id="clock">
                     <div class="clock-time">--:--</div>
                     <div class="clock-date">-- --- ----</div>
                 </div>
@@ -718,37 +88,20 @@
         </div>
 
         <!-- START MENU -->
-        <div class="start-menu" id="startMenu" role="menu">
-            <div class="start-menu-header">
-                <div class="start-apps-title">📌 Przypięte aplikacje</div>
-                <div class="start-apps-grid">
-                    <div class="start-app" data-window="offers" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">📄</div>
-                        <div class="start-app-name">Generator Ofert</div>
-                    </div>
-                    <div class="start-app" data-window="dashboard" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">📊</div>
-                        <div class="start-app-name">Dashboard</div>
-                    </div>
-                    <div class="start-app" data-window="settings" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">⚙️</div>
-                        <div class="start-app-name">Ustawienia</div>
-                    </div>
-                </div>
+        <div class="start-menu" id="startMenu">
+            <div class="start-menu-header" id="startMenuHeader">
+                <!-- Start menu items will be rendered here -->
             </div>
             <div class="start-menu-footer">
                 <div class="start-user">
                     <div class="start-user-avatar" id="userAvatar">--</div>
                     <div>
-                        <div class="start-user-name" id="userName">Ładowanie...</div>
-                        <div class="start-user-email" id="userEmail">---</div>
+                        <div class="start-user-name" id="userName">...</div>
+                        <div class="start-user-email" id="userEmail">...</div>
                     </div>
                 </div>
                 <button class="power-btn" id="logoutBtn">
                     <span>⏻</span> Wyloguj
-                </button>
-                <button class="power-btn shutdown-btn" id="closeAppBtn" style="margin-top: 5px;">
-                    <span>&#10006;</span> Zamknij
                 </button>
             </div>
         </div>
@@ -759,22 +112,13 @@
         <div class="context-menu-item" data-action="change-wallpaper">
             <span>🖼️</span> Zmień tapetę
         </div>
-        <div class="context-menu-item" data-action="add-icon">
-            <span>➕</span> Dodaj nową ikonę
-        </div>
         <div class="context-menu-separator"></div>
         <div class="context-menu-item" data-action="logout">
             <span>⏻</span> Wyloguj
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="storage.js"></script>
-    <script src="ui.js"></script>
-    <script src="pdf.js"></script>
-    <script src="dashboard.js"></script>
-    <script src="snake.js"></script>
-    <script src="domator.js"></script>
-    <script src="app.js"></script>
+    <!-- Main Application Script -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
