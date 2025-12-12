@@ -420,6 +420,7 @@ async function populateProfileSelector() {
         profiles.forEach((profile, index) => {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
+            profileCard.dataset.profile = profile.key; // Set the data-profile attribute
             profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
             
