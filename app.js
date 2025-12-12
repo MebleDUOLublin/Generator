@@ -921,10 +921,24 @@ async function generatePDF() {
     loadingOverlay?.classList.add('show');
 
     try {
+        // Gather seller data directly from the form fields to ensure any edits are captured.
+        // This overrides the base profile data for the generated PDF.
+        const sellerData = {
+            ...currentProfile, // Use profile as a base for properties not in the form (e.g., logo)
+            fullName: document.getElementById('sellerName')?.value || '',
+            name: document.getElementById('sellerName')?.value || '', // Both name and fullName are used in PDF template
+            nip: document.getElementById('sellerNIP')?.value || '',
+            address: document.getElementById('sellerAddress')?.value || '',
+            phone: document.getElementById('sellerPhone')?.value || '',
+            email: document.getElementById('sellerEmail')?.value || '',
+            bankAccount: document.getElementById('sellerBank')?.value || '',
+            sellerName: document.getElementById('sellerContact')?.value || '',
+        };
+
         const pdf = await PDFManager.generatePDF({
             orientation: document.getElementById('pdfOrientation')?.value || 'portrait',
             format: document.getElementById('pdfFormat')?.value || 'a4',
-            seller: currentProfile,
+            seller: sellerData,
             products: pdfProducts,
             offerData: offerData
         });
