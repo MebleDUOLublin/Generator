@@ -423,10 +423,13 @@ async function populateProfileSelector() {
             profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
             
-            const logoInitial = profile.name ? profile.name.substring(0, 1) : 'P';
+            const logoHtml = profile.logo
+                ? `<img src="${profile.logo}" alt="${profile.name} Logo" class="profile-logo">`
+                : `<div class="profile-logo">${profile.name ? profile.name.substring(0, 1) : 'P'}</div>`;
+
 
             profileCard.innerHTML = `
-                <div class="profile-logo">${logoInitial}</div>
+                ${logoHtml}
                 <h2 class="profile-name">${profile.name || 'Profil'}</h2>
                 <p class="profile-desc">${profile.fullName || ''}</p>
             `;

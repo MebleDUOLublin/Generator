@@ -177,10 +177,11 @@ html, body {
     margin-bottom: 2rem;
 }
 
-.profile-selection {
+.profile-selector {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
+    min-height: 150px; /* Ensure container has a height while loading */
 }
 
 .profile-card {
