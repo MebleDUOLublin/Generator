@@ -148,6 +148,17 @@ body.login-page {
 }
 
 /* ===== LOGIN SCREEN ===== */
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .login-screen {
     position: fixed;
     inset: 0;
@@ -220,6 +231,9 @@ body.login-page {
     text-align: center;
     position: relative;
     overflow: hidden;
+    opacity: 0;
+    animation: cardFadeIn 0.5s ease-out forwards;
+    animation-delay: var(--card-delay, 0s);
 }
 
 .profile-card::before {
@@ -244,6 +258,13 @@ body.login-page {
 
 .profile-card:active {
     transform: translateY(-8px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-card {
+    animation: none;
+    opacity: 1; /* Ensure cards are visible immediately */
+  }
 }
 
 .profile-logo {

@@ -417,10 +417,11 @@ async function populateProfileSelector() {
         
         selector.innerHTML = '';
         
-        profiles.forEach(profile => {
+        profiles.forEach((profile, index) => {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
             profileCard.onclick = () => loginAs(profile.key);
+            profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
             
             const logoInitial = profile.name ? profile.name.substring(0, 1) : 'P';
 
