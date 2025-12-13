@@ -45,25 +45,72 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// UI SETUP
+// UI SETUP & RENDERING
 // ============================================
 function setupUI() {
-    console.log('🎨 Setting up UI event listeners...');
+    console.log('🎨 Setting up UI event listeners for static elements...');
     
     updateClock();
     setInterval(updateClock, 1000);
 
-    setupDesktopInteractions();
+    setupDesktopInteractions(); // For desktop background and context menu
     setupTaskbarAndStartMenu();
     setupWindowManagement();
     setupOfferGenerator();
     setupSettings();
     setupGlobalEventListeners();
 
-    console.log('✅ All UI event listeners attached!');
+    console.log('✅ All static UI event listeners attached!');
 }
 
-function setupDesktopInteractions() {
+function renderDesktop() {
+    const desktopIconsContainer = document.getElementById('desktopIcons');
+    if (!desktopIconsContainer || !currentProfile?.desktopIcons) return;
+
+    desktopIconsContainer.innerHTML = ''; // Clear existing icons
+    currentProfile.desktopIcons.forEach(iconData => {
+        const iconEl = document.createElement('div');
+        iconEl.className = 'desktop-icon';
+        iconEl.dataset.window = iconData.id;
+        iconEl.tabIndex = 0;
+        iconEl.setAttribute('role', 'button');
+        iconEl.setAttribute('aria-label', `Otwórz ${iconData.name}`);
+        iconEl.innerHTML = `
+            <div class="desktop-icon-image">${iconData.icon}</div>
+            <div class="desktop-icon-name">${iconData.name}</div>
+        `;
+        desktopIconsContainer.appendChild(iconEl);
+    });
+
+    // Attach listeners to the newly created icons
+    setupDesktopIconListeners();
+}
+
+function renderStartMenu() {
+    const startMenuContainer = document.getElementById('startMenuAppsGrid');
+    if (!startMenuContainer || !currentProfile?.startMenuItems) return;
+
+    startMenuContainer.innerHTML = ''; // Clear existing items
+    currentProfile.startMenuItems.forEach(itemData => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'start-app';
+        itemEl.dataset.window = itemData.id;
+        itemEl.tabIndex = 0;
+        itemEl.setAttribute('role', 'menuitem');
+        itemEl.innerHTML = `
+            <div class="start-app-icon">${itemData.icon}</div>
+            <div class="start-app-name">${itemData.name}</div>
+        `;
+        // Add listener directly to the new element
+        itemEl.addEventListener('click', () => {
+            openWindow(itemData.id);
+            document.getElementById('startMenu')?.classList.remove('active');
+        });
+        startMenuContainer.appendChild(itemEl);
+    });
+}
+
+function setupDesktopIconListeners() {
     document.querySelectorAll('.desktop-icon').forEach(icon => {
         icon.addEventListener('dblclick', () => {
             const windowId = icon.dataset.window;
@@ -74,7 +121,10 @@ function setupDesktopInteractions() {
             icon.classList.add('selected');
         });
     });
+}
 
+function setupDesktopInteractions() {
+    // Listeners for the desktop area itself (e.g., context menu, deselecting icons)
     document.getElementById('desktop')?.addEventListener('click', (e) => {
         if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
             document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
@@ -108,15 +158,10 @@ function setupTaskbarAndStartMenu() {
         toggleStartMenu();
     });
 
-    document.querySelectorAll('.start-app').forEach(app => {
-        app.addEventListener('click', () => {
-            openWindow(app.dataset.window);
-            document.getElementById('startMenu')?.classList.remove('active');
-        });
-    });
-
+    // .start-app listeners are now added dynamically in renderStartMenu()
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
 }
+
 
 function setupWindowManagement() {
     document.querySelectorAll('.window').forEach(win => {
@@ -452,6 +497,10 @@ async function loginAs(profileKey) {
 
         console.log('✅ Profile loaded:', currentProfile);
 
+        // Dynamically render UI elements based on profile
+        renderDesktop();
+        renderStartMenu();
+
         const fieldMap = {
             sellerName: currentProfile.fullName,
             sellerNIP: currentProfile.nip,
@@ -486,12 +535,6 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
         }, 500);
-
-        // Pokaż ikonę Domator tylko dla profilu alekrzesla
-        const domatorIcon = document.querySelector('[data-window="domator"]');
-        if (domatorIcon) {
-            domatorIcon.style.display = profileKey === 'alekrzesla' ? 'flex' : 'none';
-        }
 
     } catch (error) {
         console.error('Login failed:', error);
