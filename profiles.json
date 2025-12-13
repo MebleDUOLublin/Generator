@@ -17,7 +17,18 @@
       "sellerPosition": "Kierownik Sprzedaży",
       "sellerPhone": "+48 515 189 107",
       "sellerEmail": "justyna@mebleduo.com",
-      "website": "www.mebleduo.com"
+      "website": "www.mebleduo.com",
+      "desktopIcons": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
+        { "id": "snake", "name": "Neon Snake", "icon": "🐍" }
+      ],
+      "startMenuItems": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
+      ]
     },
     "alekrzesla": {
       "key": "alekrzesla",
@@ -36,7 +47,20 @@
       "sellerPosition": "Właściciel",
       "sellerPhone": "+48 515 189 107",
       "sellerEmail": "joanna@alekrzesla.pl",
-      "website": "www.alekrzesla.pl"
+      "website": "www.alekrzesla.pl",
+      "desktopIcons": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
+        { "id": "snake", "name": "Neon Snake", "icon": "🐍" },
+        { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
+      ],
+      "startMenuItems": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
+        { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
+      ]
     }
   }
 }

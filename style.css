@@ -330,6 +330,7 @@ body.login-page {
     position: fixed;
     inset: 0;
     background: url('/userData/tapeta.png') no-repeat center center/cover;
+    background-color: #333; /* Fallback for when image is not available */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.5s ease;
@@ -375,6 +376,7 @@ body.login-page {
     font-size: 48px;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
     transition: transform var(--transition-base);
+    font-family: "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Twemoji Mozilla", "Noto Color Emoji", "Android Emoji";
 }
 
 .desktop-icon:hover .desktop-icon-image {
@@ -383,14 +385,18 @@ body.login-page {
 
 .desktop-icon-name {
     color: white;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 600;
     text-align: center;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 0, 0, 0.5);
     max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: 0.01em;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 /* ===== WINDOWS ===== */
