@@ -64,16 +64,25 @@ function setupUI() {
 }
 
 function setupDesktopInteractions() {
-    document.querySelectorAll('.desktop-icon').forEach(icon => {
-        icon.addEventListener('dblclick', () => {
-            const windowId = icon.dataset.window;
-            if (windowId) openWindow(windowId);
+    // Event delegation for dynamically created icons
+    const desktopIconsContainer = document.querySelector('.desktop-icons');
+    if (desktopIconsContainer) {
+        desktopIconsContainer.addEventListener('dblclick', (e) => {
+            const icon = e.target.closest('.desktop-icon');
+            if (icon) {
+                const windowId = icon.dataset.window;
+                if (windowId) openWindow(windowId);
+            }
         });
-        icon.addEventListener('click', () => {
-            document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
-            icon.classList.add('selected');
+
+        desktopIconsContainer.addEventListener('click', (e) => {
+            const icon = e.target.closest('.desktop-icon');
+            if (icon) {
+                document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+                icon.classList.add('selected');
+            }
         });
-    });
+    }
 
     document.getElementById('desktop')?.addEventListener('click', (e) => {
         if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
@@ -480,18 +489,15 @@ async function loginAs(profileKey) {
         generateOfferNumber();
         setTodayDate();
 
+        renderDesktop();
+        renderStartMenu();
+
         document.getElementById('loginScreen').classList.add('hidden');
         document.body.classList.remove('login-page');
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
         }, 500);
-
-        // Pokaż ikonę Domator tylko dla profilu alekrzesla
-        const domatorIcon = document.querySelector('[data-window="domator"]');
-        if (domatorIcon) {
-            domatorIcon.style.display = profileKey === 'alekrzesla' ? 'flex' : 'none';
-        }
 
     } catch (error) {
         console.error('Login failed:', error);
@@ -548,6 +554,51 @@ function setLogoPlaceholder() {
     
     currentProfile.logoData = canvas.toDataURL('image/png');
     console.log('✅ Logo placeholder created');
+}
+
+function renderDesktop() {
+    const iconsContainer = document.querySelector('.desktop-icons');
+    if (!iconsContainer) return;
+
+    iconsContainer.innerHTML = ''; // Clear existing static icons
+
+    const icons = currentProfile.desktopIcons || [];
+    icons.forEach(icon => {
+        const iconEl = document.createElement('div');
+        iconEl.className = 'desktop-icon';
+        iconEl.dataset.window = icon.id;
+        iconEl.tabIndex = 0;
+        iconEl.setAttribute('role', 'button');
+        iconEl.setAttribute('aria-label', `Otwórz ${icon.name}`);
+
+        iconEl.innerHTML = `
+            <div class="desktop-icon-image">${icon.icon}</div>
+            <div class="desktop-icon-name">${icon.name}</div>
+        `;
+        iconsContainer.appendChild(iconEl);
+    });
+}
+
+function renderStartMenu() {
+    const appsGrid = document.querySelector('.start-apps-grid');
+    if (!appsGrid) return;
+
+    appsGrid.innerHTML = ''; // Clear existing static apps
+
+    const menuItems = currentProfile.startMenuItems || [];
+    menuItems.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'start-app';
+        itemEl.dataset.window = item.id;
+        itemEl.tabIndex = 0;
+        itemEl.setAttribute('role', 'menuitem');
+
+        itemEl.innerHTML = `
+            <div class="start-app-icon">${item.icon}</div>
+            <div class="start-app-name">${item.name}</div>
+        `;
+        appsGrid.appendChild(itemEl);
+    });
 }
 
 // ============================================
