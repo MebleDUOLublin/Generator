@@ -246,6 +246,10 @@ html, body {
     display: none; /* Initially hidden */
 }
 
+#desktop.active {
+    display: block;
+}
+
 .desktop-icon {
     width: 80px;
     height: 90px;
@@ -872,6 +876,7 @@ html, body {
 }
 
 /* Utility Classes */
+.hidden { display: none !important; }
 .d-none { display: none !important; }
 .text-center { text-align: center; }
 .mt-1 { margin-top: 0.25rem; }
