@@ -74,6 +74,35 @@ function setupDesktopInteractions() {
             icon.classList.add('selected');
         });
     });
+}
+
+function renderDesktop(profile) {
+    const desktopIconsContainer = document.querySelector('.desktop-icons');
+    if (!desktopIconsContainer) return;
+
+    desktopIconsContainer.innerHTML = ''; // Clear existing icons
+
+    const icons = profile.desktopIcons || [];
+    icons.forEach(iconData => {
+        const iconEl = document.createElement('div');
+        iconEl.className = 'desktop-icon';
+        iconEl.dataset.window = iconData.window;
+        iconEl.tabIndex = 0;
+        iconEl.setAttribute('role', 'button');
+        iconEl.setAttribute('aria-label', iconData.ariaLabel);
+        if (iconData.hidden) {
+            iconEl.style.display = 'none';
+        }
+
+        iconEl.innerHTML = `
+            <div class="desktop-icon-image">${iconData.icon}</div>
+            <div class="desktop-icon-name">${iconData.label}</div>
+        `;
+        desktopIconsContainer.appendChild(iconEl);
+    });
+
+    setupDesktopInteractions();
+}
 
     document.getElementById('desktop')?.addEventListener('click', (e) => {
         if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
@@ -292,88 +321,6 @@ function handleWindowAction(action, windowId) {
     }
 }
 
-function handleContextMenuAction(action) {
-    switch (action) {
-        case 'change-wallpaper':
-            openWindow('settings');
-            break;
-        case 'add-icon':
-            UI.Feedback.toast('Funkcja wkrótce dostępna!', 'info');
-            break;
-        case 'logout':
-            logout();
-            break;
-    }
-}
-
-function focusWindow(win) {
-    document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
-    win.classList.add('focused');
-    win.style.zIndex = ++zIndexCounter;
-}
-
-function handleWindowAction(action, windowId) {
-    switch (action) {
-        case 'minimize':
-            minimizeWindow(windowId);
-            break;
-        case 'maximize':
-            maximizeWindow(windowId);
-            break;
-        case 'close':
-            closeWindow(windowId);
-            break;
-    }
-}
-function setupGlobalEventListeners() {
-    document.addEventListener('click', (e) => {
-        const startMenu = document.getElementById('startMenu');
-        const startBtn = document.getElementById('startBtn');
-        if (startMenu?.classList.contains('active') && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
-            startMenu.classList.remove('active');
-        }
-        document.getElementById('contextMenu')?.classList.remove('active');
-    });
-
-    document.addEventListener('mousemove', handleWindowDrag);
-    document.addEventListener('mouseup', stopWindowDrag);
-    document.addEventListener('keydown', handleGlobalHotkeys);
-}
-
-function handleContextMenuAction(action) {
-    switch (action) {
-        case 'change-wallpaper':
-            openWindow('settings');
-            break;
-        case 'add-icon':
-            UI.Feedback.toast('Funkcja wkrótce dostępna!', 'info');
-            break;
-        case 'logout':
-            logout();
-            break;
-    }
-}
-
-function focusWindow(win) {
-    document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
-    win.classList.add('focused');
-    win.style.zIndex = ++zIndexCounter;
-}
-
-function handleWindowAction(action, windowId) {
-    switch (action) {
-        case 'minimize':
-            minimizeWindow(windowId);
-            break;
-        case 'maximize':
-            maximizeWindow(windowId);
-            break;
-        case 'close':
-            closeWindow(windowId);
-            break;
-    }
-}
-
 function focusWindow(win) {
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
@@ -487,11 +434,7 @@ async function loginAs(profileKey) {
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
         }, 500);
 
-        // Pokaż ikonę Domator tylko dla profilu alekrzesla
-        const domatorIcon = document.querySelector('[data-window="domator"]');
-        if (domatorIcon) {
-            domatorIcon.style.display = profileKey === 'alekrzesla' ? 'flex' : 'none';
-        }
+        renderDesktop(currentProfile);
 
     } catch (error) {
         console.error('Login failed:', error);
@@ -733,6 +676,7 @@ function addProduct(productData) {
         updateProductImage(newId);
     }
 }
+
 
 function removeProduct(productId) {
     const productData = { id: productId };

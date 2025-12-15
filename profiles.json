@@ -36,7 +36,40 @@
       "sellerPosition": "Właściciel",
       "sellerPhone": "+48 515 189 107",
       "sellerEmail": "joanna@alekrzesla.pl",
-      "website": "www.alekrzesla.pl"
+      "website": "www.alekrzesla.pl",
+      "desktopIcons": [
+        {
+          "window": "offers",
+          "label": "Generator Ofert",
+          "icon": "📄",
+          "ariaLabel": "Otwórz Generator Ofert"
+        },
+        {
+          "window": "dashboard",
+          "label": "Dashboard",
+          "icon": "📊",
+          "ariaLabel": "Otwórz Dashboard"
+        },
+        {
+          "window": "settings",
+          "label": "Ustawienia",
+          "icon": "⚙️",
+          "ariaLabel": "Otwórz Ustawienia"
+        },
+        {
+          "window": "snake",
+          "label": "Neon Snake",
+          "icon": "🐍",
+          "ariaLabel": "Otwórz Neon Snake"
+        },
+        {
+          "window": "domator",
+          "label": "Zamówienie Domator",
+          "icon": "🚚",
+          "ariaLabel": "Otwórz Zamówienia Domator",
+          "hidden": false
+        }
+      ]
     }
   }
 }

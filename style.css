@@ -80,6 +80,7 @@
     /* Typography */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-emoji: "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Twemoji Mozilla", "Noto Color Emoji", "Android Emoji";
 
     /* Z-Index Scale */
     --z-dropdown: 100;
@@ -375,6 +376,7 @@ body.login-page {
     font-size: 48px;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
     transition: transform var(--transition-base);
+    font-family: var(--font-emoji);
 }
 
 .desktop-icon:hover .desktop-icon-image {
@@ -479,6 +481,7 @@ body.login-page {
 
 .window-title-icon {
     font-size: 1.25rem;
+    font-family: var(--font-emoji);
 }
 
 .window-controls {
@@ -565,6 +568,7 @@ body.login-page {
     transition: all var(--transition-base);
     position: relative;
     font-size: 1.5rem;
+    font-family: var(--font-emoji);
 }
 
 .taskbar-icon:hover {
@@ -714,6 +718,10 @@ body.login-page {
     transition: all var(--transition-fast);
 }
 
+.context-menu-item span {
+    font-family: var(--font-emoji);
+}
+
 .context-menu-item:hover {
     background: var(--primary-500);
     color: white;
@@ -763,6 +771,7 @@ body.login-page {
 
 .start-app-icon {
     font-size: 2.5rem;
+    font-family: var(--font-emoji);
 }
 
 .start-app-name {
@@ -1874,11 +1883,6 @@ body.login-page {
     overflow-x: auto;
 }
 
-.toolbar-btn {
-    background: white;
-    border: 1px solid var(--gray-300);
-    color: var(--gray-700);
-}
 
 .domator-section {
     margin-bottom: var(--space-6);
@@ -1917,8 +1921,15 @@ body.login-page {
     background: var(--gray-50);
 }
 
+.domator-toolbar .btn {
+    flex-shrink: 0;
+}
+
 .domator-table .form-input {
     width: 100%;
     padding: var(--space-2);
     border-radius: var(--radius-md);
+    border-width: 1px;
+    transition: none;
+    box-shadow: none;
 }
