@@ -264,20 +264,6 @@ function showPasteImageModal(imageData) {
     });
 }
 
-function handleContextMenuAction(action) {
-    switch (action) {
-        case 'change-wallpaper':
-            openWindow('settings');
-            break;
-        case 'add-icon':
-            UI.Feedback.toast('Funkcja wkrótce dostępna!', 'info');
-            break;
-        case 'logout':
-            logout();
-            break;
-    }
-}
-
 function handleWindowAction(action, windowId) {
     switch (action) {
         case 'minimize':
@@ -375,6 +361,67 @@ async function populateProfileSelector() {
     }
 }
 
+// ============================================
+// DYNAMIC UI RENDERING
+// ============================================
+function renderDesktop() {
+    if (!currentProfile || !currentProfile.desktopIcons) return;
+
+    const container = document.querySelector('.desktop-icons');
+    if (!container) return;
+
+    container.innerHTML = ''; // Clear existing icons
+
+    currentProfile.desktopIcons.forEach(icon => {
+        const iconEl = document.createElement('div');
+        iconEl.className = 'desktop-icon';
+        iconEl.dataset.window = icon.id;
+        iconEl.tabIndex = 0;
+        iconEl.setAttribute('role', 'button');
+        iconEl.setAttribute('aria-label', `Otwórz ${icon.name}`);
+
+        iconEl.innerHTML = `
+            <div class="desktop-icon-image">${icon.icon}</div>
+            <div class="desktop-icon-name">${icon.name}</div>
+        `;
+        container.appendChild(iconEl);
+    });
+
+    // Re-attach listeners after rendering
+    setupDesktopInteractions();
+}
+
+function renderStartMenu() {
+    if (!currentProfile || !currentProfile.startMenuItems) return;
+
+    const container = document.querySelector('.start-apps-grid');
+    if (!container) return;
+
+    container.innerHTML = ''; // Clear existing items
+
+    currentProfile.startMenuItems.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'start-app';
+        itemEl.dataset.window = item.id;
+        itemEl.tabIndex = 0;
+        itemEl.setAttribute('role', 'menuitem');
+
+        itemEl.innerHTML = `
+            <div class="start-app-icon">${item.icon}</div>
+            <div class="start-app-name">${item.name}</div>
+        `;
+        container.appendChild(itemEl);
+    });
+
+    // Re-attach listeners for newly created items
+    document.querySelectorAll('.start-app').forEach(app => {
+        app.addEventListener('click', () => {
+            openWindow(app.dataset.window);
+            document.getElementById('startMenu')?.classList.remove('active');
+        });
+    });
+}
+
 async function loginAs(profileKey) {
     try {
         console.log('🔐 Logging in as:', profileKey);
@@ -386,6 +433,10 @@ async function loginAs(profileKey) {
         }
 
         console.log('✅ Profile loaded:', currentProfile);
+
+        // Render UI based on profile
+        renderDesktop();
+        renderStartMenu();
 
         const fieldMap = {
             sellerName: currentProfile.fullName,
@@ -421,12 +472,6 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
         }, 500);
-
-        // Pokaż ikonę Domator tylko dla profilu alekrzesla
-        const domatorIcon = document.querySelector('[data-window="domator"]');
-        if (domatorIcon) {
-            domatorIcon.style.display = profileKey === 'alekrzesla' ? 'flex' : 'none';
-        }
 
     } catch (error) {
         console.error('Login failed:', error);
