@@ -133,21 +133,14 @@ const IndexedDBStore = (() => {
 
     const get = (storeName, id) => {
         return new Promise(async (resolve, reject) => {
-            try {
-                if (!db) await initDB();
-                
-                const transaction = db.transaction(storeName, 'readonly');
-                const store = transaction.objectStore(storeName);
-                const request = store.get(id);
+            if (!db) await initDB();
 
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result || null);
-            } catch (e) {
-                console.warn('IndexedDB get failed, using localStorage fallback:', e);
-                // The original implementation was incorrect. This should call the async fallback.
-                const data = await localStorageFallback.get(storeName, id);
-                resolve(data);
-            }
+            const transaction = db.transaction(storeName, 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.get(id);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result || null);
         });
     };
 
@@ -548,9 +541,31 @@ const UtilsModule = (() => {
         }
     };
 
+    const fetchWithTimeout = (resource, options = {}, timeout = 8000) => {
+        return new Promise((resolve, reject) => {
+            const controller = new AbortController();
+            const id = setTimeout(() => {
+                controller.abort();
+                reject(new Error('Request timed out'));
+            }, timeout);
+
+            fetch(resource, {
+                ...options,
+                signal: controller.signal
+            }).then(response => {
+                clearTimeout(id);
+                resolve(response);
+            }).catch(error => {
+                clearTimeout(id);
+                reject(error);
+            });
+        });
+    };
+
     return {
         debounce,
         throttle,
+        fetchWithTimeout,
         deepClone,
         deepMerge,
         retry
@@ -571,7 +586,7 @@ const ProfileManager = (() => {
                 return;
             }
 
-            const response = await fetch('profiles.json');
+            const response = await UtilsModule.fetchWithTimeout('profiles.json', {}, 5000); // 5 second timeout
             if (!response.ok) {
                 if (response.status === 404) {
                     console.warn('`profiles.json` not found. Skipping default profiles.');
