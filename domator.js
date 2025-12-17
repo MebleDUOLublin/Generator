@@ -221,32 +221,16 @@ const DomatorApp = (() => {
 
         return `
         <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
-            <tbody>
-                <tr>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 4px; font-weight: bold;">Nazwa odbiorcy:</td><td style="padding: 4px;">${data.client.name}</td></tr>
-                            <tr><td style="padding: 4px; font-weight: bold;">Adres odbiorcy:</td><td style="padding: 4px;">${data.client.street}</td></tr>
-                            <tr><td style="padding: 4px; font-weight: bold;">Kod pocztowy:</td><td style="padding: 4px;">${data.client.postCode}</td></tr>
-                            <tr><td style="padding: 4px; font-weight: bold;">Miasto:</td><td style="padding: 4px;">${data.client.city}</td></tr>
-                            <tr><td style="padding: 4px; font-weight: bold;">Numer telefonu:</td><td style="padding: 4px;">${data.client.phone}</td></tr>
-                            <tr><td style="padding: 4px; font-weight: bold;">Adres mailowy:</td><td style="padding: 4px;">${data.client.email}</td></tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px;">
-                        <h3 style="margin-top: 16px; margin-bottom: 8px; color: #333;">📦 Lista produktów:</h3>
             <thead>
                 <tr>
-                    <th colspan="6" style="background-color: #f2f2f2; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">
+                    <th colspan="7" style="background-color: #f2f2f2; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">
                         <h2 style="margin: 0; font-size: 1.5em;">Zamówienie</h2>
                     </th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="3" style="padding: 12px; vertical-align: top;">
+                    <td colspan="4" style="padding: 12px; vertical-align: top;">
                         <h3 style="margin-top: 0; color: #333;">Adres dostawy:</h3>
                         <p style="margin: 0;">
                             <strong>${data.client.name}</strong><br>
@@ -262,7 +246,8 @@ const DomatorApp = (() => {
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="6" style="padding: 12px;">
+                    <td colspan="7" style="padding: 12px;">
+                        <h3 style="margin-top: 16px; margin-bottom: 8px; color: #333;">📦 Lista produktów:</h3>
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f8f8f8;">
@@ -281,7 +266,6 @@ const DomatorApp = (() => {
                             <tfoot>
                                 <tr style="font-weight: bold; background-color: #f8f8f8;">
                                     <td colspan="5" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
-                                    <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
                                     <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
                                     <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
                                 </tr>
@@ -290,8 +274,7 @@ const DomatorApp = (() => {
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding: 12px;">
-                    <td colspan="6" style="padding: 12px;">
+                    <td colspan="7" style="padding: 12px;">
                         <h3 style="margin-top: 0; color: #333;">Dodatkowe informacje:</h3>
                         <p style="margin: 0; border: 1px solid #ddd; padding: 8px; background-color: #fdfdfd;">
                             ${data.notes || 'Brak uwag.'}
@@ -301,7 +284,7 @@ const DomatorApp = (() => {
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="6" style="padding: 12px; text-align: center; font-size: 0.9em; color: #777;">
+                    <td colspan="7" style="padding: 12px; text-align: center; font-size: 0.9em; color: #777;">
                         <p>Dziękujemy za złożenie zamówienia!</p>
                     </td>
                 </tr>
