@@ -58,7 +58,16 @@ const IndexedDBStore = (() => {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, VERSION);
 
-            request.onerror = () => reject(request.error);
+            request.onerror = (event) => {
+                console.error(`IndexedDB error: ${event.target.errorCode}`);
+                reject(request.error);
+            };
+
+            request.onblocked = (event) => {
+                console.warn("IndexedDB open is blocked. Close other tabs with this app open.");
+                // You might want to notify the user to close other tabs
+            };
+
             request.onsuccess = () => {
                 db = request.result;
                 console.log('🗄️ IndexedDB initialized successfully');
@@ -135,7 +144,8 @@ const IndexedDBStore = (() => {
                 request.onsuccess = () => resolve(request.result || null);
             } catch (e) {
                 console.warn('IndexedDB get failed, using localStorage fallback:', e);
-                const data = localStorageFallback.get(storeName, id);
+                // The original implementation was incorrect. This should call the async fallback.
+                const data = await localStorageFallback.get(storeName, id);
                 resolve(data);
             }
         });
@@ -241,35 +251,87 @@ const IndexedDBStore = (() => {
 // LOCALSTORAGE FALLBACK
 // ============================================
 const localStorageFallback = (() => {
-    const PREFIX = 'mebleduo_';
+    const PREFIX = 'PesteczkaOS_Fallback_';
 
-    const set = (storeName, data) => {
-        try {
-            const key = PREFIX + storeName;
-            const compressed = CompressionModule.compress(JSON.stringify(data));
-            localStorage.setItem(key, compressed);
-            return data;
-        } catch (e) {
-            console.warn('localStorage fallback failed:', e);
-            return null;
-        }
-    };
-
-    const get = (storeName, id) => {
+    // Helper to get the entire collection for a store
+    const getCollection = (storeName) => {
         try {
             const key = PREFIX + storeName;
             const compressed = localStorage.getItem(key);
-            if (!compressed) return null;
-            
+            if (!compressed) return {}; // Return empty object if nothing is there
             const decompressed = CompressionModule.decompress(compressed);
-            return JSON.parse(decompressed);
+            return JSON.parse(decompressed) || {};
         } catch (e) {
-            console.warn('localStorage fallback get failed:', e);
-            return null;
+            console.warn(`localStorage fallback getCollection for "${storeName}" failed:`, e);
+            return {};
         }
     };
 
-    return { set, get };
+    // Helper to save the entire collection for a store
+    const saveCollection = (storeName, collection) => {
+        try {
+            const key = PREFIX + storeName;
+            const compressed = CompressionModule.compress(JSON.stringify(collection));
+            localStorage.setItem(key, compressed);
+            return true;
+        } catch (e) {
+            console.warn(`localStorage fallback saveCollection for "${storeName}" failed:`, e);
+            return false;
+        }
+    };
+
+    const set = (storeName, data) => {
+        return new Promise((resolve) => {
+            if (!data.id) {
+                console.error("localStorageFallback: 'set' requires data with an 'id' property.");
+                resolve(null);
+                return;
+            }
+            const collection = getCollection(storeName);
+            collection[data.id] = data;
+            saveCollection(storeName, collection);
+            resolve(data);
+        });
+    };
+
+    const get = (storeName, id) => {
+        return new Promise((resolve) => {
+            const collection = getCollection(storeName);
+            resolve(collection[id] || null);
+        });
+    };
+
+    const getAll = (storeName) => {
+        return new Promise((resolve) => {
+            const collection = getCollection(storeName);
+            resolve(Object.values(collection));
+        });
+    };
+
+    const delete_ = (storeName, id) => {
+        return new Promise((resolve) => {
+            const collection = getCollection(storeName);
+            delete collection[id];
+            saveCollection(storeName, collection);
+            resolve();
+        });
+    };
+
+    const clear = (storeName) => {
+        return new Promise((resolve) => {
+            saveCollection(storeName, {});
+            resolve();
+        });
+    };
+
+
+    return {
+        set,
+        get,
+        getAll,
+        delete: delete_,
+        clear
+    };
 })();
 
 // ============================================
@@ -297,13 +359,13 @@ const AppState = (() => {
         state.ui.isDirty = true;
         state.ui.lastModified = new Date().toISOString();
 
-        // Persist to IndexedDB
+        // Persist to the active storage system (which could be IndexedDB or the fallback)
         if (key.startsWith('offer')) {
-            await IndexedDBStore.set(IndexedDBStore.STORES.offers, state.offer);
+            await window.StorageSystem.db.set(IndexedDBStore.STORES.offers, state.offer);
         } else if (key.startsWith('diablo')) {
-            await IndexedDBStore.set(IndexedDBStore.STORES.diablo, state.diablo);
+            await window.StorageSystem.db.set(IndexedDBStore.STORES.diablo, state.diablo);
         } else if (key.startsWith('settings')) {
-            await IndexedDBStore.set(IndexedDBStore.STORES.settings, state.settings);
+            await window.StorageSystem.db.set(IndexedDBStore.STORES.settings, state.settings);
         }
 
         notifySubscribers(key, value, oldValue);
@@ -580,16 +642,35 @@ const ProfileManager = (() => {
 // INITIALIZE ON PAGE LOAD
 // ============================================
 const init = async () => {
-    try {
-        if (IndexedDBStore.isAvailable) {
+    let useFallback = !IndexedDBStore.isAvailable;
+
+    if (IndexedDBStore.isAvailable) {
+        try {
             await IndexedDBStore.initDB();
-            await ProfileManager.initDefaultProfiles();
             console.log('✅ Storage system initialized with IndexedDB');
-        } else {
-            console.warn('⚠️ IndexedDB not available, using localStorage fallback');
+        } catch (e) {
+            console.error('❌ IndexedDB initialization failed. Activating fallback mode.', e);
+            useFallback = true;
         }
+    }
+
+    if (useFallback) {
+        console.warn('⚠️ Running in LocalStorage Fallback Mode. Data will not be persistent in private browsing.');
+        // Overwrite the primary store's methods with the fallback versions
+        IndexedDBStore.set = localStorageFallback.set;
+        IndexedDBStore.get = localStorageFallback.get;
+        IndexedDBStore.getAll = localStorageFallback.getAll;
+        IndexedDBStore.delete = localStorageFallback.delete;
+        IndexedDBStore.clear = localStorageFallback.clear;
+    }
+
+    // This part runs regardless of the storage mode
+    try {
+        await ProfileManager.initDefaultProfiles();
     } catch (e) {
-        console.error('❌ Storage initialization failed:', e);
+        console.error('❌ Failed to initialize default profiles:', e);
+        // This is a critical failure, but we can still allow the app to start.
+        // It will just start with no profiles loaded.
     }
 };
 
