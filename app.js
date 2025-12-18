@@ -623,7 +623,7 @@ function handleWindowDrag(event) {
     
     let newX = event.clientX - dragOffset.x;
     let newY = event.clientY - dragOffset.y;
-    
+
     // Ograniczenia, aby okno nie wychodziło poza ekran
     const windowWidth = draggedWindow.offsetWidth;
     const windowHeight = draggedWindow.offsetHeight;
@@ -1469,3 +1469,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 console.log('✅ App.js loaded successfully');
+}
