@@ -1937,3 +1937,16 @@ body.login-page {
     padding: var(--space-2);
     border-radius: var(--radius-md);
 }
+
+.taskbar-icon.open::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--gray-500);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-base);
+}

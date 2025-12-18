@@ -39,7 +39,7 @@ const CompressionModule = (() => {
 // ============================================
 const IndexedDBStore = (() => {
     const DB_NAME = 'PesteczkaOS_DB';
-    const VERSION = 7; // Incremented version to force upgrade
+    const VERSION = 8; // Incremented version to force upgrade
 
     const STORES = {
         profiles: 'profiles',

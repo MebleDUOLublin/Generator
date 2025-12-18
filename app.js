@@ -63,6 +63,30 @@ function setupUI() {
     console.log('✅ All UI event listeners attached!');
 }
 
+function renderDesktop() {
+    const iconsContainer = document.getElementById('desktopIcons');
+    if (!iconsContainer) return;
+
+    iconsContainer.innerHTML = '';
+    if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
+        currentProfile.desktopIcons.forEach(iconData => {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'desktop-icon';
+        iconEl.tabIndex = 0;
+        iconEl.setAttribute('role', 'button');
+        iconEl.setAttribute('aria-label', iconData.name);
+        iconEl.dataset.window = iconData.id;
+
+        iconEl.innerHTML = `
+            <div class="desktop-icon-image">${iconData.icon}</div>
+            <div class="desktop-icon-name">${iconData.name}</div>
+        `;
+        iconsContainer.appendChild(iconEl);
+    });
+
+    setupDesktopInteractions();
+}
+
 function setupDesktopInteractions() {
     document.querySelectorAll('.desktop-icon').forEach(icon => {
         icon.addEventListener('dblclick', () => {
@@ -292,20 +316,6 @@ function handleWindowAction(action, windowId) {
     }
 }
 
-function handleContextMenuAction(action) {
-    switch (action) {
-        case 'change-wallpaper':
-            openWindow('settings');
-            break;
-        case 'add-icon':
-            UI.Feedback.toast('Funkcja wkrótce dostępna!', 'info');
-            break;
-        case 'logout':
-            logout();
-            break;
-    }
-}
-
 function focusWindow(win) {
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
@@ -420,14 +430,8 @@ async function loginAs(profileKey) {
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
+            renderDesktop();
         }, 500);
-
-        // Pokaż ikonę Domator tylko dla profilu alekrzesla
-        const domatorIcon = document.querySelector('[data-window="domator"]');
-        if (domatorIcon) {
-            domatorIcon.style.display = profileKey === 'alekrzesla' ? 'flex' : 'none';
-        }
-
     } catch (error) {
         console.error('Login failed:', error);
         showNotification('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
@@ -502,8 +506,11 @@ function openWindow(windowId) {
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
     
-    const taskbarIcon = document.getElementById(`taskbar-${windowId}`);
-    if(taskbarIcon) taskbarIcon.classList.add('active');
+    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+    if(taskbarIcon) {
+        taskbarIcon.classList.add('active');
+        taskbarIcon.classList.add('open');
+    }
     
     // If settings window, load profile settings
     if (windowId === 'settings') {
@@ -537,6 +544,7 @@ function closeWindow(windowId) {
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
     if (taskbarIcon) {
         taskbarIcon.classList.remove('active');
+        taskbarIcon.classList.remove('open');
     }
 }
 
@@ -640,6 +648,182 @@ function toggleStartMenu() {
 // PRODUCT MANAGEMENT
 // ============================================
 
+function createProductCard(productId) {
+    const createEl = (tag, props = {}, children = []) => {
+        const el = document.createElement(tag);
+        Object.assign(el, props);
+        children.forEach(child => el.appendChild(child));
+        return el;
+    };
+
+    const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
+    const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
+    const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
+
+    const productCard = createEl('div', {
+        id: `product-${productId}`,
+        className: 'product-card',
+        draggable: true,
+        ondragstart: (e) => dragStart(e, productId),
+        ondragover: dragOver,
+        ondrop: (e) => drop(e, productId)
+    });
+
+    const imageZone = createEl('div', { className: 'product-image-zone' }, [
+        createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
+        createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
+    ]);
+    imageZone.onclick = () => document.getElementById(`productImage-${productId}`).click();
+
+    const productDetails = createEl('div', { className: 'product-details' }, [
+        createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
+        createEl('div', { className: 'form-grid-inner' }, [
+            createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
+            createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
+            createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
+            createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
+        ])
+    ]);
+
+    productCard.append(
+        createEl('div', { className: 'drag-handle', textContent: '☰' }),
+        createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
+        createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
+        createEl('div', { className: 'product-actions' }, [
+            createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
+            createButton('🗑️ Usuń', () => UI.Command.execute(new ProductCommand('remove', { id: productId })), 'btn btn-outline btn-danger')
+        ])
+    );
+
+    return productCard;
+}
+
+class ProductCommand {
+    constructor(action, productData) {
+        this.action = action;
+        this.productData = productData;
+    }
+
+    execute() {
+        switch (this.action) {
+            case 'add':
+                this._addProduct();
+                break;
+            case 'remove':
+                this._removeProduct();
+                break;
+        }
+    }
+
+    undo() {
+        switch (this.action) {
+            case 'add':
+                this._removeProduct();
+                break;
+            case 'remove':
+                this._addProduct();
+                break;
+        }
+    }
+
+    _addProduct() {
+        const productId = this.productData.id || Date.now() + productIdCounter++;
+        this.productData.id = productId;
+        products.push(productId);
+        const productCard = createProductCard(productId);
+        document.getElementById('productsList').appendChild(productCard);
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('➕ Dodano produkt', 'success');
+    }
+
+    _removeProduct() {
+        const { id } = this.productData;
+        const el = document.getElementById(`product-${id}`);
+        if (el) el.remove();
+        products = products.filter(pId => pId !== id);
+        delete productImages[id];
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('🗑️ Usunięto produkt', 'info');
+    }
+}
+
+class DuplicateProductCommand {
+    constructor(originalProductId) {
+        this.originalProductId = originalProductId;
+        this.newProductId = null;
+    }
+
+    execute() {
+        const originalData = {
+            name: document.getElementById(`productName-${this.originalProductId}`)?.value || '',
+            code: document.getElementById(`productCode-${this.originalProductId}`)?.value || '',
+            qty: document.getElementById(`productQty-${this.originalProductId}`)?.value || '1',
+            price: document.getElementById(`productPrice-${this.originalProductId}`)?.value || '0',
+            discount: document.getElementById(`productDiscount-${this.originalProductId}`)?.value || '0',
+            desc: document.getElementById(`productDesc-${this.originalProductId}`)?.value || '',
+            image: productImages[this.originalProductId]
+        };
+
+        this.newProductId = Date.now() + productIdCounter++;
+        products.push(this.newProductId);
+
+        const productCard = createProductCard(this.newProductId);
+        document.getElementById('productsList').appendChild(productCard);
+
+        document.getElementById(`productName-${this.newProductId}`).value = originalData.name + " (Kopia)";
+        document.getElementById(`productCode-${this.newProductId}`).value = originalData.code;
+        document.getElementById(`productQty-${this.newProductId}`).value = originalData.qty;
+        document.getElementById(`productPrice-${this.newProductId}`).value = originalData.price;
+        document.getElementById(`productDiscount-${this.newProductId}`).value = originalData.discount;
+        document.getElementById(`productDesc-${this.newProductId}`).value = originalData.desc;
+
+        if (originalData.image) {
+            productImages[this.newProductId] = originalData.image;
+            updateProductImage(this.newProductId);
+        }
+
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('📋 Produkt zduplikowany', 'info');
+    }
+
+    undo() {
+        const el = document.getElementById(`product-${this.newProductId}`);
+        if (el) el.remove();
+        products = products.filter(pId => pId !== this.newProductId);
+        delete productImages[this.newProductId];
+        updateProductView();
+        updateSummary();
+        UI.Feedback.toast('Cofnięto duplikację', 'info');
+    }
+}
+
+class UpdateProductImageCommand {
+    constructor(productId, newImage, oldImage) {
+        this.productId = productId;
+        this.newImage = newImage;
+        this.oldImage = oldImage;
+    }
+
+    execute() {
+        productImages[this.productId] = this.newImage;
+        updateProductImage(this.productId);
+        UI.Feedback.toast('🖼️ Zaktualizowano obraz produktu', 'success');
+    }
+
+    undo() {
+        if (this.oldImage) {
+            productImages[this.productId] = this.oldImage;
+        } else {
+            delete productImages[this.productId];
+        }
+        updateProductImage(this.productId);
+        UI.Feedback.toast('Cofnięto zmianę obrazu produktu', 'info');
+    }
+}
+
 function updateProductView() {
     const productsListEl = document.getElementById('productsList');
     if (!productsListEl) return;
@@ -684,11 +868,6 @@ function updateProductImage(productId) {
 
 function duplicateProduct(productId) {
     const command = new DuplicateProductCommand(productId);
-    UI.Command.execute(command);
-}
-
-function removeProduct(productId) {
-    const command = new ProductCommand('remove', { id: productId });
     UI.Command.execute(command);
 }
 
