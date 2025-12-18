@@ -167,7 +167,7 @@ function setupWindowManagement() {
 function setupOfferGenerator() {
     document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
     document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
-    document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
+    document.getElementById('saveOfferBtn')?.addEventListener('click', () => saveOffer(false));
     document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
 
     document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
@@ -184,6 +184,15 @@ function setupOfferGenerator() {
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
     });
+
+    // Ustawienie automatycznego zapisu co 60 sekund
+    setInterval(() => {
+        // Sprawdź czy okno generatora ofert jest otwarte
+        const offerWindow = document.getElementById('window-offers');
+        if (offerWindow && offerWindow.classList.contains('active')) {
+            saveOffer(true);
+        }
+    }, 60000);
 }
 
 function setupSettings() {
@@ -612,11 +621,22 @@ function startDrag(event, windowId) {
 function handleWindowDrag(event) {
     if (!draggedWindow) return;
     
-    const newX = event.clientX - dragOffset.x;
-    const newY = event.clientY - dragOffset.y;
+    let newX = event.clientX - dragOffset.x;
+    let newY = event.clientY - dragOffset.y;
     
-    draggedWindow.style.left = Math.max(0, newX) + 'px';
-    draggedWindow.style.top = Math.max(0, newY) + 'px';
+    // Ograniczenia, aby okno nie wychodziło poza ekran
+    const windowWidth = draggedWindow.offsetWidth;
+    const windowHeight = draggedWindow.offsetHeight;
+    const taskbarHeight = document.querySelector('.taskbar')?.offsetHeight || 72;
+
+    const maxX = window.innerWidth - windowWidth;
+    const maxY = window.innerHeight - windowHeight - taskbarHeight;
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
+    draggedWindow.style.left = newX + 'px';
+    draggedWindow.style.top = newY + 'px';
 }
 
 function stopWindowDrag() {
@@ -1073,17 +1093,22 @@ async function generatePDF() {
 // DATA PERSISTENCE (SAVE/LOAD)
 // ============================================
 
-async function saveOffer() {
+async function saveOffer(isAutosave = false) {
     if (!currentProfile) {
-        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        if (!isAutosave) {
+            showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        }
         return;
     }
-    
+
+    const offerNumberInput = document.getElementById('offerNumber');
+    const offerId = offerNumberInput?.value || `autosave_${currentProfile.key}`;
+
     const offerData = {
-        id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
+        id: offerId,
         profileKey: currentProfile.key,
         offer: {
-            number: document.getElementById('offerNumber')?.value || '',
+            number: offerNumberInput?.value || '',
             date: document.getElementById('offerDate')?.value || '',
             validUntil: document.getElementById('validUntil')?.value || '',
             currency: document.getElementById('currency')?.value || 'PLN'
@@ -1116,10 +1141,24 @@ async function saveOffer() {
 
     try {
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-        showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+        if (!isAutosave) {
+            showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+        } else {
+            console.log('📝 Oferta zapisana automatycznie o', new Date().toLocaleTimeString());
+            const offerNumberLabel = document.querySelector('label[for="offerNumber"]');
+            if (offerNumberLabel) {
+                const originalText = offerNumberLabel.innerHTML;
+                offerNumberLabel.innerHTML = '💾 Zapisano...';
+                setTimeout(() => {
+                    offerNumberLabel.innerHTML = originalText;
+                }, 2000);
+            }
+        }
     } catch (error) {
         console.error('Save offer error:', error);
-        showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+        if (!isAutosave) {
+            showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+        }
     }
 }
 
