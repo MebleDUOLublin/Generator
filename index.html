@@ -676,15 +676,6 @@
                 <div class="taskbar-icon" id="startBtn" tabindex="0" role="button" aria-label="Menu Start" aria-haspopup="true">
                     🌰
                 </div>
-                <div class="taskbar-icon" data-window="offers" tabindex="0" role="button" aria-label="Generator Ofert">
-                    📄
-                </div>
-                <div class="taskbar-icon" data-window="dashboard" tabindex="0" role="button" aria-label="Dashboard">
-                    📊
-                </div>
-                <div class="taskbar-icon" data-window="settings" tabindex="0" role="button" aria-label="Ustawienia">
-                    ⚙️
-                </div>
             </div>
             
             <div class="taskbar-right">
@@ -750,6 +741,51 @@
             <span>⏻</span> Wyloguj
         </div>
     </div>
+
+    <!-- TEMPLATES -->
+    <template id="product-card-template">
+        <div class="product-card" draggable="true">
+            <div class="drag-handle">☰</div>
+            <div class="product-content-wrapper">
+                <div class="product-image-zone" data-action="select-image">
+                    <div class="product-image-preview" data-template-id="productImagePreview">📷</div>
+                    <input type="file" accept="image/*" style="display:none" data-template-id="productImage">
+                </div>
+                <div class="product-details">
+                    <div class="form-group">
+                        <label class="form-label">Nazwa produktu</label>
+                        <input type="text" class="form-input" data-template-id="productName" data-action="update-summary">
+                    </div>
+                    <div class="form-grid-inner">
+                        <div class="form-group">
+                            <label class="form-label">Kod</label>
+                            <input type="text" class="form-input" data-template-id="productCode">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ilość</label>
+                            <input type="number" class="form-input" value="1" data-template-id="productQty" data-action="update-summary">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cena netto</label>
+                            <input type="number" class="form-input" value="0" data-template-id="productPrice" data-action="update-summary">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rabat (%)</label>
+                            <input type="number" class="form-input" value="0" data-template-id="productDiscount" data-action="update-summary">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Opis produktu</label>
+                <textarea class="form-textarea" rows="2" placeholder="• Cecha 1&#10;• Cecha 2" data-template-id="productDesc"></textarea>
+            </div>
+            <div class="product-actions">
+                <button class="btn btn-outline" data-action="duplicate">📋 Duplikuj</button>
+                <button class="btn btn-outline btn-danger" data-action="remove">🗑️ Usuń</button>
+            </div>
+        </div>
+    </template>
 
     <!-- Scripts -->
     <script src="storage.js"></script>
