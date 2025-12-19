@@ -63,6 +63,29 @@ function setupUI() {
     console.log('✅ All UI event listeners attached!');
 }
 
+function renderTaskbar() {
+    const taskbarCenter = document.querySelector('.taskbar-center');
+    if (!taskbarCenter) return;
+
+    // Clear existing app icons (keep start button)
+    const existingIcons = taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)');
+    existingIcons.forEach(icon => icon.remove());
+
+    if (currentProfile.taskbarIcons && Array.isArray(currentProfile.taskbarIcons)) {
+        currentProfile.taskbarIcons.forEach(iconData => {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'taskbar-icon';
+            iconEl.dataset.window = iconData.id;
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', iconData.name);
+            iconEl.innerHTML = iconData.icon;
+            taskbarCenter.appendChild(iconEl);
+        });
+    }
+     setupTaskbarAndStartMenu();
+}
+
 function renderDesktop() {
     const iconsContainer = document.getElementById('desktopIcons');
     if (!iconsContainer) return;
@@ -431,6 +454,10 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
             renderDesktop();
+            renderTaskbar();
+            const wallpapers = ['wallpaper1', 'wallpaper2', 'wallpaper3'];
+            const randomWallpaper = wallpapers[Math.floor(Math.random() * wallpapers.length)];
+            changeWallpaper(randomWallpaper);
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
@@ -649,51 +676,47 @@ function toggleStartMenu() {
 // ============================================
 
 function createProductCard(productId) {
-    const createEl = (tag, props = {}, children = []) => {
-        const el = document.createElement(tag);
-        Object.assign(el, props);
-        children.forEach(child => el.appendChild(child));
-        return el;
-    };
+    const template = document.getElementById('product-card-template');
+    const productCard = template.content.cloneNode(true).firstElementChild;
 
-    const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
-    const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
-    const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
+    productCard.id = `product-${productId}`;
+    productCard.dataset.productId = productId;
 
-    const productCard = createEl('div', {
-        id: `product-${productId}`,
-        className: 'product-card',
-        draggable: true,
-        ondragstart: (e) => dragStart(e, productId),
-        ondragover: dragOver,
-        ondrop: (e) => drop(e, productId)
+    // --- Helper to find elements in the template ---
+    const getEl = (templateId) => productCard.querySelector(`[data-template-id="${templateId}"]`);
+
+    // --- Assign IDs for external access ---
+    getEl('productName').id = `productName-${productId}`;
+    getEl('productCode').id = `productCode-${productId}`;
+    getEl('productQty').id = `productQty-${productId}`;
+    getEl('productPrice').id = `productPrice-${productId}`;
+    getEl('productDiscount').id = `productDiscount-${productId}`;
+    getEl('productDesc').id = `productDesc-${productId}`;
+    getEl('productImage').id = `productImage-${productId}`;
+    getEl('productImagePreview').id = `productImagePreview-${productId}`;
+
+    // --- Add Event Listeners ---
+    productCard.addEventListener('dragstart', (e) => dragStart(e, productId));
+    productCard.addEventListener('dragover', dragOver);
+    productCard.addEventListener('drop', (e) => drop(e, productId));
+
+    productCard.querySelector('[data-action="select-image"]').addEventListener('click', () => {
+        getEl('productImage').click();
     });
 
-    const imageZone = createEl('div', { className: 'product-image-zone' }, [
-        createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
-        createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
-    ]);
-    imageZone.onclick = () => document.getElementById(`productImage-${productId}`).click();
+    getEl('productImage').addEventListener('change', (e) => uploadProductImage(productId, e));
 
-    const productDetails = createEl('div', { className: 'product-details' }, [
-        createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
-        createEl('div', { className: 'form-grid-inner' }, [
-            createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
-            createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
-            createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
-            createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
-        ])
-    ]);
+    productCard.querySelectorAll('[data-action="update-summary"]').forEach(el => {
+        el.addEventListener('input', updateSummary);
+    });
 
-    productCard.append(
-        createEl('div', { className: 'drag-handle', textContent: '☰' }),
-        createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
-        createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
-        createEl('div', { className: 'product-actions' }, [
-            createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
-            createButton('🗑️ Usuń', () => UI.Command.execute(new ProductCommand('remove', { id: productId })), 'btn btn-outline btn-danger')
-        ])
-    );
+    productCard.querySelector('[data-action="duplicate"]').addEventListener('click', () => {
+        duplicateProduct(productId);
+    });
+
+    productCard.querySelector('[data-action="remove"]').addEventListener('click', () => {
+        UI.Command.execute(new ProductCommand('remove', { id: productId }));
+    });
 
     return productCard;
 }
@@ -1396,9 +1419,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url("userData/wallpapers/wallpaper1.png")',
+        wallpaper2: 'url("userData/wallpapers/wallpaper2.png")',
+        wallpaper3: 'url("userData/wallpapers/wallpaper3.png")'
     };
 
     if (wallpapers[wallpaper]) {
@@ -1427,6 +1450,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-
 
 console.log('✅ App.js loaded successfully');
