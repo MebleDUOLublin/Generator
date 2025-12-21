@@ -184,6 +184,12 @@ function setupOfferGenerator() {
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
     });
+
+    // Validate form in real-time
+    const fieldsToValidate = ['offerNumber', 'buyerName'];
+    fieldsToValidate.forEach(id => {
+        document.getElementById(id)?.addEventListener('input', validateOfferForm);
+    });
 }
 
 function setupSettings() {
@@ -431,6 +437,7 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
             renderDesktop();
+            validateOfferForm(); // Initial validation
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
@@ -657,7 +664,16 @@ function createProductCard(productId) {
     };
 
     const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
-    const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
+
+    const createInput = (id, type, value, oninput) => {
+        const el = createEl('input', { id, type, value, className: 'form-input' });
+        el.addEventListener('input', () => {
+            if (oninput) oninput();
+            validateOfferForm();
+        });
+        return el;
+    };
+
     const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
 
     const productCard = createEl('div', {
@@ -992,10 +1008,78 @@ function updateSummary() {
 }
 
 // ============================================
+// VALIDATION
+// ============================================
+
+function validateOfferForm() {
+    let isValid = true;
+    const generatePdfBtn = document.getElementById('generatePdfBtn');
+
+    const requiredFields = ['offerNumber', 'buyerName'];
+    requiredFields.forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            if (!field.value.trim()) {
+                field.classList.add('invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('invalid');
+            }
+        }
+    });
+
+    products.forEach(productId => {
+        const qtyField = document.getElementById(`productQty-${productId}`);
+        if (qtyField) {
+            const qty = parseFloat(qtyField.value);
+            if (isNaN(qty) || qty <= 0) {
+                qtyField.classList.add('invalid');
+                isValid = false;
+            } else {
+                qtyField.classList.remove('invalid');
+            }
+        }
+
+        const priceField = document.getElementById(`productPrice-${productId}`);
+        if (priceField) {
+            const price = parseFloat(priceField.value);
+            if (isNaN(price) || price < 0) {
+                priceField.classList.add('invalid');
+                isValid = false;
+            } else {
+                priceField.classList.remove('invalid');
+            }
+        }
+
+        const discountField = document.getElementById(`productDiscount-${productId}`);
+        if (discountField) {
+            const discount = parseFloat(discountField.value);
+            if (isNaN(discount) || discount < 0 || discount > 100) {
+                discountField.classList.add('invalid');
+                isValid = false;
+            } else {
+                discountField.classList.remove('invalid');
+            }
+        }
+    });
+
+    if (generatePdfBtn) {
+        generatePdfBtn.disabled = !isValid;
+    }
+
+    return isValid;
+}
+
+
+// ============================================
 // PDF GENERATION
 // ============================================
 
 async function generatePDF() {
+    if (!validateOfferForm()) {
+        showNotification('Błąd walidacji', 'Proszę poprawić błędy w formularzu.', 'error');
+        return;
+    }
     if (!currentProfile) {
         showNotification('Błąd', 'Brak aktywnego profilu.', 'error');
         return;
@@ -1078,6 +1162,11 @@ async function saveOffer() {
         showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
         return;
     }
+    const saveBtn = document.getElementById('saveOfferBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+    }
     
     const offerData = {
         id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
@@ -1115,11 +1204,17 @@ async function saveOffer() {
     };
 
     try {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
         showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
     } catch (error) {
         console.error('Save offer error:', error);
         showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span>💾</span> Zapisz ofertę';
+        }
     }
 }
 
@@ -1396,9 +1491,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.png\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.png\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.png\')'
     };
 
     if (wallpapers[wallpaper]) {
