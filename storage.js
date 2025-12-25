@@ -612,6 +612,8 @@ const ProfileManager = (() => {
             }
         } catch (error) {
             console.error('❌ Failed to initialize default profiles:', error);
+            // Propagate the error to be caught by the main initializer
+            throw new Error(`Failed to load critical profile data: ${error.message}`);
         }
     };
 
@@ -680,13 +682,7 @@ const init = async () => {
     }
 
     // This part runs regardless of the storage mode
-    try {
-        await ProfileManager.initDefaultProfiles();
-    } catch (e) {
-        console.error('❌ Failed to initialize default profiles:', e);
-        // This is a critical failure, but we can still allow the app to start.
-        // It will just start with no profiles loaded.
-    }
+    await ProfileManager.initDefaultProfiles();
 };
 
 // Export for global use

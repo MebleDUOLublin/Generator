@@ -1668,15 +1668,15 @@ body.login-page {
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper1"] {
-    background-image: url('https://source.unsplash.com/random/800x600?nature');
+    background-image: url('userData/wallpaper1.png');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper2"] {
-    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+    background-image: url('userData/wallpaper2.png');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper3"] {
-    background-image: url('https://source.unsplash.com/random/800x600?space');
+    background-image: url('userData/wallpaper3.png');
 }
     color: var(--gray-500);
 }
@@ -1949,4 +1949,51 @@ body.login-page {
   background: var(--gray-500);
   border-radius: var(--radius-full);
   transition: all var(--transition-base);
+}
+
+/* ===== PROFILE ERROR CARD ===== */
+.profile-error-card {
+    width: 480px;
+    max-width: 90vw;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 120, 120, 0.4);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-10);
+    text-align: center;
+    color: white;
+    animation: cardFadeIn 0.5s ease-out forwards;
+}
+
+.profile-error-card h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: var(--space-4);
+    color: #fca5a5; /* --primary-300 */
+}
+
+.profile-error-card p {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: var(--space-6);
+}
+
+.profile-error-card .error-details {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #fee2e2; /* --primary-100 */
+    text-align: left;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.profile-error-card code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
 }

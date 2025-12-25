@@ -550,11 +550,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const showProfileError = (message) => {
+    const selector = document.querySelector('.profile-selector');
+    if (selector) {
+        // Clear existing content (like loading spinners)
+        selector.innerHTML = '';
+
+        const errorCard = document.createElement('div');
+        errorCard.className = 'profile-error-card';
+        errorCard.innerHTML = `
+            <h2>Błąd Krytyczny</h2>
+            <p>Nie można załadować profili użytkowników.</p>
+            <div class="error-details">${message}</div>
+            <p>Sprawdź plik <code>profiles.json</code> lub konsolę (F12) po więcej informacji.</p>
+        `;
+        selector.appendChild(errorCard);
+    }
+    const subtitle = document.querySelector('.login-subtitle');
+    if (subtitle) {
+        subtitle.innerHTML = '<span style="color: #ef4444;">Aplikacja nie może zostać uruchomiona.</span>';
+    }
+};
+
 window.UI = {
     Form: ReactiveForm,
     Observer: FormObserver,
     Feedback: UIFeedback,
-    Command: CommandManager
+    Command: CommandManager,
+    showProfileError
 };
 
 console.log('✅ Advanced UI System v2.0 initialized');
