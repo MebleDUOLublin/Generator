@@ -37,9 +37,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('✅ Pesteczka OS Initialized Successfully');
     } catch (error) {
         console.error('❌ CRITICAL ERROR during initialization:', error);
-        const loginSubtitle = document.querySelector('.login-subtitle');
-        if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+        // Use the new centralized error UI handler
+        if (window.UI && typeof window.UI.showProfileError === 'function') {
+            UI.showProfileError(error.message);
+        } else {
+            // Fallback for when UI script itself might have failed
+            const loginSubtitle = document.querySelector('.login-subtitle');
+            if (loginSubtitle) {
+                loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+            }
         }
     }
 });
@@ -1396,9 +1402,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpaper1.png\')',
+        wallpaper2: 'url(\'userData/wallpaper2.png\')',
+        wallpaper3: 'url(\'userData/wallpaper3.png\')'
     };
 
     if (wallpapers[wallpaper]) {
