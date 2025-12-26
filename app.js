@@ -1078,48 +1078,57 @@ async function saveOffer() {
         showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
         return;
     }
-    
-    const offerData = {
-        id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
-        profileKey: currentProfile.key,
-        offer: {
-            number: document.getElementById('offerNumber')?.value || '',
-            date: document.getElementById('offerDate')?.value || '',
-            validUntil: document.getElementById('validUntil')?.value || '',
-            currency: document.getElementById('currency')?.value || 'PLN'
-        },
-        buyer: {
-            name: document.getElementById('buyerName')?.value || '',
-            nip: document.getElementById('buyerNIP')?.value || '',
-            address: document.getElementById('buyerAddress')?.value || '',
-            phone: document.getElementById('buyerPhone')?.value || '',
-            email: document.getElementById('buyerEmail')?.value || ''
-        },
-        terms: {
-            payment: document.getElementById('paymentTerms')?.value || '',
-            delivery: document.getElementById('deliveryTime')?.value || '',
-            warranty: document.getElementById('warranty')?.value || '',
-            deliveryMethod: document.getElementById('deliveryMethod')?.value || ''
-        },
-        products: products.map(id => ({
-            id,
-            name: document.getElementById(`productName-${id}`)?.value || '',
-            code: document.getElementById(`productCode-${id}`)?.value || '',
-            qty: document.getElementById(`productQty-${id}`)?.value || '1',
-            price: document.getElementById(`productPrice-${id}`)?.value || '0',
-            discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
-            desc: document.getElementById(`productDesc-${id}`)?.value || '',
-            image: productImages[id] || null
-        })),
-        timestamp: new Date().toISOString()
-    };
+
+    const saveBtn = document.getElementById('saveOfferBtn');
+    const originalBtnText = saveBtn.innerHTML;
 
     try {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span>💾</span> Zapisywanie...`;
+
+        const offerData = {
+            id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
+            profileKey: currentProfile.key,
+            offer: {
+                number: document.getElementById('offerNumber')?.value || '',
+                date: document.getElementById('offerDate')?.value || '',
+                validUntil: document.getElementById('validUntil')?.value || '',
+                currency: document.getElementById('currency')?.value || 'PLN'
+            },
+            buyer: {
+                name: document.getElementById('buyerName')?.value || '',
+                nip: document.getElementById('buyerNIP')?.value || '',
+                address: document.getElementById('buyerAddress')?.value || '',
+                phone: document.getElementById('buyerPhone')?.value || '',
+                email: document.getElementById('buyerEmail')?.value || ''
+            },
+            terms: {
+                payment: document.getElementById('paymentTerms')?.value || '',
+                delivery: document.getElementById('deliveryTime')?.value || '',
+                warranty: document.getElementById('warranty')?.value || '',
+                deliveryMethod: document.getElementById('deliveryMethod')?.value || ''
+            },
+            products: products.map(id => ({
+                id,
+                name: document.getElementById(`productName-${id}`)?.value || '',
+                code: document.getElementById(`productCode-${id}`)?.value || '',
+                qty: document.getElementById(`productQty-${id}`)?.value || '1',
+                price: document.getElementById(`productPrice-${id}`)?.value || '0',
+                discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
+                desc: document.getElementById(`productDesc-${id}`)?.value || '',
+                image: productImages[id] || null
+            })),
+            timestamp: new Date().toISOString()
+        };
+
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
         showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
     } catch (error) {
         console.error('Save offer error:', error);
         showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
     }
 }
 
