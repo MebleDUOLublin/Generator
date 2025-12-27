@@ -69,6 +69,12 @@ const NeonSnake = (() => {
         if (head.x === food.x && head.y === food.y) {
             score++;
             spawnFood();
+            // Increase speed every 5 points
+            if (score % 5 === 0) {
+                clearInterval(intervalId);
+                const newSpeed = Math.max(50, 100 - (score / 5) * 10);
+                intervalId = setInterval(gameLoop, newSpeed);
+            }
         } else {
             snake.pop();
         }
@@ -86,7 +92,9 @@ const NeonSnake = (() => {
         ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
 
         // Draw food
-        drawRect(food.x, food.y, '#f43f5e', '#f43f5e');
+        const foodPulse = Math.abs(Math.sin(Date.now() / 200));
+        const foodColor = `rgba(244, 63, 94, ${0.7 + foodPulse * 0.3})`;
+        drawRect(food.x, food.y, foodColor, foodColor);
 
         // Draw snake
         snake.forEach((segment, index) => {

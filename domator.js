@@ -33,7 +33,7 @@ const DomatorApp = (() => {
         document.getElementById('domatorExportPdfBtn').addEventListener('click', exportToPdf);
         document.getElementById('domatorCopyHtmlBtn').addEventListener('click', copyHtml);
 
-        // Add input event listeners to all form fields for auto-saving
+        // Add input event listeners to all form fields
         domatorApp.querySelectorAll('input, textarea').forEach(el => {
             el.addEventListener('input', updateStats);
         });
@@ -94,11 +94,24 @@ const DomatorApp = (() => {
         const value = e.target.value;
         const product = products.find(p => p.id === parseInt(id));
         if (product) {
-            product[field] = field === 'qty' ? parseInt(value) : (field === 'netto' || field === 'brutto' ? parseFloat(value) : value);
+            const row = e.target.closest('tr');
+            const nettoInput = row.querySelector('[data-field="netto"]');
+            const bruttoInput = row.querySelector('[data-field="brutto"]');
+
             if (field === 'netto') {
-                product.brutto = product.netto * 1.23;
-                const bruttoInput = e.target.parentElement.nextElementSibling.querySelector('input');
+                const nettoValue = parseFloat(value) || 0;
+                product.netto = nettoValue;
+                product.brutto = nettoValue * 1.23;
                 if (bruttoInput) bruttoInput.value = product.brutto.toFixed(2);
+            } else if (field === 'brutto') {
+                const bruttoValue = parseFloat(value) || 0;
+                product.brutto = bruttoValue;
+                product.netto = bruttoValue / 1.23;
+                if (nettoInput) nettoInput.value = product.netto.toFixed(2);
+            } else if (field === 'qty') {
+                product.qty = parseInt(value) || 0;
+            } else {
+                product[field] = value;
             }
         }
         updateStats();
@@ -123,8 +136,6 @@ const DomatorApp = (() => {
 
         const clientName = document.getElementById('domatorClientName').value;
         statusEl.textContent = clientName && totalQty > 0 ? '✅ Gotowe' : '📝 Edycja';
-
-        saveToStorage();
     };
 
     const clearForm = () => {
@@ -159,8 +170,26 @@ const DomatorApp = (() => {
     };
 
     const saveToStorage = async () => {
-        const data = collectData();
-        await StorageSystem.db.set(StorageSystem.db.STORES.domator, { id: 'domatorOrder', ...data });
+        const saveBtn = document.getElementById('domatorSaveBtn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="icon-loader animate-spin"></i> Zapisywanie...';
+
+        try {
+            const data = collectData();
+            await StorageSystem.db.set(StorageSystem.db.STORES.domator, { id: 'domatorOrder', ...data });
+            saveBtn.innerHTML = '<i class="icon-check"></i> Zapisano';
+            UI.Feedback.toast('💾 Zapisano w pamięci przeglądarki', 'success');
+        } catch (error) {
+            console.error('Save to storage failed:', error);
+            saveBtn.innerHTML = 'Błąd zapisu';
+            UI.Feedback.toast('Błąd podczas zapisu', 'error');
+        } finally {
+            setTimeout(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }, 2000);
+        }
     };
 
     const loadFromStorage = async () => {
@@ -220,76 +249,64 @@ const DomatorApp = (() => {
         let totalBrutto = data.products.reduce((sum, p) => sum + p.brutto * p.qty, 0);
 
         return `
-        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
-            <thead>
-                <tr>
-                    <th colspan="7" style="background-color: #f2f2f2; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">
-                        <h2 style="margin: 0; font-size: 1.5em;">Zamówienie</h2>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="4" style="padding: 12px; vertical-align: top;">
-                        <h3 style="margin-top: 0; color: #333;">Adres dostawy:</h3>
-                        <p style="margin: 0;">
-                            <strong>${data.client.name}</strong><br>
-                            ${data.client.street}<br>
-                            ${data.client.postCode} ${data.client.city}<br>
-                            Tel: ${data.client.phone}<br>
-                            Email: ${data.client.email}
-                        </p>
-                    </td>
-                    <td colspan="3" style="padding: 12px; vertical-align: top; text-align: right;">
-                        <h3 style="margin-top: 0; color: #333;">Data zamówienia:</h3>
-                        <p style="margin: 0;">${new Date().toLocaleDateString('pl-PL')}</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" style="padding: 12px;">
-                        <h3 style="margin-top: 16px; margin-bottom: 8px; color: #333;">📦 Lista produktów:</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background-color: #f8f8f8;">
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">#</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">EAN</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${productRows}
-                            </tbody>
-                            <tfoot>
-                                <tr style="font-weight: bold; background-color: #f8f8f8;">
-                                    <td colspan="5" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
-                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
-                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" style="padding: 12px;">
-                        <h3 style="margin-top: 0; color: #333;">Dodatkowe informacje:</h3>
-                        <p style="margin: 0; border: 1px solid #ddd; padding: 8px; background-color: #fdfdfd;">
-                            ${data.notes || 'Brak uwag.'}
-                        </p>
-                    </td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="7" style="padding: 12px; text-align: center; font-size: 0.9em; color: #777;">
-                        <p>Dziękujemy za złożenie zamówienia!</p>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 800px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #0f172a; color: #fff; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 2em;">Zamówienie dla Domator</h1>
+            </div>
+            <div style="padding: 20px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding-bottom: 20px; vertical-align: top;">
+                            <h2 style="font-size: 1.2em; color: #0f172a; margin-top: 0; border-bottom: 2px solid #0f172a; padding-bottom: 5px;">🚚 Adres dostawy</h2>
+                            <table style="width: 100%;">
+                                <tr><td style="padding: 4px 0; color: #555; width: 120px;">Nazwa odbiorcy:</td><td style="padding: 4px 0;"><strong>${data.client.name}</strong></td></tr>
+                                <tr><td style="padding: 4px 0; color: #555;">Adres:</td><td style="padding: 4px 0;">${data.client.street}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #555;">Kod pocztowy:</td><td style="padding: 4px 0;">${data.client.postCode} ${data.client.city}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #555;">Telefon:</td><td style="padding: 4px 0;">${data.client.phone}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #555;">Email:</td><td style="padding: 4px 0;">${data.client.email}</td></tr>
+                            </table>
+                        </td>
+                        <td style="text-align: right; vertical-align: top; padding-left: 20px;">
+                            <h3 style="margin-top: 0; color: #555;">Data zamówienia:</h3>
+                            <p style="margin: 0;"><strong>${new Date().toLocaleDateString('pl-PL')}</strong></p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2 style="font-size: 1.2em; color: #0f172a; margin-top: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 5px;">📦 Lista produktów</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead style="background-color: #f8f9fa;">
+                        <tr>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: center;">#</th>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: left;">SKU</th>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: left;">EAN</th>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: left;">Nazwa</th>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: center;">Ilość</th>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: right;">Cena netto</th>
+                            <th style="border: 1px solid #dee2e6; padding: 10px; text-align: right;">Cena brutto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${productRows}
+                    </tbody>
+                    <tfoot style="font-weight: bold; background-color: #f8f9fa;">
+                        <tr>
+                            <td colspan="5" style="border: 1px solid #dee2e6; padding: 10px; text-align: right;">SUMA:</td>
+                            <td style="border: 1px solid #dee2e6; padding: 10px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
+                            <td style="border: 1px solid #dee2e6; padding: 10px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <h2 style="font-size: 1.2em; color: #0f172a; margin-top: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 5px;">📝 Dodatkowe informacje</h2>
+                <div style="margin-top: 10px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    ${data.notes || 'Brak uwag.'}
+                </div>
+            </div>
+            <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 0.9em; color: #777; border-top: 1px solid #e0e0e0;">
+                <p style="margin: 0;">Dziękujemy za złożenie zamówienia! - PesteczkaOS</p>
+            </div>
+        </div>
         `;
     };
 
