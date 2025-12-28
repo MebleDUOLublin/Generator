@@ -17,34 +17,6 @@ let zIndexCounter = 1000;
 let draggedElement = null;
 
 // ============================================
-// INITIALIZATION
-// ============================================
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Pesteczka OS Main App Script Started');
-
-    try {
-        console.log('1. Awaiting Storage System initialization...');
-        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
-            await window.StorageSystem.init();
-        }
-        
-        console.log('2. Populating profile selector...');
-        await populateProfileSelector();
-        
-        console.log('3. Setting up core UI...');
-        setupUI();
-
-        console.log('✅ Pesteczka OS Initialized Successfully');
-    } catch (error) {
-        console.error('❌ CRITICAL ERROR during initialization:', error);
-        const loginSubtitle = document.querySelector('.login-subtitle');
-        if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
-        }
-    }
-});
-
-// ============================================
 // UI SETUP
 // ============================================
 function setupUI() {
@@ -1428,5 +1400,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Pesteczka OS Main App Script Started');
+
+    try {
+        console.log('1. Awaiting Storage System initialization...');
+        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
+            await window.StorageSystem.init();
+        }
+
+        console.log('2. Populating profile selector...');
+        await populateProfileSelector();
+
+        console.log('3. Setting up core UI...');
+        setupUI();
+
+        // On load, check for saved wallpaper
+        const savedWallpaper = localStorage.getItem('pesteczkaOS_wallpaper');
+        if (savedWallpaper) {
+            changeWallpaper(savedWallpaper);
+            const activePreview = document.querySelector(`.wallpaper-preview[data-wallpaper="${savedWallpaper}"]`);
+            if (activePreview) {
+                activePreview.classList.add('active');
+            }
+        } else {
+            const defaultPreview = document.querySelector('.wallpaper-preview[data-wallpaper="default"]');
+            if (defaultPreview) {
+                defaultPreview.classList.add('active');
+            }
+        }
+
+        console.log('✅ Pesteczka OS Initialized Successfully');
+    } catch (error) {
+        console.error('❌ CRITICAL ERROR during initialization:', error);
+        const loginSubtitle = document.querySelector('.login-subtitle');
+        if (loginSubtitle) {
+            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+        }
+    }
+});
 
 console.log('✅ App.js loaded successfully');
