@@ -106,7 +106,7 @@ html {
 }
 
 body {
-    font-family: var(--font-sans);
+    font-family: var(--font-sans), 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
     line-height: 1.6;
     color: var(--gray-900);
     background: #F5F5F5;
@@ -406,6 +406,9 @@ body.login-page {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
 }
 
 /* ===== WINDOWS ===== */
