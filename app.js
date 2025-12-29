@@ -1396,9 +1396,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.jpg\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')'
     };
 
     if (wallpapers[wallpaper]) {
