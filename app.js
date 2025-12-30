@@ -67,32 +67,77 @@ function renderDesktop() {
     const iconsContainer = document.getElementById('desktopIcons');
     if (!iconsContainer) return;
 
-    iconsContainer.innerHTML = '';
+    iconsContainer.innerHTML = ''; // Clear existing icons
     if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
         currentProfile.desktopIcons.forEach(iconData => {
             const iconEl = document.createElement('div');
             iconEl.className = 'desktop-icon';
-        iconEl.tabIndex = 0;
-        iconEl.setAttribute('role', 'button');
-        iconEl.setAttribute('aria-label', iconData.name);
-        iconEl.dataset.window = iconData.id;
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', iconData.name);
+            iconEl.dataset.window = iconData.id;
 
-        iconEl.innerHTML = `
-            <div class="desktop-icon-image">${iconData.icon}</div>
-            <div class="desktop-icon-name">${iconData.name}</div>
-        `;
-        iconsContainer.appendChild(iconEl);
-    });
-
+            iconEl.innerHTML = `
+                <div class="desktop-icon-image">${iconData.icon}</div>
+                <div class="desktop-icon-name">${iconData.name}</div>
+            `;
+            iconEl.addEventListener('dblclick', () => openWindow(iconData.id));
+            iconsContainer.appendChild(iconEl);
+        });
+    }
     setupDesktopInteractions();
+}
+
+function renderTaskbar() {
+    const container = document.getElementById('taskbar-center');
+    if (!container) return;
+
+    // Remove all icons except the start button
+    container.querySelectorAll('.taskbar-icon:not(#startBtn)').forEach(icon => icon.remove());
+
+    if (currentProfile.taskbarIcons && Array.isArray(currentProfile.taskbarIcons)) {
+        currentProfile.taskbarIcons.forEach(iconData => {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'taskbar-icon';
+            iconEl.dataset.window = iconData.id;
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', iconData.name);
+            iconEl.innerHTML = iconData.icon;
+            iconEl.addEventListener('click', () => toggleWindow(iconData.id));
+            container.appendChild(iconEl);
+        });
+    }
+}
+
+function renderStartMenu() {
+    const container = document.getElementById('start-apps-grid');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (currentProfile.startMenuItems && Array.isArray(currentProfile.startMenuItems)) {
+        currentProfile.startMenuItems.forEach(itemData => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'start-app';
+            itemEl.dataset.window = itemData.id;
+            itemEl.tabIndex = 0;
+            itemEl.setAttribute('role', 'menuitem');
+
+            itemEl.innerHTML = `
+                <div class="start-app-icon">${itemData.icon}</div>
+                <div class="start-app-name">${itemData.name}</div>
+            `;
+            itemEl.addEventListener('click', () => {
+                openWindow(itemData.id);
+                document.getElementById('startMenu')?.classList.remove('active');
+            });
+            container.appendChild(itemEl);
+        });
+    }
 }
 
 function setupDesktopInteractions() {
     document.querySelectorAll('.desktop-icon').forEach(icon => {
-        icon.addEventListener('dblclick', () => {
-            const windowId = icon.dataset.window;
-            if (windowId) openWindow(windowId);
-        });
         icon.addEventListener('click', () => {
             document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
             icon.classList.add('selected');
@@ -123,20 +168,9 @@ function setupDesktopInteractions() {
 }
 
 function setupTaskbarAndStartMenu() {
-    document.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => {
-        icon.addEventListener('click', () => toggleWindow(icon.dataset.window));
-    });
-
     document.getElementById('startBtn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleStartMenu();
-    });
-
-    document.querySelectorAll('.start-app').forEach(app => {
-        app.addEventListener('click', () => {
-            openWindow(app.dataset.window);
-            document.getElementById('startMenu')?.classList.remove('active');
-        });
     });
 
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
@@ -431,6 +465,8 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
             renderDesktop();
+            renderTaskbar();
+            renderStartMenu();
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
@@ -1395,10 +1431,10 @@ function changeWallpaper(wallpaper) {
     if (!desktop) return;
 
     const wallpapers = {
-        default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        default: 'url(\'userData/wallpapers/wallpaper_default.png\')',
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.png\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.png\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.png\')'
     };
 
     if (wallpapers[wallpaper]) {
