@@ -17,34 +17,6 @@ let zIndexCounter = 1000;
 let draggedElement = null;
 
 // ============================================
-// INITIALIZATION
-// ============================================
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Pesteczka OS Main App Script Started');
-
-    try {
-        console.log('1. Awaiting Storage System initialization...');
-        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
-            await window.StorageSystem.init();
-        }
-        
-        console.log('2. Populating profile selector...');
-        await populateProfileSelector();
-        
-        console.log('3. Setting up core UI...');
-        setupUI();
-
-        console.log('✅ Pesteczka OS Initialized Successfully');
-    } catch (error) {
-        console.error('❌ CRITICAL ERROR during initialization:', error);
-        const loginSubtitle = document.querySelector('.login-subtitle');
-        if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
-        }
-    }
-});
-
-// ============================================
 // UI SETUP
 // ============================================
 function setupUI() {
@@ -84,7 +56,50 @@ function renderDesktop() {
         iconsContainer.appendChild(iconEl);
     });
 
+    renderStartMenu();
     setupDesktopInteractions();
+}
+
+function renderStartMenu() {
+    const container = document.getElementById('startAppsGrid');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (currentProfile.startMenuItems && Array.isArray(currentProfile.startMenuItems)) {
+        currentProfile.startMenuItems.forEach(item => {
+            const appEl = document.createElement('div');
+            appEl.className = 'start-app';
+            appEl.tabIndex = 0;
+            appEl.setAttribute('role', 'menuitem');
+            appEl.dataset.window = item.id;
+            appEl.innerHTML = `
+                <div class="start-app-icon">${item.icon}</div>
+                <div class="start-app-name">${item.name}</div>
+            `;
+            container.appendChild(appEl);
+        });
+    }
+}
+
+function renderTaskbar() {
+    const container = document.getElementById('taskbarCenter');
+    if (!container) return;
+
+    // Clear existing app icons, but keep the start button
+    container.querySelectorAll('.taskbar-icon:not(#startBtn)').forEach(icon => icon.remove());
+
+    if (currentProfile.taskbarIcons && Array.isArray(currentProfile.taskbarIcons)) {
+        currentProfile.taskbarIcons.forEach(item => {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'taskbar-icon';
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', item.name);
+            iconEl.dataset.window = item.id;
+            iconEl.innerHTML = item.icon;
+            container.appendChild(iconEl);
+        });
+    }
 }
 
 function setupDesktopInteractions() {
@@ -431,6 +446,7 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
             renderDesktop();
+            renderTaskbar();
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
@@ -1396,9 +1412,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.png\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.png\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.png\')'
     };
 
     if (wallpapers[wallpaper]) {
@@ -1428,5 +1444,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Pesteczka OS Main App Script Started');
+
+    try {
+        console.log('1. Awaiting Storage System initialization...');
+        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
+            await window.StorageSystem.init();
+        }
+
+        console.log('2. Populating profile selector...');
+        await populateProfileSelector();
+
+        console.log('3. Setting up core UI...');
+        setupUI();
+
+        console.log('✅ Pesteczka OS Initialized Successfully');
+    } catch (error) {
+        console.error('❌ CRITICAL ERROR during initialization:', error);
+        const loginSubtitle = document.querySelector('.login-subtitle');
+        if (loginSubtitle) {
+            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+        }
+    }
+});
 
 console.log('✅ App.js loaded successfully');
