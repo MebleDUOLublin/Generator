@@ -28,6 +28,11 @@
         { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
         { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
         { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
+      ],
+      "taskbarIcons": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
       ]
     },
     "alekrzesla": {
@@ -59,6 +64,11 @@
         { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
         { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
         { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
+      ],
+      "taskbarIcons": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
       ]
     }
   }
