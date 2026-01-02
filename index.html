@@ -11,9 +11,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌰</text></svg>">
     
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/fonts.css">
     
     <!-- Local Libraries -->
     <script src="vendor/chart.min.js"></script>
@@ -672,19 +670,11 @@
 
         <!-- TASKBAR -->
         <div class="taskbar">
-            <div class="taskbar-center">
+            <div class="taskbar-center" id="taskbarCenter">
                 <div class="taskbar-icon" id="startBtn" tabindex="0" role="button" aria-label="Menu Start" aria-haspopup="true">
                     🌰
                 </div>
-                <div class="taskbar-icon" data-window="offers" tabindex="0" role="button" aria-label="Generator Ofert">
-                    📄
-                </div>
-                <div class="taskbar-icon" data-window="dashboard" tabindex="0" role="button" aria-label="Dashboard">
-                    📊
-                </div>
-                <div class="taskbar-icon" data-window="settings" tabindex="0" role="button" aria-label="Ustawienia">
-                    ⚙️
-                </div>
+                <!-- Icons will be loaded dynamically -->
             </div>
             
             <div class="taskbar-right">
@@ -704,19 +694,8 @@
         <div class="start-menu" id="startMenu" role="menu">
             <div class="start-menu-header">
                 <div class="start-apps-title">📌 Przypięte aplikacje</div>
-                <div class="start-apps-grid">
-                    <div class="start-app" data-window="offers" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">📄</div>
-                        <div class="start-app-name">Generator Ofert</div>
-                    </div>
-                    <div class="start-app" data-window="dashboard" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">📊</div>
-                        <div class="start-app-name">Dashboard</div>
-                    </div>
-                    <div class="start-app" data-window="settings" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">⚙️</div>
-                        <div class="start-app-name">Ustawienia</div>
-                    </div>
+                <div class="start-apps-grid" id="startAppsGrid">
+                    <!-- Apps will be loaded dynamically -->
                 </div>
             </div>
             <div class="start-menu-footer">
@@ -750,6 +729,51 @@
             <span>⏻</span> Wyloguj
         </div>
     </div>
+
+    <!-- TEMPLATES -->
+    <template id="product-card-template">
+        <div class="product-card" draggable="true">
+            <div class="drag-handle">☰</div>
+            <div class="product-content-wrapper">
+                <div class="product-image-zone">
+                    <div class="product-image-preview">📷</div>
+                    <input type="file" accept="image/*" class="product-image-input" style="display:none;">
+                </div>
+                <div class="product-details">
+                    <div class="form-group">
+                        <label class="form-label">Nazwa produktu</label>
+                        <input type="text" class="form-input product-name">
+                    </div>
+                    <div class="form-grid-inner">
+                        <div class="form-group">
+                            <label class="form-label">Kod</label>
+                            <input type="text" class="form-input product-code">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ilość</label>
+                            <input type="number" class="form-input product-qty" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cena netto</label>
+                            <input type="number" class="form-input product-price" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rabat (%)</label>
+                            <input type="number" class="form-input product-discount" value="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Opis produktu</label>
+                <textarea class="form-textarea product-desc" rows="2" placeholder="• Cecha 1\n• Cecha 2"></textarea>
+            </div>
+            <div class="product-actions">
+                <button class="btn btn-outline duplicate-product-btn">📋 Duplikuj</button>
+                <button class="btn btn-outline btn-danger remove-product-btn">🗑️ Usuń</button>
+            </div>
+        </div>
+    </template>
 
     <!-- Scripts -->
     <script src="storage.js"></script>

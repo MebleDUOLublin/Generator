@@ -53,8 +53,15 @@ function setupUI() {
     updateClock();
     setInterval(updateClock, 1000);
 
+    // Setup for static elements that exist on page load
+    document.getElementById('startBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleStartMenu();
+    });
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+
     setupDesktopInteractions();
-    setupTaskbarAndStartMenu();
     setupWindowManagement();
     setupOfferGenerator();
     setupSettings();
@@ -122,24 +129,72 @@ function setupDesktopInteractions() {
     });
 }
 
-function setupTaskbarAndStartMenu() {
-    document.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => {
-        icon.addEventListener('click', () => toggleWindow(icon.dataset.window));
-    });
+function renderStartMenu() {
+    const grid = document.getElementById('startAppsGrid');
+    if (!grid) return;
 
-    document.getElementById('startBtn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleStartMenu();
-    });
+    grid.innerHTML = '';
+    if (currentProfile.startMenuItems && Array.isArray(currentProfile.startMenuItems)) {
+        currentProfile.startMenuItems.forEach(itemData => {
+            const appEl = document.createElement('div');
+            appEl.className = 'start-app';
+            appEl.tabIndex = 0;
+            appEl.setAttribute('role', 'menuitem');
+            appEl.dataset.window = itemData.id;
 
-    document.querySelectorAll('.start-app').forEach(app => {
-        app.addEventListener('click', () => {
-            openWindow(app.dataset.window);
-            document.getElementById('startMenu')?.classList.remove('active');
+            appEl.innerHTML = `
+                <div class="start-app-icon">${itemData.icon}</div>
+                <div class="start-app-name">${itemData.name}</div>
+            `;
+            grid.appendChild(appEl);
         });
-    });
+    }
+}
 
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+function renderTaskbar() {
+    const container = document.getElementById('taskbarCenter');
+    if (!container) return;
+
+    // Clear existing icons, but keep start button
+    container.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => icon.remove());
+
+    if (currentProfile.taskbarIcons && Array.isArray(currentProfile.taskbarIcons)) {
+        currentProfile.taskbarIcons.forEach(iconData => {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'taskbar-icon';
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', iconData.name);
+            iconEl.dataset.window = iconData.id;
+            iconEl.innerHTML = iconData.icon;
+            container.appendChild(iconEl);
+        });
+    }
+}
+
+function setupTaskbarAndStartMenu() {
+    // This function can now be called multiple times to re-attach events for dynamic icons
+    const taskbarCenter = document.getElementById('taskbarCenter');
+    if (taskbarCenter) {
+        taskbarCenter.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => {
+            // To prevent adding listeners twice, we replace the element with its clone
+            const newIcon = icon.cloneNode(true);
+            icon.parentNode.replaceChild(newIcon, icon);
+            newIcon.addEventListener('click', () => toggleWindow(newIcon.dataset.window));
+        });
+    }
+
+    const startAppsGrid = document.getElementById('startAppsGrid');
+    if (startAppsGrid) {
+        startAppsGrid.querySelectorAll('.start-app').forEach(app => {
+            const newApp = app.cloneNode(true);
+            app.parentNode.replaceChild(newApp, app);
+            newApp.addEventListener('click', () => {
+                openWindow(newApp.dataset.window);
+                document.getElementById('startMenu')?.classList.remove('active');
+            });
+        });
+    }
 }
 
 function setupWindowManagement() {
@@ -431,6 +486,9 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
             renderDesktop();
+            renderStartMenu();
+            renderTaskbar();
+            setupTaskbarAndStartMenu();
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
@@ -649,51 +707,44 @@ function toggleStartMenu() {
 // ============================================
 
 function createProductCard(productId) {
-    const createEl = (tag, props = {}, children = []) => {
-        const el = document.createElement(tag);
-        Object.assign(el, props);
-        children.forEach(child => el.appendChild(child));
-        return el;
+    const template = document.getElementById('product-card-template');
+    const productCard = template.content.cloneNode(true).firstElementChild;
+
+    productCard.id = `product-${productId}`;
+    productCard.addEventListener('dragstart', (e) => dragStart(e, productId));
+    productCard.addEventListener('dragover', dragOver);
+    productCard.addEventListener('drop', (e) => drop(e, productId));
+
+    const imageZone = productCard.querySelector('.product-image-zone');
+    const imagePreview = productCard.querySelector('.product-image-preview');
+    const imageInput = productCard.querySelector('.product-image-input');
+
+    imagePreview.id = `productImagePreview-${productId}`;
+    imageInput.id = `productImage-${productId}`;
+    imageInput.addEventListener('change', (e) => uploadProductImage(productId, e));
+    imageZone.addEventListener('click', () => imageInput.click());
+
+    const fields = {
+        'product-name': `productName-${productId}`,
+        'product-code': `productCode-${productId}`,
+        'product-qty': `productQty-${productId}`,
+        'product-price': `productPrice-${productId}`,
+        'product-discount': `productDiscount-${productId}`,
+        'product-desc': `productDesc-${productId}`
     };
 
-    const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
-    const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
-    const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
+    for (const [cls, id] of Object.entries(fields)) {
+        const el = productCard.querySelector(`.${cls}`);
+        if (el) {
+            el.id = id;
+            if (['product-qty', 'product-price', 'product-discount', 'product-name'].includes(cls)) {
+                el.addEventListener('input', updateSummary);
+            }
+        }
+    }
 
-    const productCard = createEl('div', {
-        id: `product-${productId}`,
-        className: 'product-card',
-        draggable: true,
-        ondragstart: (e) => dragStart(e, productId),
-        ondragover: dragOver,
-        ondrop: (e) => drop(e, productId)
-    });
-
-    const imageZone = createEl('div', { className: 'product-image-zone' }, [
-        createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
-        createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
-    ]);
-    imageZone.onclick = () => document.getElementById(`productImage-${productId}`).click();
-
-    const productDetails = createEl('div', { className: 'product-details' }, [
-        createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
-        createEl('div', { className: 'form-grid-inner' }, [
-            createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
-            createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
-            createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
-            createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
-        ])
-    ]);
-
-    productCard.append(
-        createEl('div', { className: 'drag-handle', textContent: '☰' }),
-        createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
-        createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
-        createEl('div', { className: 'product-actions' }, [
-            createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
-            createButton('🗑️ Usuń', () => UI.Command.execute(new ProductCommand('remove', { id: productId })), 'btn btn-outline btn-danger')
-        ])
-    );
+    productCard.querySelector('.duplicate-product-btn').addEventListener('click', () => duplicateProduct(productId));
+    productCard.querySelector('.remove-product-btn').addEventListener('click', () => UI.Command.execute(new ProductCommand('remove', { id: productId })));
 
     return productCard;
 }
@@ -1396,9 +1447,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.jpg\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')'
     };
 
     if (wallpapers[wallpaper]) {
@@ -1425,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (defaultPreview) {
             defaultPreview.classList.add('active');
         }
+    }
     }
 });
 
