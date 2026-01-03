@@ -223,7 +223,9 @@ const ReactiveForm = (() => {
             errorDisplay = document.createElement('div');
             errorDisplay.id = `${fieldId}-error`;
             errorDisplay.style.cssText = 'color: #dc2626; font-size: 12px; margin-top: 4px;';
-            element.parentNode.appendChild(errorDisplay);
+            if (element.parentNode) {
+                element.parentNode.appendChild(errorDisplay);
+            }
         }
         errorDisplay.textContent = error;
     };
