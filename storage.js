@@ -612,6 +612,8 @@ const ProfileManager = (() => {
             }
         } catch (error) {
             console.error('❌ Failed to initialize default profiles:', error);
+            // Re-throw the error to be caught by the main initializer
+            throw new Error(`Could not load profiles.json: ${error.message}`);
         }
     };
 

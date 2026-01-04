@@ -26,11 +26,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('1. Awaiting Storage System initialization...');
         if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
             await window.StorageSystem.init();
+        } else {
+            throw new Error('StorageSystem is not available.');
         }
-        
+
         console.log('2. Populating profile selector...');
         await populateProfileSelector();
-        
+
         console.log('3. Setting up core UI...');
         setupUI();
 
@@ -39,7 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ CRITICAL ERROR during initialization:', error);
         const loginSubtitle = document.querySelector('.login-subtitle');
         if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+            loginSubtitle.innerHTML = `<span style="color: #ef4444;">Błąd krytyczny: ${error.message}</span>`;
+            loginSubtitle.title = `Pełna treść błędu: ${error.stack}`;
+        }
+        // Hide the profile selector as it's likely empty or broken
+        const profileSelector = document.querySelector('.profile-selector');
+        if (profileSelector) {
+            profileSelector.style.display = 'none';
         }
     }
 });
@@ -59,6 +67,11 @@ function setupUI() {
     setupOfferGenerator();
     setupSettings();
     setupGlobalEventListeners();
+
+    // Initialize advanced UI features from ui.js
+    if (window.initializeAdvancedUI) {
+        initializeAdvancedUI();
+    }
 
     console.log('✅ All UI event listeners attached!');
 }
@@ -165,7 +178,7 @@ function setupWindowManagement() {
 }
 
 function setupOfferGenerator() {
-    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
+    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({ id: Date.now() + productIdCounter++ }));
     document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
     document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
     document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
@@ -273,7 +286,7 @@ function showPasteImageModal(imageData) {
     });
 
     pasteToNewProductBtn.addEventListener('click', () => {
-        addProduct({ image: imageData });
+        addProduct({ image: imageData, id: Date.now() + productIdCounter++ });
         modal.remove();
     });
 
@@ -691,63 +704,13 @@ function createProductCard(productId) {
         createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
         createEl('div', { className: 'product-actions' }, [
             createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
-            createButton('🗑️ Usuń', () => UI.Command.execute(new ProductCommand('remove', { id: productId })), 'btn btn-outline btn-danger')
+            createButton('🗑️ Usuń', () => UI.Command.execute(new UI.ProductCommand('remove', { id: productId })), 'btn btn-outline btn-danger')
         ])
     );
 
     return productCard;
 }
 
-class ProductCommand {
-    constructor(action, productData) {
-        this.action = action;
-        this.productData = productData;
-    }
-
-    execute() {
-        switch (this.action) {
-            case 'add':
-                this._addProduct();
-                break;
-            case 'remove':
-                this._removeProduct();
-                break;
-        }
-    }
-
-    undo() {
-        switch (this.action) {
-            case 'add':
-                this._removeProduct();
-                break;
-            case 'remove':
-                this._addProduct();
-                break;
-        }
-    }
-
-    _addProduct() {
-        const productId = this.productData.id || Date.now() + productIdCounter++;
-        this.productData.id = productId;
-        products.push(productId);
-        const productCard = createProductCard(productId);
-        document.getElementById('productsList').appendChild(productCard);
-        updateProductView();
-        updateSummary();
-        UI.Feedback.toast('➕ Dodano produkt', 'success');
-    }
-
-    _removeProduct() {
-        const { id } = this.productData;
-        const el = document.getElementById(`product-${id}`);
-        if (el) el.remove();
-        products = products.filter(pId => pId !== id);
-        delete productImages[id];
-        updateProductView();
-        updateSummary();
-        UI.Feedback.toast('🗑️ Usunięto produkt', 'info');
-    }
-}
 
 class DuplicateProductCommand {
     constructor(originalProductId) {
@@ -843,11 +806,11 @@ function updateProductView() {
 }
 
 function addProduct(productData) {
-    const command = new ProductCommand('add', productData);
+    const command = new UI.ProductCommand('add', productData);
     UI.Command.execute(command);
 
     if (productData.image) {
-        const newId = products[products.length - 1];
+        const newId = productData.id;
         productImages[newId] = productData.image;
         updateProductImage(newId);
     }
@@ -855,7 +818,7 @@ function addProduct(productData) {
 
 function removeProduct(productId) {
     const productData = { id: productId };
-    const command = new ProductCommand('remove', productData);
+    const command = new UI.ProductCommand('remove', productData);
     UI.Command.execute(command);
 }
 
@@ -1205,7 +1168,7 @@ async function loadOfferFromHistory(offerId) {
         // Load products
         if (offer.products && offer.products.length > 0) {
             offer.products.forEach(p => {
-                addProduct();
+                addProduct({ ...p, id: p.id || Date.now() + productIdCounter++ });
                 const newId = products[products.length - 1];
                 
                 const productFields = {
@@ -1396,9 +1359,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'/userData/wallpaper1.png\')',
+        wallpaper2: 'url(\'/userData/wallpaper2.png\')',
+        wallpaper3: 'url(\'/userData/wallpaper3.png\')'
     };
 
     if (wallpapers[wallpaper]) {
@@ -1427,6 +1390,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-
-
-console.log('✅ App.js loaded successfully');

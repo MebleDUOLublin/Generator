@@ -69,7 +69,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         logger.info(f"HTTP Request: {self.address_string()} - {args[0]} {args[1]}")
 
 def open_browser():
-    """Opens the web browser in a separate thread."""
+    """Opens the web browser to the application's URL."""
     try:
         webbrowser.open_new_tab(f'http://localhost:{PORT}')
         logger.info("Browser opened successfully.")
@@ -82,7 +82,9 @@ def run_server():
         with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
             logger.info(f"Serving at http://localhost:{PORT}")
             # Open browser in a thread so it doesn't block server startup
-            threading.Timer(1, open_browser).start()
+            browser_thread = threading.Timer(1, open_browser)
+            browser_thread.daemon = True
+            browser_thread.start()
             httpd.serve_forever()
     except OSError as e:
         logger.error(f"Could not start server on port {PORT}: {e}")
