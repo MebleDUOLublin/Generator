@@ -86,6 +86,90 @@ const CommandManager = (() => {
 // HELPER FUNCTIONS
 // ============================================
 
+class ProductCommand {
+    constructor(action, productData) {
+        this.action = action;
+        this.productData = productData;
+    }
+
+    execute() {
+        switch (this.action) {
+            case 'add':
+                this._addProduct();
+                break;
+            case 'remove':
+                this._removeProduct();
+                break;
+        }
+    }
+
+    undo() {
+        switch (this.action) {
+            case 'add':
+                // To undo an add, we remove it
+                this._removeProduct();
+                break;
+            case 'remove':
+                // To undo a remove, we add it back
+                this._addProduct();
+                break;
+        }
+    }
+
+    _addProduct() {
+        // Use a globally accessible function to create the card
+        const productCard = createProductCard(this.productData.id);
+
+        // If we are re-adding (undoing a remove), we need to populate fields
+        if (this.productData.name) {
+             productCard.querySelector(`#productName-${this.productData.id}`).value = this.productData.name;
+             productCard.querySelector(`#productCode-${this.productData.id}`).value = this.productData.code;
+             productCard.querySelector(`#productQty-${this.productData.id}`).value = this.productData.qty;
+             productCard.querySelector(`#productPrice-${this.productData.id}`).value = this.productData.price;
+             productCard.querySelector(`#productDiscount-${this.productData.id}`).value = this.productData.discount;
+             productCard.querySelector(`#productDesc-${this.productData.id}`).value = this.productData.desc;
+        }
+
+        // This logic needs to be in app.js or a shared space
+        products.push(this.productData.id);
+        document.getElementById('productsList').appendChild(productCard);
+
+        if (this.productData.image) {
+            productImages[this.productData.id] = this.productData.image;
+            updateProductImage(this.productData.id);
+        }
+
+        updateProductView();
+        updateSummary();
+    }
+
+    _removeProduct() {
+        const { id } = this.productData;
+        const productToRemove = document.getElementById(`product-${id}`);
+
+        if (productToRemove) {
+            // Before removing, capture the data for the undo operation
+            this.productData.name = productToRemove.querySelector(`#productName-${id}`).value;
+            this.productData.code = productToRemove.querySelector(`#productCode-${id}`).value;
+            this.productData.qty = productToRemove.querySelector(`#productQty-${id}`).value;
+            this.productData.price = productToRemove.querySelector(`#productPrice-${id}`).value;
+            this.productData.discount = productToRemove.querySelector(`#productDiscount-${id}`).value;
+            this.productData.desc = productToRemove.querySelector(`#productDesc-${id}`).value;
+            this.productData.image = productImages[id];
+
+            productToRemove.remove();
+        }
+
+        // This logic also needs to be in a shared space
+        products = products.filter(pId => pId !== id);
+        delete productImages[id];
+
+        updateProductView();
+        updateSummary();
+    }
+}
+
+
 class FieldChangeCommand {
     constructor(fieldId, oldValue, newValue) {
         this.fieldId = fieldId;
@@ -496,16 +580,16 @@ const UIFeedback = (() => {
 // ============================================
 // INITIALIZE UI SYSTEM
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Add Undo/Redo buttons
-    const actionsBar = document.querySelector('.actions-bar');
+function initializeAdvancedUI() {
+    // Add Undo/Redo buttons to the Offer Generator actions bar
+    const actionsBar = document.querySelector('#window-offers .actions-bar');
     if (actionsBar) {
         const undoBtn = document.createElement('button');
         undoBtn.id = 'undoBtn';
         undoBtn.className = 'btn btn-outline';
         undoBtn.textContent = '↩️ Cofnij';
         undoBtn.disabled = true;
-        undoBtn.onclick = () => CommandManager.undo();
+        undoBtn.onclick = () => UI.Command.undo();
         actionsBar.appendChild(undoBtn);
 
         const redoBtn = document.createElement('button');
@@ -513,42 +597,44 @@ document.addEventListener('DOMContentLoaded', () => {
         redoBtn.className = 'btn btn-outline';
         redoBtn.textContent = '↪️ Ponów';
         redoBtn.disabled = true;
-        redoBtn.onclick = () => CommandManager.redo();
+        redoBtn.onclick = () => UI.Command.redo();
         actionsBar.appendChild(redoBtn);
 
-        CommandManager.subscribe(({ canUndo, canRedo }) => {
+        UI.Command.subscribe(({ canUndo, canRedo }) => {
             undoBtn.disabled = !canUndo;
             redoBtn.disabled = !canRedo;
         });
     }
 
-    // Initialize reactive fields
-    ReactiveForm.createField('offerNumber', {
+    // Initialize reactive fields for the Offer Generator
+    UI.Form.createField('offerNumber', {
         onValidate: (value) => value.trim() ? null : 'Numer oferty jest wymagany.'
     });
-    ReactiveForm.createField('buyerName', {
+    UI.Form.createField('buyerName', {
         onValidate: (value) => value.trim() ? null : 'Nazwa nabywcy jest wymagana.'
     });
 
-    // Shutdown logic
+    // Setup global shutdown logic
     const closeAppBtn = document.getElementById('closeAppBtn');
     if (closeAppBtn) {
         closeAppBtn.addEventListener('click', async () => {
-            const confirmed = await UIFeedback.confirm('Czy na pewno chcesz zamknąć aplikację?');
+            const confirmed = await UI.Feedback.confirm('Czy na pewno chcesz zamknąć aplikację?');
             if (confirmed) {
                 try {
+                    // Send shutdown signal to the server
                     await fetch('/shutdown', { method: 'POST' });
-                    UIFeedback.toast('Aplikacja została zamknięta.', 'info');
-                    // Give a moment for the toast to show
+                    UI.Feedback.toast('Aplikacja została zamknięta.', 'info');
+                    // Give a moment for the toast to show before closing the window
                     setTimeout(() => window.close(), 1000);
                 } catch (error) {
                     console.error('Shutdown request failed:', error);
-                    UIFeedback.toast('Serwer nie odpowiada. Zamknij okno ręcznie.', 'error');
+                    UI.Feedback.toast('Serwer nie odpowiada. Zamknij okno ręcznie.', 'error');
                 }
             }
         });
     }
-});
+    console.log('✅ Advanced UI features initialized.');
+}
 
 window.UI = {
     Form: ReactiveForm,

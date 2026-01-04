@@ -1668,15 +1668,15 @@ body.login-page {
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper1"] {
-    background-image: url('https://source.unsplash.com/random/800x600?nature');
+    background-image: url('/userData/wallpaper1.png');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper2"] {
-    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+    background-image: url('/userData/wallpaper2.png');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper3"] {
-    background-image: url('https://source.unsplash.com/random/800x600?space');
+    background-image: url('/userData/wallpaper3.png');
 }
     color: var(--gray-500);
 }
@@ -1937,16 +1937,4 @@ body.login-page {
     padding: var(--space-2);
     border-radius: var(--radius-md);
 }
-
-.taskbar-icon.open::before {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  background: var(--gray-500);
-  border-radius: var(--radius-full);
-  transition: all var(--transition-base);
 }
