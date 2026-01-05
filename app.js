@@ -19,30 +19,6 @@ let draggedElement = null;
 // ============================================
 // INITIALIZATION
 // ============================================
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Pesteczka OS Main App Script Started');
-
-    try {
-        console.log('1. Awaiting Storage System initialization...');
-        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
-            await window.StorageSystem.init();
-        }
-        
-        console.log('2. Populating profile selector...');
-        await populateProfileSelector();
-        
-        console.log('3. Setting up core UI...');
-        setupUI();
-
-        console.log('✅ Pesteczka OS Initialized Successfully');
-    } catch (error) {
-        console.error('❌ CRITICAL ERROR during initialization:', error);
-        const loginSubtitle = document.querySelector('.login-subtitle');
-        if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
-        }
-    }
-});
 
 // ============================================
 // UI SETUP
@@ -554,6 +530,10 @@ function minimizeWindow(windowId) {
         win.classList.add('minimized');
         win.classList.remove('focused');
         win.style.display = 'none';
+    }
+    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+    if (taskbarIcon) {
+        taskbarIcon.classList.remove('active');
     }
 }
 
@@ -1396,9 +1376,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.jpg\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')'
     };
 
     if (wallpapers[wallpaper]) {
@@ -1428,5 +1408,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Pesteczka OS Main App Script Started');
+
+    try {
+        console.log('1. Awaiting Storage System initialization...');
+        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
+            await window.StorageSystem.init();
+        }
+
+        console.log('2. Populating profile selector...');
+        await populateProfileSelector();
+
+        console.log('3. Setting up core UI...');
+        setupUI();
+
+        console.log('✅ Pesteczka OS Initialized Successfully');
+    } catch (error) {
+        console.error('❌ CRITICAL ERROR during initialization:', error);
+        const loginSubtitle = document.querySelector('.login-subtitle');
+        if (loginSubtitle) {
+            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+        }
+    }
+});
 
 console.log('✅ App.js loaded successfully');
