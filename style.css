@@ -591,28 +591,27 @@ body.login-page {
     transform: translateY(-2px) scale(0.95);
 }
 
-.taskbar-icon.active::after {
-    content: '';
-    position: absolute;
-    bottom: 4px;
-    width: 20px;
-    height: 4px;
-    background: var(--primary-500);
-    border-radius: var(--radius-full);
+.taskbar-icon.active {
+    background: var(--primary-100);
 }
 
 .taskbar-icon.open::before {
     content: '';
     position: absolute;
-    bottom: 4px;
-    width: 6px;
-    height: 6px;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
     background: var(--gray-400);
     border-radius: var(--radius-full);
+    transition: all var(--transition-base);
 }
 
-.taskbar-icon.open.active::before {
-    display: none;
+.taskbar-icon.active::before {
+    height: 4px;
+    background: var(--primary-500);
+    width: 32px;
 }
 
 .taskbar-right {
@@ -1668,17 +1667,15 @@ body.login-page {
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper1"] {
-    background-image: url('https://source.unsplash.com/random/800x600?nature');
+    background-image: url('userData/wallpapers/wallpaper1.jpg');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper2"] {
-    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+    background-image: url('userData/wallpapers/wallpaper2.jpg');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper3"] {
-    background-image: url('https://source.unsplash.com/random/800x600?space');
-}
-    color: var(--gray-500);
+    background-image: url('userData/wallpapers/wallpaper3.jpg');
 }
 
 .empty-state-icon {
@@ -1936,17 +1933,4 @@ body.login-page {
     width: 100%;
     padding: var(--space-2);
     border-radius: var(--radius-md);
-}
-
-.taskbar-icon.open::before {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  background: var(--gray-500);
-  border-radius: var(--radius-full);
-  transition: all var(--transition-base);
 }
