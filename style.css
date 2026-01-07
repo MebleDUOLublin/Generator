@@ -401,11 +401,14 @@ body.login-page {
     font-size: 0.75rem;
     font-weight: 600;
     text-align: center;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
     max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
 }
 
 /* ===== WINDOWS ===== */
@@ -1668,17 +1671,15 @@ body.login-page {
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper1"] {
-    background-image: url('https://source.unsplash.com/random/800x600?nature');
+    background-image: url('userData/wallpapers/wallpaper_1.jpg');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper2"] {
-    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+    background-image: url('userData/wallpapers/wallpaper_2.jpg');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper3"] {
-    background-image: url('https://source.unsplash.com/random/800x600?space');
-}
-    color: var(--gray-500);
+    background-image: url('userData/wallpapers/wallpaper_3.jpg');
 }
 
 .empty-state-icon {
