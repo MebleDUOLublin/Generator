@@ -993,6 +993,12 @@ body.login-page {
     box-shadow: 0 0 0 4px var(--primary-100);
 }
 
+.form-input.invalid,
+.form-textarea.invalid {
+    border-color: var(--danger-500) !important;
+    box-shadow: 0 0 0 4px var(--red-100);
+}
+
 .form-input::placeholder,
 .form-textarea::placeholder {
     color: var(--gray-400);
@@ -1668,15 +1674,15 @@ body.login-page {
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper1"] {
-    background-image: url('https://source.unsplash.com/random/800x600?nature');
+    background-image: url('userData/wallpapers/wallpaper1.png');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper2"] {
-    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+    background-image: url('userData/wallpapers/wallpaper2.png');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper3"] {
-    background-image: url('https://source.unsplash.com/random/800x600?space');
+    background-image: url('userData/wallpapers/wallpaper3.png');
 }
     color: var(--gray-500);
 }
