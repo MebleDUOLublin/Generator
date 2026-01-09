@@ -3,6 +3,7 @@ const DomatorApp = (() => {
     const domatorApp = document.getElementById('domator-app');
     if (!domatorApp) return { init: () => {} };
 
+    const VAT_RATE = 1.23;
     let products = [];
     let productIdCounter = 0;
 
@@ -91,16 +92,37 @@ const DomatorApp = (() => {
 
     const handleProductInputChange = (e) => {
         const { id, field } = e.target.dataset;
-        const value = e.target.value;
+        let value = e.target.value;
         const product = products.find(p => p.id === parseInt(id));
-        if (product) {
-            product[field] = field === 'qty' ? parseInt(value) : (field === 'netto' || field === 'brutto' ? parseFloat(value) : value);
-            if (field === 'netto') {
-                product.brutto = product.netto * 1.23;
-                const bruttoInput = e.target.parentElement.nextElementSibling.querySelector('input');
-                if (bruttoInput) bruttoInput.value = product.brutto.toFixed(2);
+
+        if (!product) return;
+
+        // Walidacja dla pól numerycznych
+        if (field === 'qty' || field === 'netto' || field === 'brutto') {
+            const parsedValue = parseFloat(value);
+            if (isNaN(parsedValue) || parsedValue < 0) {
+                value = 0;
+                e.target.value = value.toFixed(2);
+            } else {
+                value = parsedValue;
             }
         }
+
+        product[field] = value;
+
+        const row = e.target.closest('tr');
+        const nettoInput = row.querySelector('[data-field="netto"]');
+        const bruttoInput = row.querySelector('[data-field="brutto"]');
+
+        // Dwukierunkowe obliczanie ceny netto/brutto
+        if (field === 'netto') {
+            product.brutto = product.netto * VAT_RATE;
+            if (bruttoInput) bruttoInput.value = product.brutto.toFixed(2);
+        } else if (field === 'brutto') {
+            product.netto = product.brutto / VAT_RATE;
+            if (nettoInput) nettoInput.value = product.netto.toFixed(2);
+        }
+
         updateStats();
     };
 
@@ -206,13 +228,13 @@ const DomatorApp = (() => {
     const generateHtmlOrder = (data) => {
         let productRows = data.products.map((p, index) => `
             <tr>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${p.sku}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${p.ean || ''}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${p.name}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.qty}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${p.netto.toFixed(2)} zł</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${p.brutto.toFixed(2)} zł</td>
+                <td style="border: 1px solid #eee; padding: 10px; text-align: center;">${index + 1}</td>
+                <td style="border: 1px solid #eee; padding: 10px;">${p.sku}</td>
+                <td style="border: 1px solid #eee; padding: 10px;">${p.ean || ''}</td>
+                <td style="border: 1px solid #eee; padding: 10px;">${p.name}</td>
+                <td style="border: 1px solid #eee; padding: 10px; text-align: center;">${p.qty}</td>
+                <td style="border: 1px solid #eee; padding: 10px; text-align: right;">${p.netto.toFixed(2)} zł</td>
+                <td style="border: 1px solid #eee; padding: 10px; text-align: right;">${p.brutto.toFixed(2)} zł</td>
             </tr>
         `).join('');
 
@@ -220,76 +242,71 @@ const DomatorApp = (() => {
         let totalBrutto = data.products.reduce((sum, p) => sum + p.brutto * p.qty, 0);
 
         return `
-        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
-            <thead>
-                <tr>
-                    <th colspan="7" style="background-color: #f2f2f2; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">
-                        <h2 style="margin: 0; font-size: 1.5em;">Zamówienie</h2>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="4" style="padding: 12px; vertical-align: top;">
-                        <h3 style="margin-top: 0; color: #333;">Adres dostawy:</h3>
-                        <p style="margin: 0;">
-                            <strong>${data.client.name}</strong><br>
-                            ${data.client.street}<br>
-                            ${data.client.postCode} ${data.client.city}<br>
-                            Tel: ${data.client.phone}<br>
-                            Email: ${data.client.email}
-                        </p>
-                    </td>
-                    <td colspan="3" style="padding: 12px; vertical-align: top; text-align: right;">
-                        <h3 style="margin-top: 0; color: #333;">Data zamówienia:</h3>
-                        <p style="margin: 0;">${new Date().toLocaleDateString('pl-PL')}</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" style="padding: 12px;">
-                        <h3 style="margin-top: 16px; margin-bottom: 8px; color: #333;">📦 Lista produktów:</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background-color: #f8f8f8;">
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">#</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">SKU</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">EAN</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nazwa</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Ilość</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena netto</th>
-                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cena brutto</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${productRows}
-                            </tbody>
-                            <tfoot>
-                                <tr style="font-weight: bold; background-color: #f8f8f8;">
-                                    <td colspan="5" style="border: 1px solid #ddd; padding: 8px; text-align: right;">SUMA:</td>
-                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
-                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" style="padding: 12px;">
-                        <h3 style="margin-top: 0; color: #333;">Dodatkowe informacje:</h3>
-                        <p style="margin: 0; border: 1px solid #ddd; padding: 8px; background-color: #fdfdfd;">
-                            ${data.notes || 'Brak uwag.'}
-                        </p>
-                    </td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="7" style="padding: 12px; text-align: center; font-size: 0.9em; color: #777;">
-                        <p>Dziękujemy za złożenie zamówienia!</p>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #333; max-width: 800px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 2em; color: #2c3e50;">Zamówienie do Domator</h1>
+            </div>
+            <div style="padding: 20px;">
+                <h2 style="font-size: 1.2em; color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
+                    📍 Adres dostawy
+                </h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #555; width: 150px;"><strong>Nazwa odbiorcy:</strong></td>
+                        <td style="padding: 8px 0;">${data.client.name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #555;"><strong>Adres:</strong></td>
+                        <td style="padding: 8px 0;">${data.client.street}, ${data.client.postCode} ${data.client.city}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #555;"><strong>Telefon:</strong></td>
+                        <td style="padding: 8px 0;">${data.client.phone}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #555;"><strong>Email:</strong></td>
+                        <td style="padding: 8px 0;">${data.client.email}</td>
+                    </tr>
+                </table>
+
+                <h2 style="font-size: 1.2em; color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">
+                    📦 Lista produktów
+                </h2>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                    <thead>
+                        <tr style="background-color: #f1f3f5;">
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: center;">#</th>
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: left;">SKU</th>
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: left;">EAN</th>
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: left;">Nazwa produktu</th>
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: center;">Ilość</th>
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: right;">Cena netto</th>
+                            <th style="border: 1px solid #eee; padding: 10px; text-align: right;">Cena brutto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${productRows}
+                    </tbody>
+                    <tfoot>
+                        <tr style="font-weight: bold; background-color: #f1f3f5;">
+                            <td colspan="5" style="border: 1px solid #eee; padding: 10px; text-align: right;">SUMA:</td>
+                            <td style="border: 1px solid #eee; padding: 10px; text-align: right;">${totalNetto.toFixed(2)} zł</td>
+                            <td style="border: 1px solid #eee; padding: 10px; text-align: right;">${totalBrutto.toFixed(2)} zł</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <h2 style="font-size: 1.2em; color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">
+                    📝 Dodatkowe informacje
+                </h2>
+                <div style="background-color: #f8f9fa; border-radius: 5px; padding: 15px; font-style: italic;">
+                    ${data.notes || 'Brak uwag.'}
+                </div>
+            </div>
+            <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 0.8em; color: #777;">
+                Wygenerowano z PesteczkaOS @ ${new Date().toLocaleString('pl-PL')}
+            </div>
+        </div>
         `;
     };
 

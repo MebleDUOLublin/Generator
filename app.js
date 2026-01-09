@@ -1,3 +1,78 @@
+
+async function autoSaveOffer() {
+    if (!currentProfile) return; // Don't save if not logged in
+
+    const offerId = document.getElementById('offerNumber')?.value;
+    if (!offerId) return; // Don't save if there's no offer number
+
+    console.log(`[AutoSave] Saving offer ${offerId}...`);
+
+    const offerData = {
+        id: offerId,
+        profileKey: currentProfile.key,
+        offer: {
+            number: offerId,
+            date: document.getElementById('offerDate')?.value || '',
+            validUntil: document.getElementById('validUntil')?.value || '',
+            currency: document.getElementById('currency')?.value || 'PLN'
+        },
+        buyer: {
+            name: document.getElementById('buyerName')?.value || '',
+            nip: document.getElementById('buyerNIP')?.value || '',
+            address: document.getElementById('buyerAddress')?.value || '',
+            phone: document.getElementById('buyerPhone')?.value || '',
+            email: document.getElementById('buyerEmail')?.value || ''
+        },
+        terms: {
+            payment: document.getElementById('paymentTerms')?.value || '',
+            delivery: document.getElementById('deliveryTime')?.value || '',
+            warranty: document.getElementById('warranty')?.value || '',
+            deliveryMethod: document.getElementById('deliveryMethod')?.value || ''
+        },
+        products: products.map(id => ({
+            id,
+            name: document.getElementById(`productName-${id}`)?.value || '',
+            code: document.getElementById(`productCode-${id}`)?.value || '',
+            qty: document.getElementById(`productQty-${id}`)?.value || '1',
+            price: document.getElementById(`productPrice-${id}`)?.value || '0',
+            discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
+            desc: document.getElementById(`productDesc-${id}`)?.value || '',
+            image: productImages[id] || null
+        })),
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+        UI.Feedback.toast('📝 Oferta zapisana automatycznie.', 'info');
+    } catch (error) {
+        console.error('[AutoSave] Error:', error);
+    }
+}
+
+function validateOfferForm() {
+    const requiredFields = ['offerNumber', 'buyerName'];
+    let isValid = true;
+
+    requiredFields.forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            if (field.value.trim() === '') {
+                field.classList.add('invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('invalid');
+            }
+        }
+    });
+
+    const generatePdfBtn = document.getElementById('generatePdfBtn');
+    if (generatePdfBtn) {
+        generatePdfBtn.disabled = !isValid;
+    }
+
+    return isValid;
+}
 /**
  * PESTECZKA OS - MAIN APPLICATION SCRIPT (FIXED)
  * Orchestrates all modules and application logic.
@@ -15,34 +90,7 @@ let dragOffset = { x: 0, y: 0 };
 let pastedImageData = null;
 let zIndexCounter = 1000;
 let draggedElement = null;
-
-// ============================================
-// INITIALIZATION
-// ============================================
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Pesteczka OS Main App Script Started');
-
-    try {
-        console.log('1. Awaiting Storage System initialization...');
-        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
-            await window.StorageSystem.init();
-        }
-        
-        console.log('2. Populating profile selector...');
-        await populateProfileSelector();
-        
-        console.log('3. Setting up core UI...');
-        setupUI();
-
-        console.log('✅ Pesteczka OS Initialized Successfully');
-    } catch (error) {
-        console.error('❌ CRITICAL ERROR during initialization:', error);
-        const loginSubtitle = document.querySelector('.login-subtitle');
-        if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
-        }
-    }
-});
+let autoSaveInterval = null;
 
 // ============================================
 // UI SETUP
@@ -170,6 +218,10 @@ function setupOfferGenerator() {
     document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
     document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
 
+    // Auto Save
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(autoSaveOffer, 60000); // 60 seconds
+
     document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
         if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
             products = [];
@@ -183,6 +235,12 @@ function setupOfferGenerator() {
     });
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
+    });
+
+    // Real-time validation listeners
+    const fieldsToValidate = ['offerNumber', 'buyerName'];
+    fieldsToValidate.forEach(id => {
+        document.getElementById(id)?.addEventListener('input', validateOfferForm);
     });
 }
 
@@ -444,6 +502,7 @@ function logout() {
     setTimeout(() => {
         document.getElementById('loginScreen').classList.remove('hidden');
     }, 500);
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
 }
 
 async function loadLogoAsBase64(logoPath) {
@@ -996,10 +1055,24 @@ function updateSummary() {
 // ============================================
 
 async function generatePDF() {
+    if (!validateOfferForm()) {
+        showNotification('Błąd walidacji', 'Proszę wypełnić wszystkie wymagane pola.', 'error');
+        // Wstrząśnij formularzem, aby zwrócić uwagę
+        const form = document.getElementById('offer-tab');
+        form.style.animation = 'shake 0.5s';
+        setTimeout(() => form.style.animation = '', 500);
+        return;
+    }
+
+    const generateBtn = document.getElementById('generatePdfBtn');
     if (!currentProfile) {
         showNotification('Błąd', 'Brak aktywnego profilu.', 'error');
         return;
     }
+
+    const originalBtnText = generateBtn.innerHTML;
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span>⏳</span> Generowanie...';
 
     const offerData = {
         number: document.getElementById('offerNumber')?.value || '',
@@ -1035,12 +1108,10 @@ async function generatePDF() {
     loadingOverlay?.classList.add('show');
 
     try {
-        // Gather seller data directly from the form fields to ensure any edits are captured.
-        // This overrides the base profile data for the generated PDF.
         const sellerData = {
-            ...currentProfile, // Use profile as a base for properties not in the form (e.g., logo)
+            ...currentProfile,
             fullName: document.getElementById('sellerName')?.value || '',
-            name: document.getElementById('sellerName')?.value || '', // Both name and fullName are used in PDF template
+            name: document.getElementById('sellerName')?.value || '',
             nip: document.getElementById('sellerNIP')?.value || '',
             address: document.getElementById('sellerAddress')?.value || '',
             phone: document.getElementById('sellerPhone')?.value || '',
@@ -1066,6 +1137,8 @@ async function generatePDF() {
         showNotification('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
     } finally {
         loadingOverlay?.classList.remove('show');
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = originalBtnText;
     }
 }
 
@@ -1074,11 +1147,16 @@ async function generatePDF() {
 // ============================================
 
 async function saveOffer() {
+    const saveBtn = document.getElementById('saveOfferBtn');
     if (!currentProfile) {
         showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
         return;
     }
     
+    const originalBtnText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span>⏳</span> Zapisywanie...';
+
     const offerData = {
         id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
         profileKey: currentProfile.key,
@@ -1120,6 +1198,9 @@ async function saveOffer() {
     } catch (error) {
         console.error('Save offer error:', error);
         showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
     }
 }
 
@@ -1396,9 +1477,9 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.png\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.png\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.png\')'
     };
 
     if (wallpapers[wallpaper]) {
@@ -1430,3 +1511,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 console.log('✅ App.js loaded successfully');
+
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Pesteczka OS Main App Script Started');
+
+    try {
+        console.log('1. Awaiting Storage System initialization...');
+        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
+            await window.StorageSystem.init();
+        }
+
+        console.log('2. Populating profile selector...');
+        await populateProfileSelector();
+
+        console.log('3. Setting up core UI...');
+        setupUI();
+
+        console.log('✅ Pesteczka OS Initialized Successfully');
+    } catch (error) {
+        console.error('❌ CRITICAL ERROR during initialization:', error);
+        const loginSubtitle = document.querySelector('.login-subtitle');
+        if (loginSubtitle) {
+            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
+        }
+    }
+});
