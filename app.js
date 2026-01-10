@@ -15,6 +15,7 @@ let dragOffset = { x: 0, y: 0 };
 let pastedImageData = null;
 let zIndexCounter = 1000;
 let draggedElement = null;
+let autosaveInterval = null;
 
 // ============================================
 // INITIALIZATION
@@ -52,6 +53,9 @@ function setupUI() {
     
     updateClock();
     setInterval(updateClock, 1000);
+
+    // Autosave every 60 seconds
+    autosaveInterval = setInterval(autosaveOffer, 60000);
 
     setupDesktopInteractions();
     setupTaskbarAndStartMenu();
@@ -611,12 +615,21 @@ function startDrag(event, windowId) {
 
 function handleWindowDrag(event) {
     if (!draggedWindow) return;
-    
-    const newX = event.clientX - dragOffset.x;
-    const newY = event.clientY - dragOffset.y;
-    
-    draggedWindow.style.left = Math.max(0, newX) + 'px';
-    draggedWindow.style.top = Math.max(0, newY) + 'px';
+
+    const taskbarHeight = 72;
+    const headerHeight = 0;
+
+    const maxX = window.innerWidth - draggedWindow.offsetWidth;
+    const maxY = window.innerHeight - draggedWindow.offsetHeight - taskbarHeight;
+
+    let newX = event.clientX - dragOffset.x;
+    let newY = event.clientY - dragOffset.y;
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(headerHeight, Math.min(newY, maxY));
+
+    draggedWindow.style.left = `${newX}px`;
+    draggedWindow.style.top = `${newY}px`;
 }
 
 function stopWindowDrag() {
@@ -1073,17 +1086,14 @@ async function generatePDF() {
 // DATA PERSISTENCE (SAVE/LOAD)
 // ============================================
 
-async function saveOffer() {
-    if (!currentProfile) {
-        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
-        return;
-    }
-    
-    const offerData = {
-        id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
+function collectOfferData() {
+    const offerNumber = document.getElementById('offerNumber')?.value;
+    const offerId = offerNumber || `offer_${Date.now()}`;
+    return {
+        id: offerId,
         profileKey: currentProfile.key,
         offer: {
-            number: document.getElementById('offerNumber')?.value || '',
+            number: offerNumber || '',
             date: document.getElementById('offerDate')?.value || '',
             validUntil: document.getElementById('validUntil')?.value || '',
             currency: document.getElementById('currency')?.value || 'PLN'
@@ -1113,13 +1123,33 @@ async function saveOffer() {
         })),
         timestamp: new Date().toISOString()
     };
+}
+
+async function saveOffer() {
+    if (!currentProfile) {
+        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('saveOfferBtn');
+    if (!saveBtn) return;
+
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+
+    const offerData = collectOfferData();
 
     try {
+        await new Promise(resolve => setTimeout(resolve, 500));
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
         showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
     } catch (error) {
         console.error('Save offer error:', error);
         showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
     }
 }
 
