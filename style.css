@@ -78,8 +78,8 @@
     --transition-spring: 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     /* Typography */
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-mono: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
 
     /* Z-Index Scale */
     --z-dropdown: 100;
@@ -113,6 +113,15 @@ body {
     background: transparent;
     min-height: 100vh;
     overflow: hidden;
+}
+
+.window:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 40px -10px var(--primary-500);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 body.login-page {
@@ -343,6 +352,7 @@ body.login-page {
     position: fixed;
     inset: 0;
     background: url('/userData/tapeta.png') no-repeat center center/cover;
+    background-attachment: fixed;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.5s ease;
@@ -1668,17 +1678,15 @@ body.login-page {
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper1"] {
-    background-image: url('https://source.unsplash.com/random/800x600?nature');
+    background-image: url('userData/wallpapers/wallpaper1.jpg');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper2"] {
-    background-image: url('https://source.unsplash.com/random/800x600?abstract');
+    background-image: url('userData/wallpapers/wallpaper2.jpg');
 }
 
 .wallpaper-preview[data-wallpaper="wallpaper3"] {
-    background-image: url('https://source.unsplash.com/random/800x600?space');
-}
-    color: var(--gray-500);
+    background-image: url('userData/wallpapers/wallpaper3.jpg');
 }
 
 .empty-state-icon {
