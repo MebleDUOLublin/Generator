@@ -15,6 +15,7 @@ let dragOffset = { x: 0, y: 0 };
 let pastedImageData = null;
 let zIndexCounter = 1000;
 let draggedElement = null;
+let autosaveInterval = null;
 
 // ============================================
 // INITIALIZATION
@@ -70,21 +71,21 @@ function renderDesktop() {
     iconsContainer.innerHTML = '';
     if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
         currentProfile.desktopIcons.forEach(iconData => {
-            const iconEl = document.createElement('div');
-            iconEl.className = 'desktop-icon';
-        iconEl.tabIndex = 0;
-        iconEl.setAttribute('role', 'button');
-        iconEl.setAttribute('aria-label', iconData.name);
-        iconEl.dataset.window = iconData.id;
-
-        iconEl.innerHTML = `
-            <div class="desktop-icon-image">${iconData.icon}</div>
-            <div class="desktop-icon-name">${iconData.name}</div>
-        `;
-        iconsContainer.appendChild(iconEl);
-    });
-
-    setupDesktopInteractions();
+            const iconEl = UI.createElement('div', {
+                className: 'desktop-icon',
+                tabIndex: 0,
+                role: 'button',
+                'aria-label': iconData.name,
+                'data-window': iconData.id,
+                innerHTML: `
+                    <div class="desktop-icon-image">${iconData.icon}</div>
+                    <div class="desktop-icon-name">${iconData.name}</div>
+                `
+            });
+            iconsContainer.appendChild(iconEl);
+        });
+    }
+    // Listeners are attached once in setupDesktopInteractions
 }
 
 function setupDesktopInteractions() {
@@ -181,9 +182,38 @@ function setupOfferGenerator() {
             UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
         }
     });
+
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
     });
+
+    // Real-time validation
+    const fieldsToValidate = ['offerNumber', 'buyerName'];
+    const generatePdfBtn = document.getElementById('generatePdfBtn');
+
+    const validateForm = () => {
+        const isFormValid = fieldsToValidate.every(id => {
+            const el = document.getElementById(id);
+            const isValid = el && el.value.trim() !== '';
+
+            if (el) {
+                el.classList.toggle('invalid', !isValid);
+            }
+            return isValid;
+        });
+
+        generatePdfBtn.disabled = !isFormValid;
+    };
+
+    fieldsToValidate.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', validateForm);
+        }
+    });
+
+    // Initial validation check
+    validateForm();
 }
 
 function setupSettings() {
@@ -431,11 +461,55 @@ async function loginAs(profileKey) {
             document.getElementById('desktop').classList.add('active');
             showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
             renderDesktop();
+            renderTaskbarAndStartMenu(); // Render dynamic icons
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
         showNotification('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
     }
+}
+
+function renderTaskbarAndStartMenu() {
+    const taskbarCenter = document.querySelector('.taskbar-center');
+    const startMenuGrid = document.getElementById('startMenuAppsGrid');
+    if (!taskbarCenter || !startMenuGrid) return;
+
+    // Clear existing dynamic icons
+    taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)').forEach(icon => icon.remove());
+    startMenuGrid.innerHTML = '';
+
+    const icons = currentProfile.startMenuItems || currentProfile.desktopIcons;
+
+    if (icons && Array.isArray(icons)) {
+        icons.forEach(iconData => {
+            // Create Taskbar Icon
+            const taskbarIcon = UI.createElement('div', {
+                className: 'taskbar-icon',
+                'data-window': iconData.id,
+                tabIndex: 0,
+                role: 'button',
+                'aria-label': iconData.name,
+                innerHTML: iconData.icon
+            });
+            taskbarCenter.appendChild(taskbarIcon);
+
+            // Create Start Menu Icon
+            const startMenuIcon = UI.createElement('div', {
+                className: 'start-app',
+                'data-window': iconData.id,
+                tabIndex: 0,
+                role: 'menuitem',
+                innerHTML: `
+                    <div class="start-app-icon">${iconData.icon}</div>
+                    <div class="start-app-name">${iconData.name}</div>
+                `
+            });
+            startMenuGrid.appendChild(startMenuIcon);
+        });
+    }
+
+    // Re-attach listeners for the new dynamic elements
+    setupTaskbarAndStartMenu();
 }
 
 function logout() {
@@ -496,39 +570,39 @@ function setLogoPlaceholder() {
 function openWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (!win) return;
-    
+
     win.style.display = 'flex';
     win.classList.add('active');
     win.classList.remove('minimized');
     win.style.zIndex = ++zIndexCounter;
-    
-    // Focus the window
+
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
-    
+
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
-    if(taskbarIcon) {
-        taskbarIcon.classList.add('active');
-        taskbarIcon.classList.add('open');
-    }
-    
-    // If settings window, load profile settings
-    if (windowId === 'settings') {
-        loadProfileSettings();
+    if (taskbarIcon) {
+        taskbarIcon.classList.add('active', 'open');
     }
 
-    // If dashboard window, initialize it
-    if (windowId === 'dashboard') {
-        Dashboard.init();
-    }
-
-    // If snake window, initialize it
-    if (windowId === 'snake') {
-        NeonSnake.init('snakeCanvas');
-    }
-
-    if (windowId === 'domator') {
-        DomatorApp.init();
+    // App-specific initializations
+    switch (windowId) {
+        case 'settings':
+            loadProfileSettings();
+            break;
+        case 'dashboard':
+            Dashboard.init();
+            break;
+        case 'snake':
+            NeonSnake.init('snakeCanvas');
+            break;
+        case 'domator':
+            DomatorApp.init();
+            break;
+        case 'offers':
+            // Start autosave
+            if (autosaveInterval) clearInterval(autosaveInterval);
+            autosaveInterval = setInterval(autosaveOffer, 60000);
+            break;
     }
 }
 
@@ -541,10 +615,16 @@ function closeWindow(windowId) {
             win.style.display = 'none';
         }, { once: true });
     }
+
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
     if (taskbarIcon) {
-        taskbarIcon.classList.remove('active');
-        taskbarIcon.classList.remove('open');
+        taskbarIcon.classList.remove('active', 'open');
+    }
+
+    // App-specific cleanup
+    if (windowId === 'offers') {
+        clearInterval(autosaveInterval);
+        autosaveInterval = null;
     }
 }
 
@@ -1075,21 +1155,66 @@ async function generatePDF() {
 
 async function saveOffer() {
     if (!currentProfile) {
-        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        UI.Feedback.toast('Błąd: Brak aktywnego profilu.', 'error');
         return;
     }
-    
-    const offerData = {
-        id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
+
+    const offerData = collectOfferData();
+    if (!offerData) return; // Exit if data is invalid
+
+    const saveBtn = document.getElementById('saveOfferBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+
+    try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+        UI.Feedback.toast(`✅ Oferta ${offerData.id} zapisana.`, 'success');
+    } catch (error) {
+        console.error('Save offer error:', error);
+        UI.Feedback.toast('Błąd zapisu oferty.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+    }
+}
+
+async function autosaveOffer() {
+    if (!currentProfile) return;
+
+    const offerData = collectOfferData();
+    // Silently return if data is invalid, to not bother the user
+    if (!offerData) return;
+
+    try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+        console.log(`[AUTOSAVE] Offer ${offerData.id} saved at ${new Date().toLocaleTimeString()}`);
+        UI.Feedback.toast('📝 Autozapis...', 'info', 1500);
+    } catch (error) {
+        console.error('Autosave failed:', error);
+    }
+}
+
+function collectOfferData() {
+    const offerNumber = document.getElementById('offerNumber')?.value;
+    const buyerName = document.getElementById('buyerName')?.value;
+
+    if (!offerNumber || !buyerName) {
+        UI.Feedback.toast('Numer oferty i nazwa nabywcy są wymagane!', 'warning');
+        return null;
+    }
+
+    return {
+        id: offerNumber || `offer_${Date.now()}`,
         profileKey: currentProfile.key,
         offer: {
-            number: document.getElementById('offerNumber')?.value || '',
+            number: offerNumber,
             date: document.getElementById('offerDate')?.value || '',
             validUntil: document.getElementById('validUntil')?.value || '',
             currency: document.getElementById('currency')?.value || 'PLN'
         },
         buyer: {
-            name: document.getElementById('buyerName')?.value || '',
+            name: buyerName,
             nip: document.getElementById('buyerNIP')?.value || '',
             address: document.getElementById('buyerAddress')?.value || '',
             phone: document.getElementById('buyerPhone')?.value || '',
@@ -1113,19 +1238,11 @@ async function saveOffer() {
         })),
         timestamp: new Date().toISOString()
     };
-
-    try {
-        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-        showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
-    } catch (error) {
-        console.error('Save offer error:', error);
-        showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
-    }
 }
 
 async function loadOffer() {
     if (!currentProfile) {
-        showNotification('Błąd', 'Zaloguj się, aby wczytać oferty.', 'error');
+        UI.Feedback.toast('Błąd: Zaloguj się, aby wczytać oferty.', 'error');
         return;
     }
 
@@ -1395,10 +1512,11 @@ function changeWallpaper(wallpaper) {
     if (!desktop) return;
 
     const wallpapers = {
-        default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        default: 'url(\'/userData/wallpapers/default.png\')',
+        wallpaper1: 'url(\'/userData/wallpapers/wallpaper1.png\')',
+        wallpaper2: 'url(\'/userData/wallpapers/wallpaper2.png\')',
+        wallpaper3: 'url(\'/userData/wallpapers/wallpaper3.png\')',
+        wallpaper4: 'url(\'/userData/wallpapers/wallpaper4.png\')'
     };
 
     if (wallpapers[wallpaper]) {

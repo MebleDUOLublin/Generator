@@ -10,10 +10,6 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌰</text></svg>">
     
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <!-- Local Libraries -->
     <script src="vendor/chart.min.js"></script>
@@ -647,6 +643,7 @@
                         <div class="wallpaper-preview" data-wallpaper="wallpaper1"></div>
                         <div class="wallpaper-preview" data-wallpaper="wallpaper2"></div>
                         <div class="wallpaper-preview" data-wallpaper="wallpaper3"></div>
+                        <div class="wallpaper-preview" data-wallpaper="wallpaper4"></div>
                     </div>
                 </div>
             </div>
@@ -676,15 +673,7 @@
                 <div class="taskbar-icon" id="startBtn" tabindex="0" role="button" aria-label="Menu Start" aria-haspopup="true">
                     🌰
                 </div>
-                <div class="taskbar-icon" data-window="offers" tabindex="0" role="button" aria-label="Generator Ofert">
-                    📄
-                </div>
-                <div class="taskbar-icon" data-window="dashboard" tabindex="0" role="button" aria-label="Dashboard">
-                    📊
-                </div>
-                <div class="taskbar-icon" data-window="settings" tabindex="0" role="button" aria-label="Ustawienia">
-                    ⚙️
-                </div>
+        <!-- Icons will be loaded dynamically -->
             </div>
             
             <div class="taskbar-right">
@@ -704,19 +693,8 @@
         <div class="start-menu" id="startMenu" role="menu">
             <div class="start-menu-header">
                 <div class="start-apps-title">📌 Przypięte aplikacje</div>
-                <div class="start-apps-grid">
-                    <div class="start-app" data-window="offers" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">📄</div>
-                        <div class="start-app-name">Generator Ofert</div>
-                    </div>
-                    <div class="start-app" data-window="dashboard" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">📊</div>
-                        <div class="start-app-name">Dashboard</div>
-                    </div>
-                    <div class="start-app" data-window="settings" tabindex="0" role="menuitem">
-                        <div class="start-app-icon">⚙️</div>
-                        <div class="start-app-name">Ustawienia</div>
-                    </div>
+                <div class="start-apps-grid" id="startMenuAppsGrid">
+                    <!-- Apps will be loaded dynamically -->
                 </div>
             </div>
             <div class="start-menu-footer">

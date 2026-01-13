@@ -550,11 +550,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const UIUtils = (() => {
+    const createElement = (tag, props = {}) => {
+        const el = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+            if (key === 'innerHTML') {
+                el.innerHTML = value;
+            } else if (key.startsWith('data-') || key === 'role' || key === 'aria-label') {
+                el.setAttribute(key, value);
+            } else {
+                try {
+                    el[key] = value;
+                } catch (e) {
+                    console.warn(`Could not set property ${key} on <${tag}>`, e);
+                }
+            }
+        });
+        return el;
+    };
+
+    return {
+        createElement
+    };
+})();
+
 window.UI = {
     Form: ReactiveForm,
     Observer: FormObserver,
     Feedback: UIFeedback,
-    Command: CommandManager
+    Command: CommandManager,
+    createElement: UIUtils.createElement
 };
 
 console.log('✅ Advanced UI System v2.0 initialized');
