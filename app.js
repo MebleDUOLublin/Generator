@@ -36,29 +36,75 @@ function setupUI() {
     console.log('✅ All UI event listeners attached!');
 }
 
-function renderDesktop() {
+function renderUIForProfile() {
+    if (!currentProfile) return;
+
+    // 1. Render Desktop Icons
     const iconsContainer = document.getElementById('desktopIcons');
-    if (!iconsContainer) return;
+    if (iconsContainer) {
+        iconsContainer.innerHTML = '';
+        if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
+            currentProfile.desktopIcons.forEach(iconData => {
+                const iconEl = document.createElement('div');
+                iconEl.className = 'desktop-icon';
+                iconEl.tabIndex = 0;
+                iconEl.setAttribute('role', 'button');
+                iconEl.setAttribute('aria-label', iconData.name);
+                iconEl.dataset.window = iconData.id;
 
-    iconsContainer.innerHTML = '';
-    if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
-        currentProfile.desktopIcons.forEach(iconData => {
-            const iconEl = document.createElement('div');
-            iconEl.className = 'desktop-icon';
-            iconEl.tabIndex = 0;
-            iconEl.setAttribute('role', 'button');
-            iconEl.setAttribute('aria-label', iconData.name);
-            iconEl.dataset.window = iconData.id;
-
-            iconEl.innerHTML = `
-                <div class="desktop-icon-image">${iconData.icon}</div>
-                <div class="desktop-icon-name">${iconData.name}</div>
-            `;
-            iconsContainer.appendChild(iconEl);
-        });
+                iconEl.innerHTML = `
+                    <div class="desktop-icon-image">${iconData.icon}</div>
+                    <div class="desktop-icon-name">${iconData.name}</div>
+                `;
+                iconsContainer.appendChild(iconEl);
+            });
+        }
     }
-    // Re-attach listeners after re-rendering icons
+
+    // 2. Render Taskbar Icons
+    const taskbarCenter = document.querySelector('.taskbar-center');
+    if (taskbarCenter) {
+        const existingIcons = taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)');
+        existingIcons.forEach(icon => icon.remove());
+
+        if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
+            currentProfile.desktopIcons.forEach(iconData => {
+                 const iconEl = document.createElement('div');
+                 iconEl.className = 'taskbar-icon';
+                 iconEl.dataset.window = iconData.id;
+                 iconEl.tabIndex = 0;
+                 iconEl.setAttribute('role', 'button');
+                 iconEl.setAttribute('aria-label', iconData.name);
+                 iconEl.innerHTML = iconData.icon;
+                 taskbarCenter.appendChild(iconEl);
+            });
+        }
+    }
+
+    // 3. Render Start Menu Items
+    const startAppsGrid = document.querySelector('.start-apps-grid');
+    if (startAppsGrid) {
+        startAppsGrid.innerHTML = '';
+        if (currentProfile.startMenuItems && Array.isArray(currentProfile.startMenuItems)) {
+            currentProfile.startMenuItems.forEach(itemData => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'start-app';
+                itemEl.dataset.window = itemData.id;
+                itemEl.tabIndex = 0;
+                itemEl.setAttribute('role', 'menuitem');
+
+                itemEl.innerHTML = `
+                    <div class="start-app-icon">${itemData.icon}</div>
+                    <div class="start-app-name">${itemData.name}</div>
+                `;
+                startAppsGrid.appendChild(itemEl);
+            });
+        }
+    }
+
+    // 4. Re-attach ALL relevant listeners
     setupDesktopInteractions();
+    setupTaskbarAndStartMenu();
 }
 
 
@@ -402,7 +448,7 @@ async function loginAs(profileKey) {
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
             UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
-            renderDesktop();
+            renderUIForProfile();
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
