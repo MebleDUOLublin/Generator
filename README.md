@@ -1,0 +1,2 @@
+.exe build command:
+pyinstaller --noconfirm --onefile --windowed --name "PesteczkaOS" --add-data "app.js:." --add-data "dashboard.js:." --add-data "domator.js:." --add-data "index.html:." --add-data "pdf.js:." --add-data "profiles.json:." --add-data "snake.js:." --add-data "storage.js:." --add-data "style.css:." --add-data "ui.js:." --add-data "logos:logos" --add-data "userData:userData" --add-data "vendor:vendor" run.py
