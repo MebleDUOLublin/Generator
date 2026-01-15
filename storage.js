@@ -39,7 +39,7 @@ const CompressionModule = (() => {
 // ============================================
 const IndexedDBStore = (() => {
     const DB_NAME = 'PesteczkaOS_DB';
-    const VERSION = 8; // Incremented version to force upgrade
+    const VERSION = 9; // Incremented version to force upgrade
 
     const STORES = {
         profiles: 'profiles',
@@ -88,7 +88,7 @@ const IndexedDBStore = (() => {
                 });
 
                 // If upgrading from a version that might have stale profile data, clear it.
-                if (e.oldVersion < 7) {
+                if (e.oldVersion < 9) {
                     try {
                         console.log('  - Clearing "profiles" store to refresh data...');
                         transaction.objectStore('profiles').clear();
