@@ -530,9 +530,23 @@ function openWindow(windowId) {
     if (windowId === 'domator') {
         DomatorApp.init();
     }
+
+    // Start autosave for offer generator
+    if (windowId === 'offers') {
+        if (autosaveInterval) clearInterval(autosaveInterval);
+        autosaveInterval = setInterval(autosaveOffer, 60000); // Autosave every 60 seconds
+        console.log('🕒 Autosave interval started for Offer Generator.');
+    }
 }
 
 function closeWindow(windowId) {
+    // Stop autosave if offer generator is closed
+    if (windowId === 'offers' && autosaveInterval) {
+        clearInterval(autosaveInterval);
+        autosaveInterval = null;
+        console.log('🕒 Autosave interval stopped.');
+    }
+
     const win = document.getElementById(`window-${windowId}`);
     if (win) {
         win.classList.add('closing');
@@ -1072,14 +1086,12 @@ async function generatePDF() {
 // ============================================
 // DATA PERSISTENCE (SAVE/LOAD)
 // ============================================
+let autosaveInterval = null;
 
-async function saveOffer() {
-    if (!currentProfile) {
-        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
-        return;
-    }
+function collectOfferData() {
+    if (!currentProfile) return null;
     
-    const offerData = {
+    return {
         id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
         profileKey: currentProfile.key,
         offer: {
@@ -1113,13 +1125,47 @@ async function saveOffer() {
         })),
         timestamp: new Date().toISOString()
     };
+}
+
+async function autosaveOffer() {
+    const offerData = collectOfferData();
+    if (!offerData || !offerData.offer.number || !offerData.buyer.name) {
+        return; // Silently return if not logged in or form is essentially empty
+    }
 
     try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+        console.log(`[Autosave] Offer ${offerData.id} saved at ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+        console.error('Autosave offer error:', error);
+    }
+}
+
+async function saveOffer() {
+    const offerData = collectOfferData();
+    if (!offerData) {
+        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('saveOfferBtn');
+    const originalBtnHTML = '<span>💾</span> Zapisz ofertę';
+
+    try {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+        }
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
         showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
     } catch (error) {
         console.error('Save offer error:', error);
         showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnHTML;
+        }
     }
 }
 
@@ -1396,9 +1442,10 @@ function changeWallpaper(wallpaper) {
 
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'https://source.unsplash.com/random/1920x1080?nature\')',
-        wallpaper2: 'url(\'https://source.unsplash.com/random/1920x1080?abstract\')',
-        wallpaper3: 'url(\'https://source.unsplash.com/random/1920x1080?space\')'
+        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
+        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.jpg\')',
+        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')',
+        wallpaper4: 'url(\'userData/wallpapers/wallpaper4.jpg\')'
     };
 
     if (wallpapers[wallpaper]) {
