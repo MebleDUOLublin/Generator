@@ -391,24 +391,23 @@ const UIFeedback = (() => {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
-        toast.style.cssText = `
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            color: white;
-            animation: slideIn 0.3s ease-out;
-            ${type === 'success' ? 'background: #10b981;' : ''}
-            ${type === 'error' ? 'background: #ef4444;' : ''}
-            ${type === 'warning' ? 'background: #f59e0b;' : ''}
-            ${type === 'info' ? 'background: #3b82f6;' : ''}
-        `;
 
         container.appendChild(toast);
 
+        // Delay adding the 'show' class to trigger the CSS transition
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
         if (duration > 0) {
             setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => toast.remove(), 300);
+                toast.classList.remove('show');
+                // Remove the element after the transition ends
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300); // Corresponds to transition duration in style.css
             }, duration);
         }
 
@@ -496,10 +495,9 @@ const UIFeedback = (() => {
 // ============================================
 // INITIALIZE UI SYSTEM
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Add Undo/Redo buttons
-    const actionsBar = document.querySelector('.actions-bar');
-    if (actionsBar) {
+const initializeAdvancedUI = () => {
+    const actionsBar = document.querySelector('#window-offers .actions-bar');
+    if (actionsBar && !document.getElementById('undoBtn')) {
         const undoBtn = document.createElement('button');
         undoBtn.id = 'undoBtn';
         undoBtn.className = 'btn btn-outline';
@@ -521,7 +519,9 @@ document.addEventListener('DOMContentLoaded', () => {
             redoBtn.disabled = !canRedo;
         });
     }
+};
 
+document.addEventListener('DOMContentLoaded', () => {
     // Initialize reactive fields
     ReactiveForm.createField('offerNumber', {
         onValidate: (value) => value.trim() ? null : 'Numer oferty jest wymagany.'

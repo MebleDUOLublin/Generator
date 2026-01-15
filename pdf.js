@@ -175,7 +175,8 @@ const PDFManager = (() => {
         const { orientation = 'portrait', format = 'a4', seller = {}, offerData = {} } = options;
 
         try {
-            const { pageBreaks, template } = _preparePdfData(options);
+            const { pageBreaks, template, enrichedProducts } = _preparePdfData(options);
+            const grandTotal = calculatePageTotals(enrichedProducts);
             console.log(`📄 Generating PDF: ${pageBreaks.length} pages`);
 
             const { jsPDF } = window.jspdf;
@@ -193,6 +194,7 @@ const PDFManager = (() => {
                     isFirstPage: i === 0,
                     isLastPage: i === pageBreaks.length - 1,
                     template,
+                    grandTotal,
                 };
                 await renderPDFPage(pdf, pageWidth, pageHeight, pageOptions);
             }
@@ -217,7 +219,8 @@ const PDFManager = (() => {
             quality,
             template,
             seller,
-            offerData
+            offerData,
+            grandTotal,
         } = options;
         const buyer = offerData.buyer;
 
@@ -242,8 +245,7 @@ const PDFManager = (() => {
         pageHTML += buildProductsTable(pageProducts, pageNum, totalPages);
 
         if (isLastPage) {
-            const totals = calculatePageTotals(pageProducts);
-            pageHTML += buildSummary(totals, template);
+            pageHTML += buildSummary(grandTotal, template);
 
             if (offerData.notes) {
                 pageHTML += buildNotes(offerData.notes);
