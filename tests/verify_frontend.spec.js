@@ -31,7 +31,8 @@ test('Pesteczka OS Frontend Verification', async ({ page }) => {
   await page.click('#generatePdfBtn');
 
   // Wait for success notification with specific text
-  await page.waitForSelector('.notification.show:has-text("PDF został pomyślnie wygenerowany!")');
+  await page.waitForSelector('.toast.toast-success:has-text("PDF wygenerowany!")');
+
 
   // Take a screenshot of the offers window
   const offersWindow = await page.$('#window-offers');

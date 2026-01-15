@@ -99,6 +99,10 @@ const DomatorApp = (() => {
                 product.brutto = product.netto * 1.23;
                 const bruttoInput = e.target.parentElement.nextElementSibling.querySelector('input');
                 if (bruttoInput) bruttoInput.value = product.brutto.toFixed(2);
+            } else if (field === 'brutto') {
+                product.netto = product.brutto / 1.23;
+                const nettoInput = e.target.parentElement.previousElementSibling.querySelector('input');
+                if (nettoInput) nettoInput.value = product.netto.toFixed(2);
             }
         }
         updateStats();

@@ -359,6 +359,103 @@ function handleGlobalHotkeys(e) {
         document.getElementById('startMenu')?.classList.remove('active');
     }
 }
+
+// ============================================
+// COMMAND CLASSES
+// ============================================
+class ProductCommand {
+    constructor(action, productData) {
+        this.action = action;
+        this.productData = productData;
+        this.productId = productData.id;
+    }
+
+    execute() {
+        if (this.action === 'add') {
+            const productsListEl = document.getElementById('productsList');
+            if (!products.includes(this.productId)) {
+                products.push(this.productId);
+                const productCard = createProductCard(this.productId);
+                productsListEl.appendChild(productCard);
+                Object.entries(this.productData).forEach(([key, value]) => {
+                    const el = document.getElementById(`product${key.charAt(0).toUpperCase() + key.slice(1)}-${this.productId}`);
+                    if (el && key !== 'id') el.value = value;
+                });
+            }
+        } else if (this.action === 'remove') {
+            const productCard = document.getElementById(`product-${this.productId}`);
+            if (productCard) {
+                productCard.remove();
+                products = products.filter(id => id !== this.productId);
+                delete productImages[this.productId];
+            }
+        }
+        updateProductView();
+        updateSummary();
+    }
+
+    undo() {
+        if (this.action === 'add') {
+            const productCard = document.getElementById(`product-${this.productId}`);
+            if (productCard) productCard.remove();
+            products = products.filter(id => id !== this.productId);
+        } else if (this.action === 'remove') {
+            // This is simplified, a real undo would need to restore the exact state
+            addProduct(this.productData);
+        }
+        updateProductView();
+        updateSummary();
+    }
+}
+
+class UpdateProductImageCommand {
+    constructor(productId, newImage, oldImage) {
+        this.productId = productId;
+        this.newImage = newImage;
+        this.oldImage = oldImage;
+    }
+
+    execute() {
+        productImages[this.productId] = this.newImage;
+        updateProductImage(this.productId);
+    }
+
+    undo() {
+        productImages[this.productId] = this.oldImage;
+        updateProductImage(this.productId);
+    }
+}
+
+class DuplicateProductCommand {
+    constructor(originalId) {
+        this.originalId = originalId;
+        this.newId = Date.now() + productIdCounter++;
+    }
+
+    execute() {
+        const originalData = {
+            id: this.newId,
+            name: document.getElementById(`productName-${this.originalId}`)?.value || '',
+            code: document.getElementById(`productCode-${this.originalId}`)?.value || '',
+            qty: document.getElementById(`productQty-${this.originalId}`)?.value || '1',
+            price: document.getElementById(`productPrice-${this.originalId}`)?.value || '0',
+            discount: document.getElementById(`productDiscount-${this.originalId}`)?.value || '0',
+            desc: document.getElementById(`productDesc-${this.originalId}`)?.value || '',
+        };
+        const originalImage = productImages[this.originalId];
+
+        addProduct(originalData);
+        if (originalImage) {
+             productImages[this.newId] = originalImage;
+             updateProductImage(this.newId);
+        }
+    }
+
+    undo() {
+        removeProduct(this.newId);
+    }
+}
+
 // ============================================
 // PROFILE MANAGEMENT & LOGIN
 // ============================================
@@ -531,6 +628,7 @@ function openWindow(windowId) {
     if (windowId === 'domator') DomatorApp.init();
 
     if (windowId === 'offers') {
+        initializeAdvancedUI();
         if (autosaveInterval) clearInterval(autosaveInterval);
         autosaveInterval = setInterval(autosaveOffer, 60000);
     }
