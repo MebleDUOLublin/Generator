@@ -27,7 +27,8 @@ function setupUI() {
     setInterval(updateClock, 1000);
 
     setupDesktopInteractions();
-    setupTaskbarAndStartMenu();
+    // setupTaskbarAndStartMenu(); // Now part of setupStaticUI
+    setupStaticUIElements();
     setupWindowManagement();
     setupOfferGenerator();
     setupSettings();
@@ -102,9 +103,9 @@ function renderUIForProfile() {
         }
     }
 
-    // 4. Re-attach ALL relevant listeners
+    // 4. Re-attach ALL relevant listeners for dynamic elements
     setupDesktopInteractions();
-    setupTaskbarAndStartMenu();
+    setupDynamicAppLaunchers();
 }
 
 
@@ -146,14 +147,10 @@ function setupDesktopInteractions() {
     }
 }
 
-function setupTaskbarAndStartMenu() {
+// Sets up listeners for dynamically created app icons
+function setupDynamicAppLaunchers() {
     document.querySelectorAll('.taskbar-icon[data-window]').forEach(icon => {
         icon.addEventListener('click', () => toggleWindow(icon.dataset.window));
-    });
-
-    document.getElementById('startBtn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleStartMenu();
     });
 
     document.querySelectorAll('.start-app').forEach(app => {
@@ -162,7 +159,13 @@ function setupTaskbarAndStartMenu() {
             document.getElementById('startMenu')?.classList.remove('active');
         });
     });
+}
 
+function setupStaticUIElements() {
+    document.getElementById('startBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleStartMenu();
+    });
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
 }
 
