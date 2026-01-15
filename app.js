@@ -15,34 +15,7 @@ let dragOffset = { x: 0, y: 0 };
 let pastedImageData = null;
 let zIndexCounter = 1000;
 let draggedElement = null;
-
-// ============================================
-// INITIALIZATION
-// ============================================
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Pesteczka OS Main App Script Started');
-
-    try {
-        console.log('1. Awaiting Storage System initialization...');
-        if (window.StorageSystem && typeof window.StorageSystem.init === 'function') {
-            await window.StorageSystem.init();
-        }
-        
-        console.log('2. Populating profile selector...');
-        await populateProfileSelector();
-        
-        console.log('3. Setting up core UI...');
-        setupUI();
-
-        console.log('✅ Pesteczka OS Initialized Successfully');
-    } catch (error) {
-        console.error('❌ CRITICAL ERROR during initialization:', error);
-        const loginSubtitle = document.querySelector('.login-subtitle');
-        if (loginSubtitle) {
-            loginSubtitle.innerHTML = '<span style="color: #ef4444;">Błąd krytyczny. Sprawdź konsolę (F12).</span>';
-        }
-    }
-});
+let autosaveInterval = null;
 
 // ============================================
 // UI SETUP
@@ -72,20 +45,22 @@ function renderDesktop() {
         currentProfile.desktopIcons.forEach(iconData => {
             const iconEl = document.createElement('div');
             iconEl.className = 'desktop-icon';
-        iconEl.tabIndex = 0;
-        iconEl.setAttribute('role', 'button');
-        iconEl.setAttribute('aria-label', iconData.name);
-        iconEl.dataset.window = iconData.id;
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', iconData.name);
+            iconEl.dataset.window = iconData.id;
 
-        iconEl.innerHTML = `
-            <div class="desktop-icon-image">${iconData.icon}</div>
-            <div class="desktop-icon-name">${iconData.name}</div>
-        `;
-        iconsContainer.appendChild(iconEl);
-    });
-
+            iconEl.innerHTML = `
+                <div class="desktop-icon-image">${iconData.icon}</div>
+                <div class="desktop-icon-name">${iconData.name}</div>
+            `;
+            iconsContainer.appendChild(iconEl);
+        });
+    }
+    // Re-attach listeners after re-rendering icons
     setupDesktopInteractions();
 }
+
 
 function setupDesktopInteractions() {
     document.querySelectorAll('.desktop-icon').forEach(icon => {
@@ -99,27 +74,30 @@ function setupDesktopInteractions() {
         });
     });
 
-    document.getElementById('desktop')?.addEventListener('click', (e) => {
-        if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
-            document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
-        }
-    });
+    const desktopEl = document.getElementById('desktop');
+    if (desktopEl) {
+        desktopEl.addEventListener('click', (e) => {
+            if (e.target.id === 'desktop' || e.target.classList.contains('desktop-icons')) {
+                document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+            }
+        });
 
-    const contextMenu = document.getElementById('contextMenu');
-    document.getElementById('desktop')?.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        contextMenu.style.top = `${e.clientY}px`;
-        contextMenu.style.left = `${e.clientX}px`;
-        contextMenu.classList.add('active');
-    });
+        const contextMenu = document.getElementById('contextMenu');
+        desktopEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.classList.add('active');
+        });
 
-    contextMenu?.addEventListener('click', (e) => {
-        const action = e.target.closest('.context-menu-item')?.dataset.action;
-        if (action) {
-            handleContextMenuAction(action);
-            contextMenu.classList.remove('active');
-        }
-    });
+        contextMenu?.addEventListener('click', (e) => {
+            const action = e.target.closest('.context-menu-item')?.dataset.action;
+            if (action) {
+                handleContextMenuAction(action);
+                contextMenu.classList.remove('active');
+            }
+        });
+    }
 }
 
 function setupTaskbarAndStartMenu() {
@@ -339,10 +317,8 @@ function handleGlobalHotkeys(e) {
 // PROFILE MANAGEMENT & LOGIN
 // ============================================
 async function populateProfileSelector() {
-    console.log('2a. Inside populateProfileSelector');
     try {
         const profiles = await StorageSystem.ProfileManager.getAllProfiles();
-        console.log('2b. Profiles fetched from DB:', profiles);
 
         if (!profiles || profiles.length === 0) {
             console.warn('⚠️ No profiles found in DB.');
@@ -377,7 +353,6 @@ async function populateProfileSelector() {
             `;
             selector.appendChild(profileCard);
         });
-        console.log('2c. ✅ Profile selector populated.');
     } catch (error) {
         console.error('❌ Failed to populate profile selector:', error);
         const selector = document.querySelector('.profile-selector');
@@ -387,15 +362,12 @@ async function populateProfileSelector() {
 
 async function loginAs(profileKey) {
     try {
-        console.log('🔐 Logging in as:', profileKey);
         currentProfile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
 
         if (!currentProfile) {
-            showNotification('Błąd', 'Profil nie znaleziony', 'error');
+            UI.Feedback.show('Błąd', 'Profil nie znaleziony', 'error');
             return;
         }
-
-        console.log('✅ Profile loaded:', currentProfile);
 
         const fieldMap = {
             sellerName: currentProfile.fullName,
@@ -429,18 +401,19 @@ async function loginAs(profileKey) {
         document.body.classList.remove('login-page');
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
-            showNotification('Witaj!', `Zalogowano jako ${currentProfile.name}`, 'success');
+            UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
             renderDesktop();
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
-        showNotification('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
+        UI.Feedback.show('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
     }
 }
 
 function logout() {
     currentProfile = null;
     document.getElementById('desktop').classList.remove('active');
+    document.body.classList.add('login-page');
     setTimeout(() => {
         document.getElementById('loginScreen').classList.remove('hidden');
     }, 500);
@@ -456,7 +429,6 @@ async function loadLogoAsBase64(logoPath) {
             reader.onloadend = () => {
                 currentProfile.logoData = reader.result;
                 StorageSystem.db.set(StorageSystem.db.STORES.profiles, currentProfile);
-                console.log('✅ Logo loaded and converted to Base64');
                 resolve(reader.result);
             };
             reader.onerror = reject;
@@ -486,13 +458,11 @@ function setLogoPlaceholder() {
     ctx.fillText((currentProfile.name || 'U').substring(0, 2).toUpperCase(), 100, 50);
     
     currentProfile.logoData = canvas.toDataURL('image/png');
-    console.log('✅ Logo placeholder created');
 }
 
 // ============================================
-// WINDOW MANAGEMENT - PEŁNA IMPLEMENTACJA
+// WINDOW MANAGEMENT
 // ============================================
-
 function openWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (!win) return;
@@ -500,11 +470,8 @@ function openWindow(windowId) {
     win.style.display = 'flex';
     win.classList.add('active');
     win.classList.remove('minimized');
-    win.style.zIndex = ++zIndexCounter;
     
-    // Focus the window
-    document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
-    win.classList.add('focused');
+    focusWindow(win);
     
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
     if(taskbarIcon) {
@@ -512,39 +479,21 @@ function openWindow(windowId) {
         taskbarIcon.classList.add('open');
     }
     
-    // If settings window, load profile settings
-    if (windowId === 'settings') {
-        loadProfileSettings();
-    }
+    if (windowId === 'settings') loadProfileSettings();
+    if (windowId === 'dashboard') Dashboard.init();
+    if (windowId === 'snake') NeonSnake.init('snakeCanvas');
+    if (windowId === 'domator') DomatorApp.init();
 
-    // If dashboard window, initialize it
-    if (windowId === 'dashboard') {
-        Dashboard.init();
-    }
-
-    // If snake window, initialize it
-    if (windowId === 'snake') {
-        NeonSnake.init('snakeCanvas');
-    }
-
-    if (windowId === 'domator') {
-        DomatorApp.init();
-    }
-
-    // Start autosave for offer generator
     if (windowId === 'offers') {
         if (autosaveInterval) clearInterval(autosaveInterval);
-        autosaveInterval = setInterval(autosaveOffer, 60000); // Autosave every 60 seconds
-        console.log('🕒 Autosave interval started for Offer Generator.');
+        autosaveInterval = setInterval(autosaveOffer, 60000);
     }
 }
 
 function closeWindow(windowId) {
-    // Stop autosave if offer generator is closed
     if (windowId === 'offers' && autosaveInterval) {
         clearInterval(autosaveInterval);
         autosaveInterval = null;
-        console.log('🕒 Autosave interval stopped.');
     }
 
     const win = document.getElementById(`window-${windowId}`);
@@ -557,8 +506,7 @@ function closeWindow(windowId) {
     }
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
     if (taskbarIcon) {
-        taskbarIcon.classList.remove('active');
-        taskbarIcon.classList.remove('open');
+        taskbarIcon.classList.remove('active', 'open');
     }
 }
 
@@ -567,7 +515,9 @@ function minimizeWindow(windowId) {
     if (win) {
         win.classList.add('minimized');
         win.classList.remove('focused');
-        win.style.display = 'none';
+        setTimeout(() => {
+             win.style.display = 'none';
+        }, 200);
     }
 }
 
@@ -576,19 +526,16 @@ function maximizeWindow(windowId) {
     if (!win) return;
     
     if (win.classList.contains('maximized')) {
-        // Restore
         win.classList.remove('maximized');
         win.style.top = win.dataset.prevTop || '50px';
         win.style.left = win.dataset.prevLeft || '100px';
         win.style.width = win.dataset.prevWidth || '90vw';
         win.style.height = win.dataset.prevHeight || '85vh';
     } else {
-        // Maximize - save current position
         win.dataset.prevTop = win.style.top;
         win.dataset.prevLeft = win.style.left;
         win.dataset.prevWidth = win.style.width;
         win.dataset.prevHeight = win.style.height;
-        
         win.classList.add('maximized');
     }
 }
@@ -604,17 +551,12 @@ function toggleWindow(windowId) {
     }
 }
 
-// Window dragging
 function startDrag(event, windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (!win || win.classList.contains('maximized')) return;
     
     draggedWindow = win;
-    
-    // Focus the window
-    document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
-    win.classList.add('focused');
-    win.style.zIndex = ++zIndexCounter;
+    focusWindow(win);
     
     const rect = win.getBoundingClientRect();
     dragOffset.x = event.clientX - rect.left;
@@ -625,12 +567,21 @@ function startDrag(event, windowId) {
 
 function handleWindowDrag(event) {
     if (!draggedWindow) return;
+    const desktop = document.getElementById('desktop');
+    const headerHeight = 40;
+    const taskbarHeight = 40;
     
-    const newX = event.clientX - dragOffset.x;
-    const newY = event.clientY - dragOffset.y;
+    const maxLeft = desktop.clientWidth - draggedWindow.clientWidth;
+    const maxTop = desktop.clientHeight - draggedWindow.clientHeight - taskbarHeight;
+
+    let newX = event.clientX - dragOffset.x;
+    let newY = event.clientY - dragOffset.y;
+
+    newX = Math.max(0, Math.min(newX, maxLeft));
+    newY = Math.max(0, Math.min(newY, maxTop));
     
-    draggedWindow.style.left = Math.max(0, newX) + 'px';
-    draggedWindow.style.top = Math.max(0, newY) + 'px';
+    draggedWindow.style.left = newX + 'px';
+    draggedWindow.style.top = newY + 'px';
 }
 
 function stopWindowDrag() {
@@ -638,12 +589,11 @@ function stopWindowDrag() {
 }
 
 // ============================================
-// TAB SWITCHING
+// TAB SWITCHING & START MENU
 // ============================================
-
 function switchTab(tabId, event) {
-    const tabsContainer = event.target.parentElement;
-    const windowContent = tabsContainer.parentElement;
+    const tabsContainer = event.target.closest('.tabs');
+    const windowContent = event.target.closest('.window-content');
 
     tabsContainer.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
     event.target.classList.add('active');
@@ -661,7 +611,6 @@ function toggleStartMenu() {
 // ============================================
 // PRODUCT MANAGEMENT
 // ============================================
-
 function createProductCard(productId) {
     const createEl = (tag, props = {}, children = []) => {
         const el = document.createElement(tag);
@@ -677,11 +626,10 @@ function createProductCard(productId) {
     const productCard = createEl('div', {
         id: `product-${productId}`,
         className: 'product-card',
-        draggable: true,
-        ondragstart: (e) => dragStart(e, productId),
-        ondragover: dragOver,
-        ondrop: (e) => drop(e, productId)
     });
+
+    const dragHandle = createEl('div', { className: 'drag-handle', textContent: '☰', draggable: true });
+    dragHandle.ondragstart = (e) => dragStart(e, productId);
 
     const imageZone = createEl('div', { className: 'product-image-zone' }, [
         createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
@@ -700,7 +648,7 @@ function createProductCard(productId) {
     ]);
 
     productCard.append(
-        createEl('div', { className: 'drag-handle', textContent: '☰' }),
+        dragHandle,
         createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
         createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
         createEl('div', { className: 'product-actions' }, [
@@ -709,133 +657,11 @@ function createProductCard(productId) {
         ])
     );
 
+    productCard.addEventListener('dragover', dragOver);
+    productCard.addEventListener('drop', (e) => drop(e, productId));
+    productCard.addEventListener('dragenter', (e) => e.preventDefault());
+
     return productCard;
-}
-
-class ProductCommand {
-    constructor(action, productData) {
-        this.action = action;
-        this.productData = productData;
-    }
-
-    execute() {
-        switch (this.action) {
-            case 'add':
-                this._addProduct();
-                break;
-            case 'remove':
-                this._removeProduct();
-                break;
-        }
-    }
-
-    undo() {
-        switch (this.action) {
-            case 'add':
-                this._removeProduct();
-                break;
-            case 'remove':
-                this._addProduct();
-                break;
-        }
-    }
-
-    _addProduct() {
-        const productId = this.productData.id || Date.now() + productIdCounter++;
-        this.productData.id = productId;
-        products.push(productId);
-        const productCard = createProductCard(productId);
-        document.getElementById('productsList').appendChild(productCard);
-        updateProductView();
-        updateSummary();
-        UI.Feedback.toast('➕ Dodano produkt', 'success');
-    }
-
-    _removeProduct() {
-        const { id } = this.productData;
-        const el = document.getElementById(`product-${id}`);
-        if (el) el.remove();
-        products = products.filter(pId => pId !== id);
-        delete productImages[id];
-        updateProductView();
-        updateSummary();
-        UI.Feedback.toast('🗑️ Usunięto produkt', 'info');
-    }
-}
-
-class DuplicateProductCommand {
-    constructor(originalProductId) {
-        this.originalProductId = originalProductId;
-        this.newProductId = null;
-    }
-
-    execute() {
-        const originalData = {
-            name: document.getElementById(`productName-${this.originalProductId}`)?.value || '',
-            code: document.getElementById(`productCode-${this.originalProductId}`)?.value || '',
-            qty: document.getElementById(`productQty-${this.originalProductId}`)?.value || '1',
-            price: document.getElementById(`productPrice-${this.originalProductId}`)?.value || '0',
-            discount: document.getElementById(`productDiscount-${this.originalProductId}`)?.value || '0',
-            desc: document.getElementById(`productDesc-${this.originalProductId}`)?.value || '',
-            image: productImages[this.originalProductId]
-        };
-
-        this.newProductId = Date.now() + productIdCounter++;
-        products.push(this.newProductId);
-
-        const productCard = createProductCard(this.newProductId);
-        document.getElementById('productsList').appendChild(productCard);
-
-        document.getElementById(`productName-${this.newProductId}`).value = originalData.name + " (Kopia)";
-        document.getElementById(`productCode-${this.newProductId}`).value = originalData.code;
-        document.getElementById(`productQty-${this.newProductId}`).value = originalData.qty;
-        document.getElementById(`productPrice-${this.newProductId}`).value = originalData.price;
-        document.getElementById(`productDiscount-${this.newProductId}`).value = originalData.discount;
-        document.getElementById(`productDesc-${this.newProductId}`).value = originalData.desc;
-
-        if (originalData.image) {
-            productImages[this.newProductId] = originalData.image;
-            updateProductImage(this.newProductId);
-        }
-
-        updateProductView();
-        updateSummary();
-        UI.Feedback.toast('📋 Produkt zduplikowany', 'info');
-    }
-
-    undo() {
-        const el = document.getElementById(`product-${this.newProductId}`);
-        if (el) el.remove();
-        products = products.filter(pId => pId !== this.newProductId);
-        delete productImages[this.newProductId];
-        updateProductView();
-        updateSummary();
-        UI.Feedback.toast('Cofnięto duplikację', 'info');
-    }
-}
-
-class UpdateProductImageCommand {
-    constructor(productId, newImage, oldImage) {
-        this.productId = productId;
-        this.newImage = newImage;
-        this.oldImage = oldImage;
-    }
-
-    execute() {
-        productImages[this.productId] = this.newImage;
-        updateProductImage(this.productId);
-        UI.Feedback.toast('🖼️ Zaktualizowano obraz produktu', 'success');
-    }
-
-    undo() {
-        if (this.oldImage) {
-            productImages[this.productId] = this.oldImage;
-        } else {
-            delete productImages[this.productId];
-        }
-        updateProductImage(this.productId);
-        UI.Feedback.toast('Cofnięto zmianę obrazu produktu', 'info');
-    }
 }
 
 function updateProductView() {
@@ -843,9 +669,9 @@ function updateProductView() {
     if (!productsListEl) return;
     const emptyStateEl = productsListEl.querySelector('.empty-state');
 
-    if (products.length > 0 && emptyStateEl) {
-        emptyStateEl.remove();
-    } else if (products.length === 0 && !emptyStateEl) {
+    if (products.length > 0) {
+        if(emptyStateEl) emptyStateEl.remove();
+    } else if (!emptyStateEl) {
         productsListEl.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">📦</div>
@@ -856,14 +682,14 @@ function updateProductView() {
     }
 }
 
-function addProduct(productData) {
-    const command = new ProductCommand('add', productData);
+function addProduct(productData = {}) {
+    const newId = productData.id || Date.now() + productIdCounter++;
+    const command = new ProductCommand('add', { ...productData, id: newId });
     UI.Command.execute(command);
 
     if (productData.image) {
-        const newId = products[products.length - 1];
-        productImages[newId] = productData.image;
-        updateProductImage(newId);
+        const commandImg = new UpdateProductImageCommand(newId, productData.image, null);
+        UI.Command.execute(commandImg);
     }
 }
 
@@ -875,8 +701,12 @@ function removeProduct(productId) {
 
 function updateProductImage(productId) {
     const preview = document.getElementById(`productImagePreview-${productId}`);
-    if (preview && productImages[productId]) {
-        preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+    if (preview) {
+        if (productImages[productId]) {
+            preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+        } else {
+            preview.innerHTML = '📷';
+        }
     }
 }
 
@@ -891,14 +721,14 @@ function uploadProductImage(productId, event) {
     
     const reader = new FileReader();
     reader.onload = (e) => {
-        productImages[productId] = e.target.result;
-        updateProductImage(productId);
+        const oldImage = productImages[productId];
+        const command = new UpdateProductImageCommand(productId, e.target.result, oldImage);
+        UI.Command.execute(command);
         UI.Feedback.toast('📸 Zdjęcie załadowane', 'success');
     };
     reader.readAsDataURL(file);
 }
 
-// Product drag & drop
 function dragStart(event, productId) {
     draggedElement = document.getElementById(`product-${productId}`);
     event.dataTransfer.effectAllowed = 'move';
@@ -910,50 +740,36 @@ function dragStart(event, productId) {
 
 function dragOver(event) {
     event.preventDefault();
-    const container = document.getElementById('productsList');
-    if (!container) return;
-    
-    const afterElement = getDragAfterElement(container, event.clientY);
-    const dragging = document.querySelector('.dragging');
-    if (!dragging) return;
-    
-    if (afterElement == null) {
-        container.appendChild(dragging);
-    } else {
-        container.insertBefore(dragging, afterElement);
-    }
 }
 
-function drop(event, productId) {
+function drop(event, targetProductId) {
     event.preventDefault();
+    if (!draggedElement) return;
+
     const draggedId = parseInt(event.dataTransfer.getData('text/plain'));
-    const targetId = productId;
+    const targetElement = document.getElementById(`product-${targetProductId}`);
 
-    if (draggedId !== targetId) {
-        const draggedIndex = products.indexOf(draggedId);
-        const targetIndex = products.indexOf(targetId);
-        const [removed] = products.splice(draggedIndex, 1);
-        products.splice(targetIndex, 0, removed);
-    }
-    
-    if(draggedElement) {
-        draggedElement.classList.remove('dragging');
-    }
-    draggedElement = null;
-}
+    if (draggedId !== targetProductId && targetElement) {
+        const container = document.getElementById('productsList');
+        const rect = targetElement.getBoundingClientRect();
+        const offsetY = event.clientY - rect.top;
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.product-card:not(.dragging)')];
-
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
+        if (offsetY > rect.height / 2) {
+            container.insertBefore(draggedElement, targetElement.nextSibling);
         } else {
-            return closest;
+            container.insertBefore(draggedElement, targetElement);
         }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+        // Update products array order
+        const draggedIndex = products.indexOf(draggedId);
+        products.splice(draggedIndex, 1);
+
+        const newNodes = Array.from(container.querySelectorAll('.product-card')).map(node => parseInt(node.id.replace('product-', '')));
+        products = newNodes;
+    }
+
+    draggedElement.classList.remove('dragging');
+    draggedElement = null;
 }
 
 function updateSummary() {
@@ -962,56 +778,49 @@ function updateSummary() {
     tbody.innerHTML = '';
     
     let totalNet = 0;
-    let validIdx = 1;
     
-    products.forEach(productId => {
-        const nameEl = document.getElementById(`productName-${productId}`);
-        const name = nameEl?.value;
-        if (!name || !name.trim()) return;
-        
-        const qty = parseFloat(document.getElementById(`productQty-${productId}`)?.value) || 0;
-        const price = parseFloat(document.getElementById(`productPrice-${productId}`)?.value) || 0;
-        const discount = parseFloat(document.getElementById(`productDiscount-${productId}`)?.value) || 0;
-        
-        const discountedPrice = price * (1 - discount / 100);
-        const total = qty * discountedPrice;
-        totalNet += total;
-        
-        tbody.innerHTML += `
-            <tr>
-                <td>${validIdx++}</td>
-                <td>${name}</td>
-                <td>${qty}</td>
-                <td>${price.toFixed(2)} zł</td>
-                <td>${discount}%</td>
-                <td>${total.toFixed(2)} zł</td>
-            </tr>
-        `;
-    });
-    
-    if (validIdx === 1) {
+    const productData = products.map(id => ({
+        name: document.getElementById(`productName-${id}`)?.value || '',
+        qty: parseFloat(document.getElementById(`productQty-${id}`)?.value) || 0,
+        price: parseFloat(document.getElementById(`productPrice-${id}`)?.value) || 0,
+        discount: parseFloat(document.getElementById(`productDiscount-${id}`)?.value) || 0,
+    })).filter(p => p.name.trim());
+
+    if(productData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 2rem;">Brak produktów</td></tr>';
+    } else {
+        productData.forEach((p, index) => {
+            const discountedPrice = p.price * (1 - p.discount / 100);
+            const total = p.qty * discountedPrice;
+            totalNet += total;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${p.name}</td>
+                    <td>${p.qty}</td>
+                    <td>${p.price.toFixed(2)} zł</td>
+                    <td>${p.discount}%</td>
+                    <td>${total.toFixed(2)} zł</td>
+                </tr>
+            `;
+        });
     }
     
     const vat = totalNet * 0.23;
     const gross = totalNet + vat;
     
-    const totalNetEl = document.getElementById('totalNet');
-    const totalVatEl = document.getElementById('totalVat');
-    const totalGrossEl = document.getElementById('totalGross');
-    
-    if (totalNetEl) totalNetEl.textContent = totalNet.toFixed(2) + ' zł';
-    if (totalVatEl) totalVatEl.textContent = vat.toFixed(2) + ' zł';
-    if (totalGrossEl) totalGrossEl.textContent = gross.toFixed(2) + ' zł';
+    document.getElementById('totalNet').textContent = totalNet.toFixed(2) + ' zł';
+    document.getElementById('totalVat').textContent = vat.toFixed(2) + ' zł';
+    document.getElementById('totalGross').textContent = gross.toFixed(2) + ' zł';
 }
 
 // ============================================
 // PDF GENERATION
 // ============================================
-
 async function generatePDF() {
     if (!currentProfile) {
-        showNotification('Błąd', 'Brak aktywnego profilu.', 'error');
+        UI.Feedback.show('Błąd', 'Brak aktywnego profilu.', 'error');
         return;
     }
 
@@ -1045,16 +854,13 @@ async function generatePDF() {
         image: productImages[id] || null,
     }));
 
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    loadingOverlay?.classList.add('show');
+    document.getElementById('loadingOverlay')?.classList.add('show');
 
     try {
-        // Gather seller data directly from the form fields to ensure any edits are captured.
-        // This overrides the base profile data for the generated PDF.
         const sellerData = {
-            ...currentProfile, // Use profile as a base for properties not in the form (e.g., logo)
+            ...currentProfile,
             fullName: document.getElementById('sellerName')?.value || '',
-            name: document.getElementById('sellerName')?.value || '', // Both name and fullName are used in PDF template
+            name: document.getElementById('sellerName')?.value || '',
             nip: document.getElementById('sellerNIP')?.value || '',
             address: document.getElementById('sellerAddress')?.value || '',
             phone: document.getElementById('sellerPhone')?.value || '',
@@ -1074,20 +880,18 @@ async function generatePDF() {
         const filename = `Oferta_${offerData.number.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.pdf`;
         PDFManager.savePDF(pdf, filename);
         
-        showNotification('Sukces', 'PDF został pomyślnie wygenerowany!', 'success');
+        UI.Feedback.toast('PDF wygenerowany!', 'success');
     } catch (error) {
         console.error('PDF Generation Error:', error);
-        showNotification('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
+        UI.Feedback.show('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
     } finally {
-        loadingOverlay?.classList.remove('show');
+        document.getElementById('loadingOverlay')?.classList.remove('show');
     }
 }
 
 // ============================================
 // DATA PERSISTENCE (SAVE/LOAD)
 // ============================================
-let autosaveInterval = null;
-
 function collectOfferData() {
     if (!currentProfile) return null;
     
@@ -1129,9 +933,7 @@ function collectOfferData() {
 
 async function autosaveOffer() {
     const offerData = collectOfferData();
-    if (!offerData || !offerData.offer.number || !offerData.buyer.name) {
-        return; // Silently return if not logged in or form is essentially empty
-    }
+    if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
 
     try {
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
@@ -1144,50 +946,44 @@ async function autosaveOffer() {
 async function saveOffer() {
     const offerData = collectOfferData();
     if (!offerData) {
-        showNotification('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        UI.Feedback.show('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
         return;
     }
 
     const saveBtn = document.getElementById('saveOfferBtn');
-    const originalBtnHTML = '<span>💾</span> Zapisz ofertę';
+    const originalBtnHTML = saveBtn.innerHTML;
 
     try {
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
-        }
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-        showNotification('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+        UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
     } catch (error) {
         console.error('Save offer error:', error);
-        showNotification('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+        UI.Feedback.show('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
     } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalBtnHTML;
-        }
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnHTML;
     }
 }
 
 async function loadOffer() {
     if (!currentProfile) {
-        showNotification('Błąd', 'Zaloguj się, aby wczytać oferty.', 'error');
+        UI.Feedback.show('Błąd', 'Zaloguj się, aby wczytać oferty.', 'error');
         return;
     }
 
     try {
-        const allOffers = await StorageSystem.db.getAll(StorageSystem.db.STORES.offers);
-        const profileOffers = allOffers
-            .filter(o => o.profileKey === currentProfile.key)
-            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const profileOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', currentProfile.key);
+        profileOffers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         if (profileOffers.length === 0) {
-            showNotification('Informacja', 'Brak zapisanych ofert dla tego profilu.', 'info');
+            UI.Feedback.toast('Brak zapisanych ofert dla tego profilu.', 'info');
             return;
         }
 
         const listHTML = profileOffers.map(offer => `
-            <div class="offer-history-item" onclick="loadOfferFromHistory('${offer.id}')">
+            <div class="offer-history-item" data-offer-id="${offer.id}">
                 <div class="offer-number">${offer.offer?.number || offer.id}</div>
                 <div class="offer-buyer">${offer.buyer?.name || 'Brak nabywcy'}</div>
                 <div class="offer-date">${new Date(offer.timestamp).toLocaleString('pl-PL')}</div>
@@ -1195,20 +991,14 @@ async function loadOffer() {
             </div>
         `).join('');
         
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content" style="width: 600px;">
-                <h2 style="margin-bottom: 1.5rem;">Wczytaj ofertę</h2>
-                <div class="offers-history-list" style="max-height: 60vh; overflow-y: auto;">${listHTML}</div>
-                <button class="btn btn-outline" style="margin-top: 1.5rem;" onclick="this.closest('.modal-overlay').remove()">Anuluj</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
+        UI.Modal.show('Wczytaj ofertę', `<div class="offers-history-list">${listHTML}</div>`, 'loadOfferModal');
+        document.querySelectorAll('.offer-history-item').forEach(item => {
+            item.addEventListener('click', () => loadOfferFromHistory(item.dataset.offerId));
+        });
 
     } catch (error) {
         console.error('Load offer error:', error);
-        showNotification('Błąd wczytywania', 'Nie udało się wczytać historii ofert.', 'error');
+        UI.Feedback.show('Błąd wczytywania', 'Nie udało się wczytać historii ofert.', 'error');
     }
 }
 
@@ -1216,145 +1006,94 @@ async function loadOfferFromHistory(offerId) {
     try {
         const offer = await StorageSystem.db.get(StorageSystem.db.STORES.offers, offerId);
         if (!offer) {
-            showNotification('Błąd', 'Nie znaleziono oferty.', 'error');
+            UI.Feedback.show('Błąd', 'Nie znaleziono oferty.', 'error');
             return;
         }
 
-        // Clear current form
         products = [];
         productImages = {};
-        const productsList = document.getElementById('productsList');
-        if (productsList) productsList.innerHTML = '';
+        document.getElementById('productsList').innerHTML = '';
 
-        // Load data
         const fields = {
-            'offerNumber': offer.offer?.number,
-            'offerDate': offer.offer?.date,
-            'validUntil': offer.offer?.validUntil,
-            'currency': offer.offer?.currency,
-            'buyerName': offer.buyer?.name,
-            'buyerNIP': offer.buyer?.nip,
-            'buyerAddress': offer.buyer?.address,
-            'buyerPhone': offer.buyer?.phone,
-            'buyerEmail': offer.buyer?.email,
-            'paymentTerms': offer.terms?.payment,
-            'deliveryTime': offer.terms?.delivery,
-            'warranty': offer.terms?.warranty,
+            'offerNumber': offer.offer?.number, 'offerDate': offer.offer?.date, 'validUntil': offer.offer?.validUntil,
+            'currency': offer.offer?.currency, 'buyerName': offer.buyer?.name, 'buyerNIP': offer.buyer?.nip,
+            'buyerAddress': offer.buyer?.address, 'buyerPhone': offer.buyer?.phone, 'buyerEmail': offer.buyer?.email,
+            'paymentTerms': offer.terms?.payment, 'deliveryTime': offer.terms?.delivery, 'warranty': offer.terms?.warranty,
             'deliveryMethod': offer.terms?.deliveryMethod
         };
-        
         Object.entries(fields).forEach(([id, value]) => {
             const el = document.getElementById(id);
             if (el && value) el.value = value;
         });
 
-        // Load products
-        if (offer.products && offer.products.length > 0) {
+        if (offer.products?.length > 0) {
             offer.products.forEach(p => {
-                addProduct();
+                addProduct(p);
                 const newId = products[products.length - 1];
-                
-                const productFields = {
-                    [`productName-${newId}`]: p.name,
-                    [`productCode-${newId}`]: p.code,
-                    [`productQty-${newId}`]: p.qty,
-                    [`productPrice-${newId}`]: p.price,
-                    [`productDiscount-${newId}`]: p.discount,
-                    [`productDesc-${newId}`]: p.desc
-                };
-                
-                Object.entries(productFields).forEach(([id, value]) => {
-                    const el = document.getElementById(id);
-                    if (el && value) el.value = value;
-                });
-                
-                if (p.image) {
-                    productImages[newId] = p.image;
-                    updateProductImage(newId);
+                if(p.image) {
+                     productImages[newId] = p.image;
+                     updateProductImage(newId);
                 }
             });
         }
-
         updateSummary();
-        
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) modal.remove();
-        
-        showNotification('Wczytano!', `Załadowano ofertę ${offer.id}.`, 'success');
-
+        UI.Modal.hide('loadOfferModal');
+        UI.Feedback.toast(`Załadowano ofertę ${offer.id}.`, 'success');
     } catch (error) {
         console.error('Load from history error:', error);
-        showNotification('Błąd', 'Nie udało się wczytać wybranej oferty.', 'error');
+        UI.Feedback.show('Błąd', 'Nie udało się wczytać wybranej oferty.', 'error');
     }
 }
 
 // ============================================
 // SETTINGS WINDOW
 // ============================================
-
 function loadProfileSettings() {
     if (!currentProfile) return;
-    
     const fields = {
-        'settingsName': currentProfile.name,
-        'settingsFullName': currentProfile.fullName,
-        'settingsNIP': currentProfile.nip,
-        'settingsPhone': currentProfile.phone,
-        'settingsAddress': currentProfile.address,
-        'settingsEmail': currentProfile.email,
-        'settingsBankAccount': currentProfile.bankAccount,
-        'settingsSellerName': currentProfile.sellerName,
-        'settingsSellerPosition': currentProfile.sellerPosition,
-        'settingsSellerPhone': currentProfile.sellerPhone,
+        'settingsName': currentProfile.name, 'settingsFullName': currentProfile.fullName,
+        'settingsNIP': currentProfile.nip, 'settingsPhone': currentProfile.phone,
+        'settingsAddress': currentProfile.address, 'settingsEmail': currentProfile.email,
+        'settingsBankAccount': currentProfile.bankAccount, 'settingsSellerName': currentProfile.sellerName,
+        'settingsSellerPosition': currentProfile.sellerPosition, 'settingsSellerPhone': currentProfile.sellerPhone,
         'settingsSellerEmail': currentProfile.sellerEmail
     };
-    
     Object.entries(fields).forEach(([id, value]) => {
         const el = document.getElementById(id);
         if (el) el.value = value || '';
     });
-    
     const preview = document.getElementById('logoPreview');
     if (preview) {
-        if (currentProfile.logoData) {
-            preview.innerHTML = `<img src="${currentProfile.logoData}" style="width: 100%; height: 100%; object-fit: contain;">`;
-        } else {
-            preview.innerHTML = '📋';
-        }
+        preview.innerHTML = currentProfile.logoData ? `<img src="${currentProfile.logoData}" style="width: 100%; height: 100%; object-fit: contain;">` : '📋';
     }
 }
 
 async function saveProfileSettings() {
     if (!currentProfile) return;
-
     const updatedProfile = {
         ...currentProfile,
-        name: document.getElementById('settingsName')?.value || currentProfile.name,
-        fullName: document.getElementById('settingsFullName')?.value || '',
-        nip: document.getElementById('settingsNIP')?.value || '',
-        phone: document.getElementById('settingsPhone')?.value || '',
-        address: document.getElementById('settingsAddress')?.value || '',
-        email: document.getElementById('settingsEmail')?.value || '',
-        bankAccount: document.getElementById('settingsBankAccount')?.value || '',
-        sellerName: document.getElementById('settingsSellerName')?.value || '',
-        sellerPosition: document.getElementById('settingsSellerPosition')?.value || '',
-        sellerPhone: document.getElementById('settingsSellerPhone')?.value || '',
-        sellerEmail: document.getElementById('settingsSellerEmail')?.value || '',
+        name: document.getElementById('settingsName')?.value,
+        fullName: document.getElementById('settingsFullName')?.value,
+        nip: document.getElementById('settingsNIP')?.value,
+        phone: document.getElementById('settingsPhone')?.value,
+        address: document.getElementById('settingsAddress')?.value,
+        email: document.getElementById('settingsEmail')?.value,
+        bankAccount: document.getElementById('settingsBankAccount')?.value,
+        sellerName: document.getElementById('settingsSellerName')?.value,
+        sellerPosition: document.getElementById('settingsSellerPosition')?.value,
+        sellerPhone: document.getElementById('settingsSellerPhone')?.value,
+        sellerEmail: document.getElementById('settingsSellerEmail')?.value,
     };
     
     try {
         await StorageSystem.ProfileManager.saveProfile(updatedProfile);
         currentProfile = updatedProfile;
-        
-        // Update seller fields
-        const sellerNameEl = document.getElementById('sellerName');
-        if (sellerNameEl) sellerNameEl.value = currentProfile.fullName || '';
-        
-        showNotification('Zapisano!', 'Ustawienia profilu zostały zaktualizowane.', 'success');
+        document.getElementById('sellerName').value = currentProfile.fullName || '';
+        UI.Feedback.toast('Ustawienia profilu zostały zaktualizowane.', 'success');
         closeWindow('settings');
     } catch (error) {
         console.error('Save profile error:', error);
-        showNotification('Błąd', 'Nie udało się zapisać ustawień.', 'error');
+        UI.Feedback.show('Błąd', 'Nie udało się zapisać ustawień.', 'error');
     }
 }
 
@@ -1365,10 +1104,7 @@ function uploadLogoFromSettings(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         currentProfile.logoData = e.target.result;
-        const preview = document.getElementById('logoPreview');
-        if (preview) {
-            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain;">`;
-        }
+        document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain;">`;
         UI.Feedback.toast('📸 Logo gotowe do zapisania', 'info');
     };
     reader.readAsDataURL(file);
@@ -1377,43 +1113,16 @@ function uploadLogoFromSettings(event) {
 // ============================================
 // UTILITY & UI HELPER FUNCTIONS
 // ============================================
-
 function updateClock() {
     const now = new Date();
     const time = now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
     const date = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' });
-    
     const clockEl = document.getElementById('clock');
     if (clockEl) {
-        const timeEl = clockEl.querySelector('.clock-time');
-        const dateEl = clockEl.querySelector('.clock-date');
-        if (timeEl) timeEl.textContent = time;
-        if (dateEl) dateEl.textContent = date;
+        clockEl.querySelector('.clock-time').textContent = time;
+        clockEl.querySelector('.clock-date').textContent = date;
     }
 }
-
-function showNotification(title, message, type = 'info') {
-    const notification = document.getElementById('notification');
-    if (!notification) {
-        console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
-        return;
-    }
-    
-    const titleEl = notification.querySelector('.notification-title');
-    const messageEl = notification.querySelector('.notification-message');
-    
-    if (titleEl) titleEl.textContent = title;
-    if (messageEl) messageEl.textContent = message;
-    
-    const colors = { info: '#3b82f6', success: '#10b981', error: '#ef4444' };
-    notification.style.borderLeftColor = colors[type] || colors.info;
-
-    notification.classList.add('show');
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 4000);
-}
-
 
 function generateOfferNumber() {
     const date = new Date();
@@ -1421,25 +1130,20 @@ function generateOfferNumber() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    const offerNumberInput = document.getElementById('offerNumber');
-    if(offerNumberInput) offerNumberInput.value = `OF/${year}/${month}/${day}/${random}`;
+    document.getElementById('offerNumber').value = `OF/${year}/${month}/${day}/${random}`;
 }
 
 function setTodayDate() {
     const today = new Date().toISOString().split('T')[0];
-    const offerDateInput = document.getElementById('offerDate');
-    if(offerDateInput) offerDateInput.value = today;
-
+    document.getElementById('offerDate').value = today;
     const validDate = new Date();
     validDate.setDate(validDate.getDate() + 30);
-    const validUntilInput = document.getElementById('validUntil');
-    if(validUntilInput) validUntilInput.value = validDate.toISOString().split('T')[0];
+    document.getElementById('validUntil').value = validDate.toISOString().split('T')[0];
 }
 
 function changeWallpaper(wallpaper) {
     const desktop = document.getElementById('desktop');
     if (!desktop) return;
-
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
         wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
@@ -1447,33 +1151,51 @@ function changeWallpaper(wallpaper) {
         wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')',
         wallpaper4: 'url(\'userData/wallpapers/wallpaper4.jpg\')'
     };
-
     if (wallpapers[wallpaper]) {
         desktop.style.backgroundImage = wallpapers[wallpaper];
         desktop.style.backgroundSize = 'cover';
         desktop.style.backgroundPosition = 'center';
-        UI.Feedback.toast(`🖼️ Zmieniono tapetę na ${wallpaper}`, 'info');
-        // Save wallpaper choice to localStorage
+        UI.Feedback.toast(`🖼️ Zmieniono tapetę`, 'info');
         localStorage.setItem('pesteczkaOS_wallpaper', wallpaper);
     }
 }
 
-// On load, check for saved wallpaper
-document.addEventListener('DOMContentLoaded', () => {
-    const savedWallpaper = localStorage.getItem('pesteczkaOS_wallpaper');
-    if (savedWallpaper) {
-        changeWallpaper(savedWallpaper);
-        const activePreview = document.querySelector(`.wallpaper-preview[data-wallpaper="${savedWallpaper}"]`);
-        if (activePreview) {
-            activePreview.classList.add('active');
-        }
-    } else {
-        const defaultPreview = document.querySelector('.wallpaper-preview[data-wallpaper="default"]');
-        if (defaultPreview) {
-            defaultPreview.classList.add('active');
-        }
+function applySavedWallpaper() {
+    const savedWallpaper = localStorage.getItem('pesteczkaOS_wallpaper') || 'default';
+    changeWallpaper(savedWallpaper);
+    document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
+    const activePreview = document.querySelector(`.wallpaper-preview[data-wallpaper="${savedWallpaper}"]`);
+    if (activePreview) {
+        activePreview.classList.add('active');
     }
-});
-
+}
 
 console.log('✅ App.js loaded successfully');
+
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Pesteczka OS Main App Script Started');
+
+    try {
+        if (!window.StorageSystem || typeof window.StorageSystem.init !== 'function') {
+            throw new Error('StorageSystem not found or is not a valid module.');
+        }
+        await window.StorageSystem.init();
+
+        await populateProfileSelector();
+
+        setupUI();
+        applySavedWallpaper();
+
+        console.log('✅ Pesteczka OS Initialized Successfully');
+    } catch (error) {
+        console.error('❌ CRITICAL ERROR during initialization:', error);
+        document.body.innerHTML = `<div class="critical-error-container">
+            <h1>Błąd krytyczny</h1>
+            <p>Nie można załadować aplikacji. Sprawdź konsolę (F12), aby uzyskać szczegółowe informacje.</p>
+            <pre>${error.stack}</pre>
+        </div>`;
+    }
+});
