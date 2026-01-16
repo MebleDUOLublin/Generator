@@ -783,15 +783,18 @@ function stopWindowDrag() {
 // TAB SWITCHING & START MENU
 // ============================================
 function switchTab(tabId, event) {
-    const tabsContainer = event.target.closest('.tabs');
-    const windowContent = event.target.closest('.window-content');
+    const clickedTab = event.target.closest('.tab');
+    if (!clickedTab) return;
+
+    const tabsContainer = clickedTab.closest('.tabs');
+    const windowContent = clickedTab.closest('.window-content');
 
     tabsContainer.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    event.target.classList.add('active');
+    clickedTab.classList.add('active');
 
     windowContent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     const activeTabContent = windowContent.querySelector(`#${tabId}-tab`);
-    if(activeTabContent) {
+    if (activeTabContent) {
         activeTabContent.classList.add('active');
     }
 }

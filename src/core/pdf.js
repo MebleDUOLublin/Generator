@@ -172,6 +172,7 @@ const PDFManager = (() => {
     };
 
     const generatePDF = async (options) => {
+        console.log('Checking for pdfMake library:', typeof pdfMake);
         const { orientation = 'portrait', format = 'a4', seller = {}, offerData = {} } = options;
 
         try {
