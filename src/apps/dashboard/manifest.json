@@ -1,0 +1,10 @@
+{
+  "id": "dashboard",
+  "name": "Dashboard",
+  "description": "Przeglądaj statystyki i analizy.",
+  "icon": "📊",
+  "entrypoints": {
+    "html": "ui.html",
+    "js": "main.js"
+  }
+}

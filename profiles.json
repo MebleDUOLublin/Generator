@@ -21,17 +21,7 @@
         "primary": "#7c3aed",
         "accent": "#00d1ff"
       },
-      "desktopIcons": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "snake", "name": "Neon Snake", "icon": "🐍" }
-      ],
-      "startMenuItems": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
-      ]
+      "enabledApps": ["offers", "dashboard", "settings", "snake"]
     },
     "mebleduo": {
       "key": "mebleduo",
@@ -54,17 +44,7 @@
         "primary": "#dc2626",
         "accent": "#111827"
       },
-      "desktopIcons": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "snake", "name": "Neon Snake", "icon": "🐍" }
-      ],
-      "startMenuItems": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
-      ]
+      "enabledApps": ["offers", "dashboard", "settings", "snake"]
     },
     "alekrzesla": {
       "key": "alekrzesla",
@@ -87,18 +67,7 @@
         "primary": "#dc2626",
         "accent": "#111827"
       },
-      "desktopIcons": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
-      ],
-      "startMenuItems": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
-      ]
+      "enabledApps": ["offers", "dashboard", "settings", "domator"]
     }
   }
 }

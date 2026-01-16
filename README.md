@@ -4,7 +4,7 @@ Pesteczka OS is a lightweight, modular operating system environment built for th
 
 **Created by Paweł Steczka ([pesteczka.com](https://pesteczka.com))**
 
-![Pesteczka OS Screenshot](https://i.imgur.com/example.png) <!-- Replace with a real screenshot -->
+![Pesteczka OS Screenshot](https://i.imgur.com/qRSzDBc.png)
 
 ## Core Philosophy
 

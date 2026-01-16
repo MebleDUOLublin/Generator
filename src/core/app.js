@@ -63,72 +63,70 @@ function applyTheme(theme) {
 }
 
 function renderUIForProfile() {
-    if (!currentProfile) return;
+    if (!currentProfile || !window.AppRegistry) return;
 
-    // 1. Render Desktop Icons
+    // Get the full app objects for the apps enabled in the current profile.
+    const enabledApps = window.AppRegistry.filter(app =>
+        currentProfile.enabledApps && currentProfile.enabledApps.includes(app.id)
+    );
+
+    // Get containers
     const iconsContainer = document.getElementById('desktopIcons');
-    if (iconsContainer) {
-        iconsContainer.innerHTML = '';
-        if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
-            currentProfile.desktopIcons.forEach(iconData => {
-                const iconEl = document.createElement('div');
-                iconEl.className = 'desktop-icon';
-                iconEl.tabIndex = 0;
-                iconEl.setAttribute('role', 'button');
-                iconEl.setAttribute('aria-label', iconData.name);
-                iconEl.dataset.window = iconData.id;
-
-                iconEl.innerHTML = `
-                    <div class="desktop-icon-image">${iconData.icon}</div>
-                    <div class="desktop-icon-name">${iconData.name}</div>
-                `;
-                iconsContainer.appendChild(iconEl);
-            });
-        }
-    }
-
-    // 2. Render Taskbar Icons
     const taskbarCenter = document.querySelector('.taskbar-center');
-    if (taskbarCenter) {
-        const existingIcons = taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)');
-        existingIcons.forEach(icon => icon.remove());
-
-        if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
-            currentProfile.desktopIcons.forEach(iconData => {
-                 const iconEl = document.createElement('div');
-                 iconEl.className = 'taskbar-icon';
-                 iconEl.dataset.window = iconData.id;
-                 iconEl.tabIndex = 0;
-                 iconEl.setAttribute('role', 'button');
-                 iconEl.setAttribute('aria-label', iconData.name);
-                 iconEl.innerHTML = iconData.icon;
-                 taskbarCenter.appendChild(iconEl);
-            });
-        }
-    }
-
-    // 3. Render Start Menu Items
     const startAppsGrid = document.querySelector('.start-apps-grid');
-    if (startAppsGrid) {
-        startAppsGrid.innerHTML = '';
-        if (currentProfile.startMenuItems && Array.isArray(currentProfile.startMenuItems)) {
-            currentProfile.startMenuItems.forEach(itemData => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'start-app';
-                itemEl.dataset.window = itemData.id;
-                itemEl.tabIndex = 0;
-                itemEl.setAttribute('role', 'menuitem');
 
-                itemEl.innerHTML = `
-                    <div class="start-app-icon">${itemData.icon}</div>
-                    <div class="start-app-name">${itemData.name}</div>
-                `;
-                startAppsGrid.appendChild(itemEl);
-            });
-        }
+    // Clear existing dynamic content
+    if (iconsContainer) iconsContainer.innerHTML = '';
+    if (taskbarCenter) {
+        taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)').forEach(icon => icon.remove());
     }
+    if (startAppsGrid) startAppsGrid.innerHTML = '';
 
-    // 4. Re-attach ALL relevant listeners for dynamic elements
+    // Render UI elements for each enabled app
+    enabledApps.forEach(app => {
+        // 1. Render Desktop Icon
+        if (iconsContainer) {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'desktop-icon';
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', app.name);
+            iconEl.dataset.window = app.id;
+            iconEl.innerHTML = `
+                <div class="desktop-icon-image">${app.icon}</div>
+                <div class="desktop-icon-name">${app.name}</div>
+            `;
+            iconsContainer.appendChild(iconEl);
+        }
+
+        // 2. Render Taskbar Icon
+        if (taskbarCenter) {
+            const taskbarIcon = document.createElement('div');
+            taskbarIcon.className = 'taskbar-icon';
+            taskbarIcon.dataset.window = app.id;
+            taskbarIcon.tabIndex = 0;
+            taskbarIcon.setAttribute('role', 'button');
+            taskbarIcon.setAttribute('aria-label', app.name);
+            taskbarIcon.innerHTML = app.icon;
+            taskbarCenter.appendChild(taskbarIcon);
+        }
+
+        // 3. Render Start Menu Item
+        if (startAppsGrid) {
+            const startItem = document.createElement('div');
+            startItem.className = 'start-app';
+            startItem.dataset.window = app.id;
+            startItem.tabIndex = 0;
+            startItem.setAttribute('role', 'menuitem');
+            startItem.innerHTML = `
+                <div class="start-app-icon">${app.icon}</div>
+                <div class="start-app-name">${app.name}</div>
+            `;
+            startAppsGrid.appendChild(startItem);
+        }
+    });
+
+    // Re-attach ALL relevant listeners for the newly created dynamic elements
     setupDesktopInteractions();
     setupDynamicAppLaunchers();
 }
@@ -217,26 +215,8 @@ function setupWindowManagement() {
 }
 
 function setupOfferGenerator() {
-    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
-    document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
-    document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
-    document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
-
-    document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
-        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
-            products = [];
-            productImages = {};
-            updateProductView();
-            generateOfferNumber();
-            setTodayDate();
-            updateSummary();
-            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
-        }
-    });
-    // This now only targets tabs within the offers window
-    document.querySelectorAll('#window-offers .tab').forEach(tab => {
-        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
-    });
+    // This function is now intentionally empty.
+    // The logic has been moved to the Offers plugin.
 }
 
 function setupSettings() {
@@ -573,9 +553,6 @@ async function loginAs(profileKey) {
             setLogoPlaceholder();
         }
 
-        generateOfferNumber();
-        setTodayDate();
-
         document.getElementById('loginScreen').classList.add('hidden');
         document.body.classList.remove('login-page');
         // Setup the main UI and apply wallpaper only AFTER login is successful
@@ -583,9 +560,14 @@ async function loginAs(profileKey) {
         applySavedWallpaper();
 
         setTimeout(() => {
-            document.getElementById('desktop').classList.add('active');
-            UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
-            renderUIForProfile();
+            try {
+                document.getElementById('desktop').classList.add('active');
+                UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
+                renderUIForProfile();
+            } catch (error) {
+                console.error('Error during post-login UI update:', error);
+                // Optionally, show a user-facing error message here
+            }
         }, 500);
     } catch (error) {
         console.error('Login failed:', error);
@@ -647,58 +629,62 @@ function setLogoPlaceholder() {
 // WINDOW MANAGEMENT
 // ============================================
 async function openWindow(windowId) {
-    const win = document.getElementById(`window-${windowId}`);
-    if (!win) {
-        console.warn(`Window element #window-${windowId} not found. Cannot open.`);
-        return;
-    }
-
-    const contentArea = win.querySelector('.window-content');
-    if (!contentArea) {
-        console.error(`Window #${windowId} is missing a .window-content child.`);
-        return;
-    }
-
-    if (!contentArea.classList.contains('loaded')) {
-        const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
-        if (pluginAssets && pluginAssets.html) {
-            contentArea.innerHTML = pluginAssets.html;
-            contentArea.classList.add('loaded');
-
-            setTimeout(() => {
-                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
-                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
-                    console.log(`Initializing ${appObjectName}...`);
-                    window[appObjectName].init();
-                }
-            }, 100);
-
-        } else {
-            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+    return new Promise(async (resolve) => {
+        const win = document.getElementById(`window-${windowId}`);
+        if (!win) {
+            console.warn(`Window element #window-${windowId} not found. Cannot open.`);
+            return resolve();
         }
-    }
-    
-    win.style.display = 'flex';
-    win.classList.add('active');
-    win.classList.remove('minimized');
-    
-    focusWindow(win);
-    
-    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
-    if(taskbarIcon) {
-        taskbarIcon.classList.add('active');
-        taskbarIcon.classList.add('open');
-    }
-    
-    if (windowId === 'dashboard' && window.Dashboard) Dashboard.init();
-    if (windowId === 'snake' && window.NeonSnake) NeonSnake.init('snakeCanvas');
-    if (windowId === 'domator' && window.DomatorApp) DomatorApp.init();
 
-    if (windowId === 'offers') {
-        if(typeof initializeAdvancedUI === 'function') initializeAdvancedUI();
-        if (autosaveInterval) clearInterval(autosaveInterval);
-        autosaveInterval = setInterval(autosaveOffer, 60000);
-    }
+        const contentArea = win.querySelector('.window-content');
+        if (!contentArea) {
+            console.error(`Window #${windowId} is missing a .window-content child.`);
+            return resolve();
+        }
+
+        if (!contentArea.classList.contains('loaded')) {
+            const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
+            if (pluginAssets && pluginAssets.html) {
+                contentArea.innerHTML = pluginAssets.html;
+                contentArea.classList.add('loaded');
+
+                await new Promise(r => requestAnimationFrame(r));
+
+                try {
+                    const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
+                    if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
+                        console.log(`Initializing ${appObjectName}...`);
+                        window[appObjectName].init();
+                    }
+                } catch (e) {
+                    console.error(`Error initializing plugin ${windowId}:`, e);
+                }
+
+            } else {
+                contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+            }
+        }
+
+        win.style.display = 'flex';
+        win.classList.add('active');
+        win.classList.remove('minimized');
+
+        focusWindow(win);
+
+        const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+        if(taskbarIcon) {
+            taskbarIcon.classList.add('active');
+            taskbarIcon.classList.add('open');
+        }
+
+        if (windowId === 'offers') {
+            if(typeof initializeAdvancedUI === 'function') initializeAdvancedUI();
+            if (autosaveInterval) clearInterval(autosaveInterval);
+            autosaveInterval = setInterval(autosaveOffer, 60000);
+        }
+
+        resolve();
+    });
 }
 
 function closeWindow(windowId) {
@@ -811,7 +797,9 @@ function switchTab(tabId, event) {
 
     windowContent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     const activeTabContent = windowContent.querySelector(`#${tabId}-tab`);
-    if(activeTabContent) activeTabContent.classList.add('active');
+    if(activeTabContent) {
+        activeTabContent.classList.add('active');
+    }
 }
 
 function toggleStartMenu() {

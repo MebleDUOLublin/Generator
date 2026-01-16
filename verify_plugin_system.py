@@ -20,21 +20,26 @@ async def main():
             await expect(page.locator("#desktop")).to_be_visible(timeout=10000)
             print("Login successful, desktop is visible.")
 
-            print("Opening the Settings window via its desktop icon...")
-            await page.locator('#desktopIcons [data-window="settings"]').dblclick()
+            print("Opening the Offer Generator window via its desktop icon...")
+            await page.locator('#desktopIcons [data-window="offers"]').dblclick()
 
-            print("Verifying that the Settings window is visible...")
-            settings_window = page.locator("#window-settings")
-            await expect(settings_window).to_be_visible(timeout=5000)
-            print("Settings window is visible.")
+            # Add a short delay to allow the plugin UI to render
+            await page.wait_for_timeout(500)
+
+            print("Verifying that the Offer Generator window is visible...")
+            offers_window = page.locator("#window-offers")
+            await expect(offers_window).to_be_visible(timeout=5000)
+            print("Offer Generator window is visible.")
 
             print("Verifying that the plugin's HTML content has been loaded...")
-            # We'll check for an element that is unique to the settings UI, like the wallpaper selector.
-            wallpaper_selector = settings_window.locator(".wallpaper-selector")
-            await expect(wallpaper_selector).to_be_visible(timeout=5000)
-            print("Plugin content (.wallpaper-selector) is visible inside the window.")
+            # We'll check for an element that is unique to the offers UI, like the 'Add Product' button.
+            # First, we need to switch to the "Products" tab.
+            await offers_window.locator('[data-tab="products"]').click()
+            add_product_button = offers_window.locator("#addProductBtn")
+            await expect(add_product_button).to_be_visible(timeout=5000)
+            print("Plugin content (#addProductBtn) is visible inside the window.")
 
-            print("✅ Verification successful! The plugin system correctly loaded the Settings app.")
+            print("✅ Verification successful! The plugin system correctly loaded the Offer Generator app.")
 
         except Exception as e:
             print(f"❌ Verification failed: {e}")
