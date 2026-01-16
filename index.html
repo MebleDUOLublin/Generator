@@ -101,29 +101,41 @@
 
                     <div class="domator-content">
                         <!-- STATYSTYKI -->
-                        <div class="domator-stats">
+                        <div class="dashboard-grid" style="margin-bottom: var(--space-6);">
                             <div class="stat-card">
-                                <div class="stat-label">Produktów</div>
-                                <div class="stat-value" id="domatorProductCount">0</div>
+                                <div class="stat-card-header">
+                                    <div class="stat-card-title">Produktów</div>
+                                    <div class="stat-card-icon">📦</div>
+                                </div>
+                                <div class="stat-card-value" id="domatorProductCount">0</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-label">Suma Netto</div>
-                                <div class="stat-value" id="domatorSumNetto">0,00 zł</div>
+                                <div class="stat-card-header">
+                                    <div class="stat-card-title">Suma Netto</div>
+                                    <div class="stat-card-icon">💰</div>
+                                </div>
+                                <div class="stat-card-value" id="domatorSumNetto">0,00 zł</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-label">Suma Brutto</div>
-                                <div class="stat-value" id="domatorSumBrutto">0,00 zł</div>
+                                <div class="stat-card-header">
+                                    <div class="stat-card-title">Suma Brutto</div>
+                                    <div class="stat-card-icon">💵</div>
+                                </div>
+                                <div class="stat-card-value" id="domatorSumBrutto">0,00 zł</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-label">Status</div>
-                                <div class="stat-value" id="domatorStatus">📝 Edycja</div>
+                                <div class="stat-card-header">
+                                    <div class="stat-card-title">Status</div>
+                                    <div class="stat-card-icon">🚦</div>
+                                </div>
+                                <div class="stat-card-value" id="domatorStatus" style="font-size: 1.8rem;">📝 Edycja</div>
                             </div>
                         </div>
 
                         <!-- PASEK NARZĘDZI -->
-                        <div class="domator-toolbar">
+                        <div class="actions-bar" style="margin-bottom: var(--space-6); padding: var(--space-4);">
                             <button class="btn btn-secondary" id="domatorExportEmailBtn">
-                                <span>✉️</span> Eksport do maila
+                                <span>✉️</span> Eksportuj
                             </button>
                             <button class="btn btn-secondary" id="domatorExportPdfBtn">
                                 <span>📄</span> Generuj PDF
@@ -131,7 +143,8 @@
                             <button class="btn btn-secondary" id="domatorCopyHtmlBtn">
                                 <span>📋</span> Kopiuj HTML
                             </button>
-                            <button class="btn btn-secondary" id="domatorSaveBtn">
+                            <div style="margin-left: auto;"></div>
+                            <button class="btn btn-outline" id="domatorSaveBtn">
                                 <span>💾</span> Zapisz
                             </button>
                             <button class="btn btn-danger" id="domatorClearBtn">
@@ -140,82 +153,93 @@
                         </div>
 
                         <!-- DANE ADRESOWE -->
-                        <div class="domator-section">
-                            <h3 class="domator-section-title">
+                        <div class="section">
+                            <h2 class="section-title">
                                 <span>📍</span>
                                 Adres dostawy
-                            </h3>
+                            </h2>
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label class="form-label">Nazwa / Imię i Nazwisko</label>
+                                    <label class="form-label" for="domatorClientName">Nazwa / Imię i Nazwisko</label>
                                     <input type="text" class="form-input" id="domatorClientName">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Ulica z numerem</label>
+                                    <label class="form-label" for="domatorStreet">Ulica z numerem</label>
                                     <input type="text" class="form-input" id="domatorStreet">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Kod pocztowy</label>
+                                    <label class="form-label" for="domatorPostCode">Kod pocztowy</label>
                                     <input type="text" class="form-input" id="domatorPostCode">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Miasto</label>
+                                    <label class="form-label" for="domatorCity">Miasto</label>
                                     <input type="text" class="form-input" id="domatorCity">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Numer telefonu</label>
+                                    <label class="form-label" for="domatorPhone">Numer telefonu</label>
                                     <input type="tel" class="form-input" id="domatorPhone">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Adres mailowy</label>
+                                    <label class="form-label" for="domatorEmail">Adres mailowy</label>
                                     <input type="email" class="form-input" id="domatorEmail">
                                 </div>
                             </div>
                         </div>
 
                         <!-- LISTA PRODUKTÓW -->
-                        <div class="domator-section">
-                            <h3 class="domator-section-title">
+                        <div class="section">
+                            <h2 class="section-title">
                                 <span>📦</span>
                                 Lista produktów
-                                <button class="btn btn-success" id="addDomatorProductBtn" style="margin-left: auto;">
+                                <button class="btn btn-success" id="addDomatorProductBtn">
                                     <span>➕</span> Dodaj produkt
                                 </button>
-                            </h3>
-                            <table class="domator-table" id="domatorProductsTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40px; text-align: center;">#</th>
-                                        <th style="min-width: 120px;">SKU</th>
-                                        <th style="min-width: 120px;">EAN</th>
-                                        <th style="min-width: 250px;">Nazwa produktu</th>
-                                        <th style="width: 80px; text-align: center;">Ilość</th>
-                                        <th style="min-width: 120px; text-align: right;">Cena netto</th>
-                                        <th style="min-width: 130px; text-align: right;">Cena brutto</th>
-                                        <th style="width: 80px; text-align: center;">Akcje</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="domatorProductsBody">
-                                    <!-- Produkty będą dodawane dynamicznie -->
-                                </tbody>
-                                <tfoot>
-                                    <tr style="background: #f3f4f6; font-weight: 600;">
-                                        <td colspan="5" style="text-align: right;">SUMA:</td>
-                                        <td style="text-align: right;" id="domatorTotalNetto">0,00 zł</td>
-                                        <td style="text-align: right;" id="domatorTotalBrutto">0,00 zł</td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                            </h2>
+                            <div class="table-container" style="overflow-x: auto;">
+                                <table class="domator-table" id="domatorProductsTable" style="width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px; text-align: center;">#</th>
+                                            <th style="min-width: 140px;">SKU</th>
+                                            <th style="min-width: 140px;">EAN</th>
+                                            <th style="min-width: 300px;">Nazwa produktu</th>
+                                            <th style="width: 90px; text-align: center;">Ilość</th>
+                                            <th style="min-width: 140px; text-align: right;">Cena netto</th>
+                                            <th style="min-width: 140px; text-align: right;">Cena brutto</th>
+                                            <th style="width: 100px; text-align: center;">Akcje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="domatorProductsBody">
+                                        <!-- Produkty będą dodawane dynamicznie -->
+                                        <tr>
+                                            <td colspan="8">
+                                                <div class="empty-state" style="padding: var(--space-8);">
+                                                    <div class="empty-state-icon">📦</div>
+                                                    <div class="empty-state-title">Brak produktów</div>
+                                                    <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="background: var(--gray-100); font-weight: 700;">
+                                            <td colspan="5" style="text-align: right; padding-right: var(--space-4);">SUMA:</td>
+                                            <td style="text-align: right;" id="domatorTotalNetto">0,00 zł</td>
+                                            <td style="text-align: right;" id="domatorTotalBrutto">0,00 zł</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- DODATKOWE INFORMACJE -->
-                        <div class="domator-section">
-                            <h3 class="domator-section-title">
+                        <div class="section">
+                            <h2 class="section-title">
                                 <span>📝</span>
                                 Dodatkowe informacje
-                            </h3>
-                            <textarea id="domatorNotes" class="form-textarea" rows="3" placeholder="Uwagi do zamówienia, specjalne instrukcje dostawy..."></textarea>
+                            </h2>
+                            <textarea id="domatorNotes" class="form-textarea" rows="4" placeholder="Uwagi do zamówienia, specjalne instrukcje dostawy..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -481,6 +505,7 @@
                     <button class="btn btn-primary btn-lg" id="generatePdfBtn">
                         <span>📄</span> Generuj PDF
                     </button>
+                    <div id="autosave-status" class="autosave-status"></div>
                     <button class="btn btn-secondary" id="saveOfferBtn">
                         <span>💾</span> Zapisz ofertę
                     </button>
@@ -732,6 +757,55 @@
             <span>⏻</span> Wyloguj
         </div>
     </div>
+
+    <!-- TEMPLATES -->
+    <template id="productCardTemplate">
+        <div class="product-card" draggable="true">
+            <div class="drag-handle" title="Przeciągnij, aby zmienić kolejność">☰</div>
+            <div class="product-content-wrapper">
+                <div class="product-image-zone" title="Kliknij, aby dodać obraz">
+                    <div class="product-image-preview">📷</div>
+                    <input type="file" accept="image/*" class="product-image-input" style="display:none;">
+                </div>
+                <div class="product-details">
+                    <div class="form-group">
+                        <label class="form-label">Nazwa produktu</label>
+                        <input type="text" class="form-input product-name" placeholder="np. Fotel gamingowy">
+                    </div>
+                    <div class="form-grid-inner">
+                        <div class="form-group">
+                            <label class="form-label">Kod</label>
+                            <input type="text" class="form-input product-code">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ilość</label>
+                            <input type="number" class="form-input product-qty" value="1" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cena netto</label>
+                            <input type="number" class="form-input product-price" value="0" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rabat (%)</label>
+                            <input type="number" class="form-input product-discount" value="0" min="0" max="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: var(--space-4);">
+                <label class="form-label">Opis produktu</label>
+                <textarea class="form-textarea product-desc" rows="2" placeholder="• Cecha 1&#10;• Cecha 2"></textarea>
+            </div>
+            <div class="product-actions">
+                <button class="btn btn-outline btn-sm product-duplicate-btn">
+                    <span>📋</span> Duplikuj
+                </button>
+                <button class="btn btn-outline btn-danger btn-sm product-remove-btn">
+                    <span>🗑️</span> Usuń
+                </button>
+            </div>
+        </div>
+    </template>
 
     <!-- Scripts -->
     <script src="storage.js"></script>

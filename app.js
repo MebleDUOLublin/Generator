@@ -758,99 +758,108 @@ function toggleStartMenu() {
 // ============================================
 // PRODUCT MANAGEMENT
 // ============================================
-function createProductCard(productId) {
-    const createEl = (tag, props = {}, children = []) => {
-        const el = document.createElement(tag);
-        Object.assign(el, props);
-        children.forEach(child => el.appendChild(child));
-        return el;
+function createProductCard(productId, productData = {}) {
+    const template = document.getElementById('productCardTemplate');
+    const card = template.content.cloneNode(true).firstElementChild;
+    card.id = `product-${productId}`;
+    card.dataset.id = productId;
+
+    const fields = {
+        name: productData.name || '',
+        code: productData.code || '',
+        qty: productData.qty || 1,
+        price: productData.price || 0,
+        discount: productData.discount || 0,
+        desc: productData.desc || ''
     };
 
-    const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
-    const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
-    const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
+    for (const [key, value] of Object.entries(fields)) {
+        card.querySelector(`.product-${key}`).value = value;
+    }
 
-    const productCard = createEl('div', {
-        id: `product-${productId}`,
-        className: 'product-card',
+    // Attach event listeners
+    card.querySelector('.product-image-zone').addEventListener('click', (e) => {
+        e.currentTarget.querySelector('.product-image-input').click();
+    });
+    card.querySelector('.product-image-input').addEventListener('change', (e) => uploadProductImage(productId, e));
+    card.querySelector('.product-duplicate-btn').addEventListener('click', () => duplicateProduct(productId));
+    card.querySelector('.product-remove-btn').addEventListener('click', () => removeProduct(productId));
+    card.querySelectorAll('.form-input, .form-textarea').forEach(input => {
+        input.addEventListener('input', updateSummary);
     });
 
-    const dragHandle = createEl('div', { className: 'drag-handle', textContent: '☰', draggable: true });
-    dragHandle.ondragstart = (e) => dragStart(e, productId);
+    // Drag and Drop listeners
+    card.addEventListener('dragstart', (e) => dragStart(e, productId));
+    card.addEventListener('dragover', dragOver);
+    card.addEventListener('drop', (e) => drop(e, productId));
+    card.addEventListener('dragenter', (e) => e.preventDefault());
 
-    const imageZone = createEl('div', { className: 'product-image-zone' }, [
-        createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
-        createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
-    ]);
-    imageZone.onclick = () => document.getElementById(`productImage-${productId}`).click();
-
-    const productDetails = createEl('div', { className: 'product-details' }, [
-        createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
-        createEl('div', { className: 'form-grid-inner' }, [
-            createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
-            createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
-            createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
-            createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
-        ])
-    ]);
-
-    productCard.append(
-        dragHandle,
-        createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
-        createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
-        createEl('div', { className: 'product-actions' }, [
-            createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
-            createButton('🗑️ Usuń', () => UI.Command.execute(new ProductCommand('remove', { id: productId })), 'btn btn-outline btn-danger')
-        ])
-    );
-
-    productCard.addEventListener('dragover', dragOver);
-    productCard.addEventListener('drop', (e) => drop(e, productId));
-    productCard.addEventListener('dragenter', (e) => e.preventDefault());
-
-    return productCard;
+    return card;
 }
 
-function updateProductView() {
-    const productsListEl = document.getElementById('productsList');
-    if (!productsListEl) return;
-    const emptyStateEl = productsListEl.querySelector('.empty-state');
 
-    if (products.length > 0) {
-        if(emptyStateEl) emptyStateEl.remove();
-    } else if (!emptyStateEl) {
-        productsListEl.innerHTML = `
+function renderAllProducts() {
+    const container = document.getElementById('productsList');
+    container.innerHTML = ''; // Clear existing cards
+
+    if (products.length === 0) {
+        container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">📦</div>
                 <div class="empty-state-title">Brak produktów</div>
                 <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
             </div>
         `;
+        return;
     }
+
+    products.forEach(p => {
+        const card = createProductCard(p.id, p);
+        container.appendChild(card);
+        if (productImages[p.id]) {
+            updateProductImage(p.id);
+        }
+    });
+    updateSummary();
 }
+
 
 function addProduct(productData = {}) {
     const newId = productData.id || Date.now() + productIdCounter++;
-    const command = new ProductCommand('add', { ...productData, id: newId });
-    UI.Command.execute(command);
+    const newProduct = {
+        id: newId,
+        name: productData.name || '',
+        code: productData.code || '',
+        qty: productData.qty || 1,
+        price: productData.price || 0,
+        discount: productData.discount || 0,
+        desc: productData.desc || '',
+    };
+    products.push(newProduct);
 
     if (productData.image) {
-        const commandImg = new UpdateProductImageCommand(newId, productData.image, null);
-        UI.Command.execute(commandImg);
+        productImages[newId] = productData.image;
+    }
+
+    renderAllProducts();
+}
+
+async function removeProduct(productId) {
+    if(await UI.Feedback.confirm('Czy na pewno chcesz usunąć ten produkt?')) {
+        products = products.filter(p => p.id !== productId);
+        delete productImages[productId];
+        renderAllProducts();
+        UI.Feedback.toast('🗑️ Produkt usunięty', 'info');
     }
 }
 
-function removeProduct(productId) {
-    const productData = { id: productId };
-    const command = new ProductCommand('remove', productData);
-    UI.Command.execute(command);
-}
-
 function updateProductImage(productId) {
-    const preview = document.getElementById(`productImagePreview-${productId}`);
+    const card = document.getElementById(`product-${productId}`);
+    if (!card) return;
+    const preview = card.querySelector(`.product-image-preview`);
     if (preview) {
         if (productImages[productId]) {
-            preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            preview.innerHTML = `<img src="${productImages[productId]}" alt="Product Image">`;
         } else {
             preview.innerHTML = '📷';
         }
@@ -858,23 +867,36 @@ function updateProductImage(productId) {
 }
 
 function duplicateProduct(productId) {
-    const command = new DuplicateProductCommand(productId);
-    UI.Command.execute(command);
+    const originalProduct = products.find(p => p.id === productId);
+    if (!originalProduct) return;
+
+    const newId = Date.now() + productIdCounter++;
+    const duplicatedProduct = { ...originalProduct, id: newId };
+
+    const originalIndex = products.findIndex(p => p.id === productId);
+    products.splice(originalIndex + 1, 0, duplicatedProduct);
+
+    if (productImages[productId]) {
+        productImages[newId] = productImages[productId];
+    }
+
+    renderAllProducts();
+    UI.Feedback.toast('📋 Produkt zduplikowany', 'success');
 }
 
 function uploadProductImage(productId, event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
-        const oldImage = productImages[productId];
-        const command = new UpdateProductImageCommand(productId, e.target.result, oldImage);
-        UI.Command.execute(command);
+        productImages[productId] = e.target.result;
+        updateProductImage(productId);
         UI.Feedback.toast('📸 Zdjęcie załadowane', 'success');
     };
     reader.readAsDataURL(file);
 }
+
 
 function dragStart(event, productId) {
     draggedElement = document.getElementById(`product-${productId}`);
@@ -887,36 +909,37 @@ function dragStart(event, productId) {
 
 function dragOver(event) {
     event.preventDefault();
+    const container = document.getElementById('productsList');
+    const target = event.target.closest('.product-card');
+    if (target && draggedElement !== target) {
+        const rect = target.getBoundingClientRect();
+        const offsetY = event.clientY - rect.top;
+        if (offsetY > rect.height / 2) {
+            container.insertBefore(draggedElement, target.nextSibling);
+        } else {
+            container.insertBefore(draggedElement, target);
+        }
+    }
 }
 
-function drop(event, targetProductId) {
+function drop(event) {
     event.preventDefault();
     if (!draggedElement) return;
 
-    const draggedId = parseInt(event.dataTransfer.getData('text/plain'));
-    const targetElement = document.getElementById(`product-${targetProductId}`);
-
-    if (draggedId !== targetProductId && targetElement) {
-        const container = document.getElementById('productsList');
-        const rect = targetElement.getBoundingClientRect();
-        const offsetY = event.clientY - rect.top;
-
-        if (offsetY > rect.height / 2) {
-            container.insertBefore(draggedElement, targetElement.nextSibling);
-        } else {
-            container.insertBefore(draggedElement, targetElement);
-        }
-
-        // Update products array order
-        const draggedIndex = products.indexOf(draggedId);
-        products.splice(draggedIndex, 1);
-
-        const newNodes = Array.from(container.querySelectorAll('.product-card')).map(node => parseInt(node.id.replace('product-', '')));
-        products = newNodes;
-    }
-
     draggedElement.classList.remove('dragging');
     draggedElement = null;
+
+    // Reorder the actual products array based on the new DOM order
+    const container = document.getElementById('productsList');
+    const cards = Array.from(container.querySelectorAll('.product-card'));
+    const newProductsOrder = cards.map(card => {
+        const id = parseInt(card.dataset.id);
+        return products.find(p => p.id === id);
+    });
+    products = newProductsOrder;
+
+    updateSummary();
+    UI.Feedback.toast('🔄 Zmieniono kolejność', 'info');
 }
 
 function updateSummary() {
@@ -1079,13 +1102,29 @@ function collectOfferData() {
 }
 
 async function autosaveOffer() {
+    const statusEl = document.getElementById('autosave-status');
+    if (!statusEl) return;
+
     const offerData = collectOfferData();
-    if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
+    if (!offerData || !offerData.offer.number || !offerData.buyer.name) {
+        statusEl.textContent = 'Autozapis: Czeka na dane';
+        statusEl.className = 'autosave-status waiting';
+        return;
+    }
 
     try {
+        statusEl.textContent = 'Zapisywanie...';
+        statusEl.className = 'autosave-status saving';
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-        console.log(`[Autosave] Offer ${offerData.id} saved at ${new Date().toLocaleTimeString()}`);
+
+        const timestamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        statusEl.textContent = `Zapisano o ${timestamp}`;
+        statusEl.className = 'autosave-status saved';
+
+        console.log(`[Autosave] Offer ${offerData.id} saved at ${timestamp}`);
     } catch (error) {
+        statusEl.textContent = 'Błąd zapisu!';
+        statusEl.className = 'autosave-status error';
         console.error('Autosave offer error:', error);
     }
 }
@@ -1099,15 +1138,32 @@ async function saveOffer() {
 
     const saveBtn = document.getElementById('saveOfferBtn');
     const originalBtnHTML = saveBtn.innerHTML;
+    const statusEl = document.getElementById('autosave-status');
 
     try {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+        if (statusEl) {
+            statusEl.textContent = 'Zapisywanie...';
+            statusEl.className = 'autosave-status saving';
+        }
+
         await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
         UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+
+        if (statusEl) {
+             const timestamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+             statusEl.textContent = `Zapisano o ${timestamp}`;
+             statusEl.className = 'autosave-status saved';
+        }
+
     } catch (error) {
         console.error('Save offer error:', error);
         UI.Feedback.show('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+        if (statusEl) {
+            statusEl.textContent = 'Błąd zapisu!';
+            statusEl.className = 'autosave-status error';
+        }
     } finally {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalBtnHTML;

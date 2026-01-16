@@ -398,10 +398,11 @@ body.login-page {
 
 .desktop-icon-name {
     color: white;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 500;
     text-align: center;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    letter-spacing: 0.02em;
     max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -465,6 +466,7 @@ body.login-page {
     transform: scale(0.8) translateY(100vh);
     opacity: 0;
     pointer-events: none;
+    transition: transform 0.3s ease-in, opacity 0.3s ease-in;
 }
 
 .window.focused {
@@ -768,12 +770,14 @@ body.login-page {
 }
 
 .start-app:hover {
-    background: var(--gray-100);
-    transform: scale(1.02);
+    background: var(--primary-50);
+    transform: scale(1.05);
+    color: var(--primary-600);
 }
 
 .start-app:active {
     transform: scale(0.98);
+    background: var(--primary-100);
 }
 
 .start-app-icon {
@@ -1956,4 +1960,59 @@ body.login-page {
   background: var(--gray-500);
   border-radius: var(--radius-full);
   transition: all var(--transition-base);
+}
+
+.autosave-status {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-right: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    transition: all var(--transition-fast);
+}
+
+.autosave-status::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--gray-400);
+    transition: all var(--transition-base);
+}
+
+.autosave-status.waiting {
+    color: var(--gray-500);
+}
+.autosave-status.waiting::before {
+    background-color: var(--gray-400);
+}
+
+.autosave-status.saving {
+    color: var(--info-600);
+}
+.autosave-status.saving::before {
+    background-color: var(--info-500);
+    animation: pulse 1.5s infinite;
+}
+
+.autosave-status.saved {
+    color: var(--success-600);
+}
+.autosave-status.saved::before {
+    background-color: var(--success-500);
+}
+
+.autosave-status.error {
+    color: var(--danger-600);
+}
+.autosave-status.error::before {
+    background-color: var(--danger-500);
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
 }

@@ -39,6 +39,13 @@ const DomatorApp = (() => {
         });
     };
 
+    const VAT_RATE = 1.23;
+
+    // Utility to format currency
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN' }).format(value || 0);
+    };
+
     const addProduct = () => {
         productIdCounter++;
         const newProduct = {
@@ -56,8 +63,8 @@ const DomatorApp = (() => {
         UI.Feedback.toast('➕ Dodano nowy produkt', 'success');
     };
 
-    const removeProduct = (id) => {
-        if (confirm('Czy na pewno usunąć ten produkt?')) {
+    const removeProduct = async (id) => {
+        if (await UI.Feedback.confirm('Czy na pewno usunąć ten produkt?')) {
             products = products.filter(p => p.id !== id);
             renderProducts();
             updateStats();
@@ -66,19 +73,36 @@ const DomatorApp = (() => {
     };
 
     const renderProducts = () => {
+        if (products.length === 0) {
+            productsBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state" style="padding: var(--space-8);">
+                            <div class="empty-state-icon">📦</div>
+                            <div class="empty-state-title">Brak produktów</div>
+                            <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
         productsBodyEl.innerHTML = '';
         products.forEach((product, index) => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td style="text-align: center; font-weight: 600;">${index + 1}</td>
-                <td><input type="text" class="form-input" value="${product.sku}" data-id="${product.id}" data-field="sku"></td>
+                <td style="text-align: center; font-weight: 600; color: var(--gray-500);">${index + 1}</td>
+                <td><input type="text" class="form-input" value="${product.sku || ''}" data-id="${product.id}" data-field="sku"></td>
                 <td><input type="text" class="form-input" value="${product.ean || ''}" data-id="${product.id}" data-field="ean"></td>
-                <td><input type="text" class="form-input" value="${product.name}" data-id="${product.id}" data-field="name"></td>
-                <td><input type="number" class="form-input" value="${product.qty}" data-id="${product.id}" data-field="qty" style="text-align: center;"></td>
-                <td><input type="number" class="form-input" value="${product.netto.toFixed(2)}" data-id="${product.id}" data-field="netto" style="text-align: right;"></td>
-                <td><input type="number" class="form-input" value="${product.brutto.toFixed(2)}" data-id="${product.id}" data-field="brutto" style="text-align: right;"></td>
+                <td><input type="text" class="form-input" value="${product.name || ''}" data-id="${product.id}" data-field="name"></td>
+                <td><input type="number" class="form-input" value="${product.qty}" data-id="${product.id}" data-field="qty" style="text-align: center;" min="0"></td>
+                <td><input type="number" class="form-input" value="${product.netto.toFixed(2)}" data-id="${product.id}" data-field="netto" style="text-align: right;" step="0.01"></td>
+                <td><input type="number" class="form-input" value="${product.brutto.toFixed(2)}" data-id="${product.id}" data-field="brutto" style="text-align: right;" step="0.01"></td>
                 <td style="text-align: center;">
-                    <button class="btn btn-danger btn-sm">Usuń</button>
+                    <button class="btn btn-danger btn-sm">
+                        <span style="font-size: 1.2rem;">🗑️</span>
+                    </button>
                 </td>
             `;
             row.querySelector('button').addEventListener('click', () => removeProduct(product.id));
@@ -93,14 +117,20 @@ const DomatorApp = (() => {
         const { id, field } = e.target.dataset;
         const value = e.target.value;
         const product = products.find(p => p.id === parseInt(id));
+
         if (product) {
-            product[field] = field === 'qty' ? parseInt(value) : (field === 'netto' || field === 'brutto' ? parseFloat(value) : value);
+            const numericValue = parseFloat(value) || 0;
+            if (field === 'qty') product.qty = parseInt(value) || 0;
+            else if (field === 'netto') product.netto = numericValue;
+            else if (field === 'brutto') product.brutto = numericValue;
+            else product[field] = value;
+
             if (field === 'netto') {
-                product.brutto = product.netto * 1.23;
+                product.brutto = product.netto * VAT_RATE;
                 const bruttoInput = e.target.parentElement.nextElementSibling.querySelector('input');
                 if (bruttoInput) bruttoInput.value = product.brutto.toFixed(2);
             } else if (field === 'brutto') {
-                product.netto = product.brutto / 1.23;
+                product.netto = product.brutto / VAT_RATE;
                 const nettoInput = e.target.parentElement.previousElementSibling.querySelector('input');
                 if (nettoInput) nettoInput.value = product.netto.toFixed(2);
             }
@@ -111,38 +141,47 @@ const DomatorApp = (() => {
     const updateStats = () => {
         let totalNetto = 0;
         let totalBrutto = 0;
-        let totalQty = 0;
+        let totalItems = 0;
 
         products.forEach(p => {
-            totalNetto += (p.netto || 0) * (p.qty || 0);
-            totalBrutto += (p.brutto || 0) * (p.qty || 0);
-            totalQty += p.qty || 0;
+            const qty = p.qty || 0;
+            totalNetto += (p.netto || 0) * qty;
+            totalBrutto += (p.brutto || 0) * qty;
+            totalItems += qty;
         });
 
-        productCountEl.textContent = totalQty;
-        sumNettoEl.textContent = `${totalNetto.toFixed(2)} zł`;
-        sumBruttoEl.textContent = `${totalBrutto.toFixed(2)} zł`;
-        totalNettoEl.textContent = `${totalNetto.toFixed(2)} zł`;
-        totalBruttoEl.textContent = `${totalBrutto.toFixed(2)} zł`;
+        productCountEl.textContent = totalItems;
+        sumNettoEl.textContent = formatCurrency(totalNetto);
+        sumBruttoEl.textContent = formatCurrency(totalBrutto);
+        totalNettoEl.textContent = formatCurrency(totalNetto);
+        totalBruttoEl.textContent = formatCurrency(totalBrutto);
 
-        const clientName = document.getElementById('domatorClientName').value;
-        statusEl.textContent = clientName && totalQty > 0 ? '✅ Gotowe' : '📝 Edycja';
+        const clientName = document.getElementById('domatorClientName').value.trim();
+        if (clientName && totalItems > 0) {
+            statusEl.innerHTML = '<span class="badge badge-success">Gotowe</span>';
+        } else if (clientName || totalItems > 0) {
+            statusEl.innerHTML = '<span class="badge badge-warning">W edycji</span>';
+        } else {
+            statusEl.innerHTML = '<span class="badge">Nowe</span>';
+        }
 
         saveToStorage();
     };
 
-    const clearForm = () => {
-        if (confirm('Czy na pewno wyczyścić wszystkie dane?')) {
+    const clearForm = async () => {
+        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić cały formularz zamówienia? Tej operacji nie można cofnąć.')) {
             products = [];
             productIdCounter = 0;
-            domatorApp.querySelectorAll('input, textarea').forEach(el => {
-                if (el.id !== 'addDomatorProductBtn') { // Don't clear buttons
+            const formElements = domatorApp.querySelectorAll('input, textarea');
+            formElements.forEach(el => {
+                if (el.type !== 'button' && el.type !== 'submit') {
                     el.value = '';
                 }
             });
+            renderProducts();
             addProduct();
             updateStats();
-            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'warning');
+            UI.Feedback.toast('🗑️ Formularz został wyczyszczony', 'warning');
         }
     };
 
