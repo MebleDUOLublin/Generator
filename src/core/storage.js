@@ -39,7 +39,7 @@ const CompressionModule = (() => {
 // ============================================
 const IndexedDBStore = (() => {
     const DB_NAME = 'PesteczkaOS_DB';
-    const VERSION = 9; // Incremented version to force upgrade
+    const VERSION = 10; // Incremented to trigger profile data migration
 
     const STORES = {
         profiles: 'profiles',
@@ -87,15 +87,23 @@ const IndexedDBStore = (() => {
                     }
                 });
 
-                // If upgrading from a version that might have stale profile data, clear it.
-                if (e.oldVersion < 9) {
-                    try {
-                        console.log('  - Clearing "profiles" store to refresh data...');
-                        transaction.objectStore('profiles').clear();
-                        console.log('  - "profiles" store cleared.');
-                    } catch (clearError) {
-                        console.error('  - Error clearing profiles store:', clearError);
-                    }
+                // Migration for v10: Convert profiles from desktopIcons to enabledApps
+                if (e.oldVersion < 10) {
+                    const profileStore = transaction.objectStore('profiles');
+                    profileStore.openCursor().onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            const profile = cursor.value;
+                            if (profile.desktopIcons && !profile.enabledApps) {
+                                const appIds = profile.desktopIcons.map(icon => icon.id);
+                                profile.enabledApps = [...new Set(appIds)];
+                                delete profile.desktopIcons;
+                                delete profile.startMenuItems;
+                                cursor.update(profile);
+                            }
+                            cursor.continue();
+                        }
+                    };
                 }
             };
         });

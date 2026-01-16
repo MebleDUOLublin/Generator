@@ -560,16 +560,9 @@ async function loginAs(profileKey) {
         setupUI();
         applySavedWallpaper();
 
-        setTimeout(() => {
-            try {
-                document.getElementById('desktop').classList.add('active');
-                UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
-                renderUIForProfile();
-            } catch (error) {
-                console.error('Error during post-login UI update:', error);
-                // Optionally, show a user-facing error message here
-            }
-        }, 500);
+        document.getElementById('desktop').classList.add('active');
+        UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
+        renderUIForProfile();
     } catch (error) {
         console.error('Login failed:', error);
         UI.Feedback.show('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
