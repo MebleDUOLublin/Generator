@@ -37,6 +37,31 @@ function setupUI() {
     console.log('✅ All UI event listeners attached!');
 }
 
+function applyTheme(theme) {
+    const root = document.documentElement;
+    if (!root || !theme) {
+        console.warn('Attempted to apply theme but no theme object or root element was found.');
+        return;
+    }
+
+    // This theme engine sets the core brand colors used in `style.css`.
+    const themeColors = {
+        '--primary-500': theme.primary,
+        '--primary-600': theme.accent,
+        '--primary-700': theme.accent, // Use accent for darker shades
+        '--accent-500': theme.accent,
+        '--accent-600': theme.primary,
+        '--shadow-glow': `0 0 40px -10px ${theme.primary}`
+    };
+
+    for (const [key, value] of Object.entries(themeColors)) {
+        if (value) { // Only set property if a value exists in the theme
+            root.style.setProperty(key, value);
+        }
+    }
+    console.log(`🎨 Theme applied with primary color: ${theme.primary}`);
+}
+
 function renderUIForProfile() {
     if (!currentProfile) return;
 
@@ -214,10 +239,21 @@ function setupOfferGenerator() {
 }
 
 function setupSettings() {
+    const settingsWindow = document.getElementById('window-settings');
+    if (!settingsWindow) return;
+
+    // Tab switching logic
+    const tabs = settingsWindow.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
+    });
+
+    // Profile settings
     document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
     document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
     document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
 
+    // Wallpaper selection
     document.querySelectorAll('.wallpaper-preview').forEach(preview => {
         preview.addEventListener('click', () => {
             changeWallpaper(preview.dataset.wallpaper);
@@ -465,9 +501,10 @@ class DuplicateProductCommand {
 async function populateProfileSelector() {
     try {
         const profiles = await StorageSystem.ProfileManager.getAllProfiles();
+        console.log('Profiles fetched for UI rendering:', JSON.stringify(profiles, null, 2));
 
         if (!profiles || profiles.length === 0) {
-            console.warn('⚠️ No profiles found in DB.');
+            console.warn('⚠️ No profiles found in DB for UI rendering.');
             const selector = document.querySelector('.profile-selector');
             if(selector) selector.innerHTML = '<p style="color: white;">Nie znaleziono profili. Sprawdź plik profiles.json i konsolę.</p>';
             return;
@@ -484,6 +521,7 @@ async function populateProfileSelector() {
         profiles.forEach((profile, index) => {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
+            profileCard.dataset.profileId = profile.key; // CRITICAL FIX
             profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
             
@@ -513,6 +551,14 @@ async function loginAs(profileKey) {
         if (!currentProfile) {
             UI.Feedback.show('Błąd', 'Profil nie znaleziony', 'error');
             return;
+        }
+
+        // Apply the theme BEFORE rendering the rest of the UI
+        if (currentProfile.theme) {
+            console.log("Applying theme:", currentProfile.theme);
+            applyTheme(currentProfile.theme);
+        } else {
+            console.log("No theme found for profile. Using default.");
         }
 
         const fieldMap = {

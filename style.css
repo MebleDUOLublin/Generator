@@ -1957,3 +1957,69 @@ body.login-page {
   border-radius: var(--radius-full);
   transition: all var(--transition-base);
 }
+
+/* Settings Window Specific Styles */
+#window-settings .tab-content {
+    padding: 1.5rem;
+}
+
+.system-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    background-color: var(--surface-background);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background-color: var(--background);
+    border-radius: var(--radius-md);
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.theme-selector {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.theme-preview {
+    width: 100px;
+    height: 70px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.2s ease;
+    display: flex;
+    overflow: hidden;
+}
+
+.theme-preview.active {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 15px -5px var(--primary-500);
+}
+
+.theme-color-block {
+    flex: 1;
+}
