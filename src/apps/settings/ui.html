@@ -1,0 +1,160 @@
+<div class="tabs" role="tablist">
+    <button class="tab active" role="tab" aria-selected="true" data-tab="personalization">
+        <span>🎨</span> Personalizacja
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="profile">
+        <span>👤</span> Profil
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="system-info">
+        <span>ℹ️</span> Informacje
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="applications">
+        <span>📦</span> Aplikacje
+    </button>
+</div>
+
+<!-- TAB: Personalizacja -->
+<div id="personalization-tab" class="tab-content active" role="tabpanel">
+    <div class="section">
+        <h2 class="section-title">🖼️ Tapeta Pulpitu</h2>
+        <div class="wallpaper-selector">
+            <div class="wallpaper-preview" data-wallpaper="default"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper1"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper2"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper3"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper4"></div>
+        </div>
+    </div>
+        <div class="section">
+        <h2 class="section-title">🎨 Motyw kolorystyczny</h2>
+        <div class="theme-selector">
+            </div>
+    </div>
+</div>
+
+<!-- TAB: Profil -->
+<div id="profile-tab" class="tab-content" role="tabpanel">
+    <div class="section">
+        <h2 class="section-title">📋 Dane Firmy</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label" for="settingsName">Nazwa firmy</label>
+                <input type="text" class="form-input" id="settingsName">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsFullName">Pełna nazwa</label>
+                <input type="text" class="form-input" id="settingsFullName">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsNIP">NIP</label>
+                <input type="text" class="form-input" id="settingsNIP">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsPhone">Telefon</label>
+                <input type="tel" class="form-input" id="settingsPhone">
+            </div>
+            <div class="form-group full-width">
+                <label class="form-label" for="settingsAddress">Adres</label>
+                <textarea class="form-textarea" id="settingsAddress" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsEmail">Email</label>
+                <input type="email" class="form-input" id="settingsEmail">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsBankAccount">Nr konta</label>
+                <input type="text" class="form-input" id="settingsBankAccount">
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <h2 class="section-title">👤 Dane Sprzedawcy</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label" for="settingsSellerName">Imię i nazwisko</label>
+                <input type="text" class="form-input" id="settingsSellerName">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsSellerPosition">Stanowisko</label>
+                <input type="text" class="form-input" id="settingsSellerPosition">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsSellerPhone">Telefon</label>
+                <input type="tel" class="form-input" id="settingsSellerPhone">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="settingsSellerEmail">Email</label>
+                <input type="email" class="form-input" id="settingsSellerEmail">
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <h2 class="section-title">🖼️ Logo Firmy</h2>
+        <div style="display: flex; gap: 2rem; align-items: flex-start;">
+            <div style="flex: 1;">
+                <input type="file" accept="image/*" id="logoUploadInput" class="form-input">
+                <p class="text-small text-muted mt-2">Maksymalny rozmiar: 5MB. Formaty: PNG, JPG, SVG</p>
+            </div>
+            <div id="logoPreview" style="width: 120px; height: 120px; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; background: var(--gray-50); font-size: 3rem;">
+                📋
+            </div>
+        </div>
+    </div>
+    <div class="flex gap-4 mt-6">
+        <button class="btn btn-primary" id="saveProfileSettingsBtn">
+            <span>💾</span> Zapisz zmiany
+        </button>
+        <button class="btn btn-outline" id="loadProfileSettingsBtn">
+            <span>🔄</span> Odśwież
+        </button>
+    </div>
+</div>
+
+<!-- TAB: Informacje o Systemie -->
+<div id="system-info-tab" class="tab-content" role="tabpanel">
+    <div class="section">
+        <h2 class="section-title">ℹ️ Informacje o Systemie</h2>
+        <div class="system-info-grid">
+            <div class="info-item">
+                <span class="info-label">Nazwa Systemu:</span>
+                <span class="info-value">Pesteczka OS</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Wersja:</span>
+                <span class="info-value">1.0.0</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Twórca:</span>
+                <span class="info-value">PSteczka (pesteczka.com)</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Data Wydania:</span>
+                <span class="info-value">Lipiec 2024</span>
+            </div>
+            <div class="info-item full-width">
+                <span class="info-label">Opis:</span>
+                <span class="info-value">Profesjonalny system do generowania ofert, dostosowany do potrzeb nowoczesnego biznesu.</span>
+            </div>
+                <div class="info-item full-width">
+                <span class="info-label">Technologie:</span>
+                <span class="info-value">HTML5, CSS3, JavaScript (ES6+), Python, Electron</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: Applications -->
+<div id="applications-tab" class="tab-content" role="tabpanel">
+    <div class="section">
+        <h2 class="section-title">📦 Zarządzaj Aplikacjami</h2>
+        <p class="text-muted mb-4">Wybierz, które aplikacje mają być widoczne na pulpicie i w menu start dla tego profilu.</p>
+        <div id="app-management-list">
+            <!-- Application toggles will be dynamically inserted here -->
+        </div>
+        <div class="mt-6">
+            <button class="btn btn-primary" id="saveAppSettingsBtn">
+                <span>💾</span> Zapisz zmiany w aplikacjach
+            </button>
+        </div>
+    </div>
+</div>

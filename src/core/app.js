@@ -233,34 +233,17 @@ function setupOfferGenerator() {
             UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
         }
     });
-    document.querySelectorAll('.tab').forEach(tab => {
+    // This now only targets tabs within the offers window
+    document.querySelectorAll('#window-offers .tab').forEach(tab => {
         tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
     });
 }
 
 function setupSettings() {
-    const settingsWindow = document.getElementById('window-settings');
-    if (!settingsWindow) return;
-
-    // Tab switching logic
-    const tabs = settingsWindow.querySelectorAll('.tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
-    });
-
-    // Profile settings
-    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
-    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
-    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
-
-    // Wallpaper selection
-    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
-        preview.addEventListener('click', () => {
-            changeWallpaper(preview.dataset.wallpaper);
-            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
-            preview.classList.add('active');
-        });
-    });
+    // This function is now intentionally empty.
+    // The logic has been moved to the Settings plugin.
+    // It is kept here to avoid breaking the setupUI() call chain.
+    // In a future refactor, setupUI could be made dynamic.
 }
 
 function setupGlobalEventListeners() {
@@ -522,11 +505,15 @@ async function populateProfileSelector() {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
             profileCard.dataset.profileId = profile.key; // CRITICAL FIX
+            if (profile.key === 'pesteczka') {
+                profileCard.id = 'pesteczka-profile-card';
+            }
             profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
             
-            const logoHtml = profile.logo
-                ? `<img src="${profile.logo}" alt="${profile.name} Logo" class="profile-logo">`
+            const logoPath = profile.logo ? `src/assets/${profile.logo}` : '';
+            const logoHtml = logoPath
+                ? `<img src="${logoPath}" alt="${profile.name} Logo" class="profile-logo">`
                 : `<div class="profile-logo">${profile.name ? profile.name.substring(0, 1) : 'P'}</div>`;
 
 
@@ -591,6 +578,10 @@ async function loginAs(profileKey) {
 
         document.getElementById('loginScreen').classList.add('hidden');
         document.body.classList.remove('login-page');
+        // Setup the main UI and apply wallpaper only AFTER login is successful
+        setupUI();
+        applySavedWallpaper();
+
         setTimeout(() => {
             document.getElementById('desktop').classList.add('active');
             UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
@@ -655,9 +646,37 @@ function setLogoPlaceholder() {
 // ============================================
 // WINDOW MANAGEMENT
 // ============================================
-function openWindow(windowId) {
+async function openWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
-    if (!win) return;
+    if (!win) {
+        console.warn(`Window element #window-${windowId} not found. Cannot open.`);
+        return;
+    }
+
+    const contentArea = win.querySelector('.window-content');
+    if (!contentArea) {
+        console.error(`Window #${windowId} is missing a .window-content child.`);
+        return;
+    }
+
+    if (!contentArea.classList.contains('loaded')) {
+        const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
+        if (pluginAssets && pluginAssets.html) {
+            contentArea.innerHTML = pluginAssets.html;
+            contentArea.classList.add('loaded');
+
+            setTimeout(() => {
+                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
+                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
+                    console.log(`Initializing ${appObjectName}...`);
+                    window[appObjectName].init();
+                }
+            }, 100);
+
+        } else {
+            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+        }
+    }
     
     win.style.display = 'flex';
     win.classList.add('active');
@@ -671,13 +690,12 @@ function openWindow(windowId) {
         taskbarIcon.classList.add('open');
     }
     
-    if (windowId === 'settings') loadProfileSettings();
-    if (windowId === 'dashboard') Dashboard.init();
-    if (windowId === 'snake') NeonSnake.init('snakeCanvas');
-    if (windowId === 'domator') DomatorApp.init();
+    if (windowId === 'dashboard' && window.Dashboard) Dashboard.init();
+    if (windowId === 'snake' && window.NeonSnake) NeonSnake.init('snakeCanvas');
+    if (windowId === 'domator' && window.DomatorApp) DomatorApp.init();
 
     if (windowId === 'offers') {
-        initializeAdvancedUI();
+        if(typeof initializeAdvancedUI === 'function') initializeAdvancedUI();
         if (autosaveInterval) clearInterval(autosaveInterval);
         autosaveInterval = setInterval(autosaveOffer, 60000);
     }
@@ -1241,67 +1259,9 @@ async function loadOfferFromHistory(offerId) {
 // ============================================
 // SETTINGS WINDOW
 // ============================================
-function loadProfileSettings() {
-    if (!currentProfile) return;
-    const fields = {
-        'settingsName': currentProfile.name, 'settingsFullName': currentProfile.fullName,
-        'settingsNIP': currentProfile.nip, 'settingsPhone': currentProfile.phone,
-        'settingsAddress': currentProfile.address, 'settingsEmail': currentProfile.email,
-        'settingsBankAccount': currentProfile.bankAccount, 'settingsSellerName': currentProfile.sellerName,
-        'settingsSellerPosition': currentProfile.sellerPosition, 'settingsSellerPhone': currentProfile.sellerPhone,
-        'settingsSellerEmail': currentProfile.sellerEmail
-    };
-    Object.entries(fields).forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = value || '';
-    });
-    const preview = document.getElementById('logoPreview');
-    if (preview) {
-        preview.innerHTML = currentProfile.logoData ? `<img src="${currentProfile.logoData}" style="width: 100%; height: 100%; object-fit: contain;">` : '📋';
-    }
-}
-
-async function saveProfileSettings() {
-    if (!currentProfile) return;
-    const updatedProfile = {
-        ...currentProfile,
-        name: document.getElementById('settingsName')?.value,
-        fullName: document.getElementById('settingsFullName')?.value,
-        nip: document.getElementById('settingsNIP')?.value,
-        phone: document.getElementById('settingsPhone')?.value,
-        address: document.getElementById('settingsAddress')?.value,
-        email: document.getElementById('settingsEmail')?.value,
-        bankAccount: document.getElementById('settingsBankAccount')?.value,
-        sellerName: document.getElementById('settingsSellerName')?.value,
-        sellerPosition: document.getElementById('settingsSellerPosition')?.value,
-        sellerPhone: document.getElementById('settingsSellerPhone')?.value,
-        sellerEmail: document.getElementById('settingsSellerEmail')?.value,
-    };
-    
-    try {
-        await StorageSystem.ProfileManager.saveProfile(updatedProfile);
-        currentProfile = updatedProfile;
-        document.getElementById('sellerName').value = currentProfile.fullName || '';
-        UI.Feedback.toast('Ustawienia profilu zostały zaktualizowane.', 'success');
-        closeWindow('settings');
-    } catch (error) {
-        console.error('Save profile error:', error);
-        UI.Feedback.show('Błąd', 'Nie udało się zapisać ustawień.', 'error');
-    }
-}
-
-function uploadLogoFromSettings(event) {
-    const file = event.target.files[0];
-    if (!file || !currentProfile) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        currentProfile.logoData = e.target.result;
-        document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain;">`;
-        UI.Feedback.toast('📸 Logo gotowe do zapisania', 'info');
-    };
-    reader.readAsDataURL(file);
-}
+// All functions related to the settings window (loadProfileSettings,
+// saveProfileSettings, uploadLogoFromSettings, etc.) have been moved
+// to src/apps/settings/main.js
 
 // ============================================
 // UTILITY & UI HELPER FUNCTIONS
@@ -1339,10 +1299,10 @@ function changeWallpaper(wallpaper) {
     if (!desktop) return;
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
-        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.jpg\')',
-        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')',
-        wallpaper4: 'url(\'userData/wallpapers/wallpaper4.jpg\')'
+        wallpaper1: 'url(\'src/assets/userData/wallpapers/wallpaper1.jpg\')',
+        wallpaper2: 'url(\'src/assets/userData/wallpapers/wallpaper2.jpg\')',
+        wallpaper3: 'url(\'src/assets/userData/wallpapers/wallpaper3.jpg\')',
+        wallpaper4: 'url(\'src/assets/userData/wallpapers/wallpaper4.jpg\')'
     };
     if (wallpapers[wallpaper]) {
         desktop.style.backgroundImage = wallpapers[wallpaper];
@@ -1372,15 +1332,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Pesteczka OS Main App Script Started');
 
     try {
-        if (!window.StorageSystem || typeof window.StorageSystem.init !== 'function') {
-            throw new Error('StorageSystem not found or is not a valid module.');
+        if (!window.StorageSystem || !window.PluginLoader) {
+            throw new Error('Core systems (StorageSystem, PluginLoader) not found.');
         }
-        await window.StorageSystem.init();
+
+        // Initialize core systems in parallel
+        await Promise.all([
+            window.StorageSystem.init(),
+            window.PluginLoader.init()
+        ]);
 
         await populateProfileSelector();
-
-        setupUI();
-        applySavedWallpaper();
 
         console.log('✅ Pesteczka OS Initialized Successfully');
     } catch (error) {

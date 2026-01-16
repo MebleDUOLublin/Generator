@@ -1,122 +1,103 @@
-# Pesteczka OS
+# Pesteczka OS - Modular Business System
 
-## Project Overview
+Pesteczka OS is a lightweight, modular operating system environment built for the web, designed to run a suite of business-oriented applications. Its core philosophy is a plugin-based architecture, allowing for easy expansion and maintenance.
 
-Pesteczka OS is a web-based desktop environment designed to run in a browser, created by PSteczka (pesteczka.com). It offers a dynamic and customizable user interface that can be tailored to different user profiles, each with its own theme, applications, and settings. The project is built using vanilla HTML, CSS, and JavaScript, with a Python server for local development.
+**Created by Paweł Steczka ([pesteczka.com](https://pesteczka.com))**
 
-## Key Features
+![Pesteczka OS Screenshot](https://i.imgur.com/example.png) <!-- Replace with a real screenshot -->
 
-*   **Dynamic Theming:** The look and feel of the OS can be changed based on the user profile. The system supports multiple themes, with a default "Pesteczka" theme (Royal Purple and Neon Blue) and a "Meble Duo" theme (Red, White, and Black).
-*   **User Profiles:** The OS supports multiple user profiles, each with its own set of applications, desktop icons, and start menu items.
-*   **Desktop Environment:** A familiar desktop interface with a taskbar, start menu, and desktop icons.
-*   **Application Suite:** Includes a set of built-in applications, such as:
-    *   **Generator Ofert:** An offer generation tool.
-    *   **Dashboard:** A data visualization dashboard.
-    *   **Ustawienia (Settings):** An application for customizing the OS.
-    *   **Neon Snake:** A classic snake game.
-*   **Extensible:** The OS is designed to be extensible, with a clear separation of concerns between the UI, application logic, and data storage.
+## Core Philosophy
 
-## Setup and Installation
+The system is designed like a microkernel operating system. The core is minimal and agnostic to the applications it runs. Its only responsibilities are:
 
-### Running in a Browser
+1.  **Plugin Engine:** Dynamically discover and load applications (plugins).
+2.  **UI Shell:** Manage the main desktop, windows, and taskbar.
+3.  **Core Services:** Provide shared services like storage and notifications.
 
-1.  **Start the Server:**
-    ```bash
-    python3 run.py
-    ```
-2.  **Open in Browser:** Open your web browser and navigate to `http://localhost:8080`.
-
-### Building the Application (.exe)
-
-This project can be packaged as a standalone desktop application using Electron.
-
-1.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-2.  **Build the Application:**
-    ```bash
-    npm run dist
-    ```
-    This command will create a `dist` folder containing the executable file.
+Everything else, from the Offer Generator to the Settings panel, is an independent plugin.
 
 ## Project Structure
 
+The project is organized into a clean, modular structure:
+
 ```
-.
-├── app.js              # Main application logic
-├── style.css           # Main stylesheet
-├── index.html          # Main HTML file
-├── ui.js               # UI components and logic
-├── storage.js          # Data storage logic (IndexedDB)
-├── profiles.json       # User profile data
-├── run.py              # Python server for local development
-├── main.js             # Electron main process
-├── preload.js          # Electron preload script
-├── package.json        # Project metadata and dependencies
-└── README.md           # This file
+/
+├── src/
+│   ├── apps/
+│   │   └── settings/         # Example of a self-contained plugin
+│   │       ├── manifest.json
+│   │       ├── main.js
+│   │       └── ui.html
+│   ├── assets/               # All static assets
+│   │   ├── style.css
+│   │   ├── logos/
+│   │   └── vendor/
+│   └── core/                 # The OS microkernel
+│       ├── app.js
+│       ├── pluginLoader.js
+│       ├── storage.js
+│       └── ui.js
+├── index.html                # The main application shell
+└── run.py                    # Simple Python server for development
 ```
 
-## Customization
+## Creating a New Application (Plugin)
 
-The OS can be customized by modifying the `profiles.json` file. This file contains the user profiles, including their names, themes, and application lists.
+Creating a new application is simple:
 
-### Themes
+1.  **Create a New Directory:** Add a new folder inside `src/apps/`. The folder name will be your app's ID (e.g., `src/apps/my-new-app`).
 
-Themes are defined in `style.css` using CSS variables. Each theme has a primary and accent color. To add a new theme, you need to:
+2.  **Create a `manifest.json`:** This file describes your application to the OS.
 
-1.  Add the new theme colors to `style.css`.
-2.  Add a new theme object to the `profiles.json` file.
-3.  Assign the new theme to a user profile.
-
-### Applications
-
-Applications are defined in their own JavaScript files (e.g., `snake.js`, `domator.js`). To add a new application, you need to:
-
-1.  Create a new JavaScript file for the application logic.
-2.  Add the new application to the `desktopIcons` and `startMenuItems` arrays in the `profiles.json` file.
-3.  Add a new case to the `launchApp` function in `app.js` to handle launching the new application.
-# Pesteczka OS - Premium Business System
-
-Pesteczka OS is a web-based "operating system" designed to streamline business operations. It provides a suite of applications within a unified desktop environment, accessible from any modern web browser. The flagship application is a powerful Offer Generator that allows for the creation, management, and export of professional business proposals.
-
-**Created by PSteczka (pesteczka.com)**
-
-## Key Features
-
-*   **Virtual Desktop Environment:** A familiar, intuitive desktop interface with a taskbar, start menu, and draggable windows.
-*   **Multi-Profile Support:** Easily switch between different company profiles, each with its own branding, data, and settings.
-*   **Dynamic Theming:** The user interface automatically adapts to the brand colors of the selected profile.
-*   **Offer Generator:** A comprehensive tool for creating detailed sales offers, including product lists, images, discounts, and terms.
-*   **PDF Export:** Generate professional, branded PDF documents from the offers you create.
-*   **Data Persistence:** All data is saved locally in your browser, ensuring your work is never lost.
-*   **Extensible:** The OS is designed to be extensible, with additional applications like a dashboard, a simple order generator, and even a game included.
-
-## Getting Started
-
-To run Pesteczka OS locally, you will need Python 3 installed.
-
-### Setup
-
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd <repository-directory>
+    ```json
+    {
+      "id": "my-new-app",
+      "name": "My New App",
+      "description": "A brief description of what this app does.",
+      "icon": "🚀",
+      "entrypoints": {
+        "html": "ui.html",
+        "js": "main.js"
+      }
+    }
     ```
 
-2.  **Run the application:**
+3.  **Create the UI (`ui.html`):** This file contains *only the HTML content* that goes inside the `.window-content` div. The window frame itself is handled by the OS.
+
+4.  **Create the Logic (`main.js`):** This file contains your app's JavaScript. It must expose an `init` function on a global object that matches the app's name (PascalCase + "App").
+
+    ```javascript
+    // src/apps/my-new-app/main.js
+
+    function setupMyAppListeners() {
+        // Your event listener code here...
+    }
+
+    function init() {
+        console.log("My New App Initialized!");
+        setupMyAppListeners();
+    }
+
+    // Expose the init function
+    window.MyNewAppApp = {
+      init: init
+    };
+    ```
+
+5.  **Add to `pluginLoader.js`:** For now, you must manually add the path to your new manifest in `src/core/pluginLoader.js` for it to be discovered.
+
+## Development
+
+1.  **Prerequisites:** Python 3.x is required to run the local development server.
+2.  **Run the Server:**
     ```bash
     python3 run.py
     ```
+3.  **Open in Browser:** Navigate to `http://localhost:8080`.
 
-    The application will be served at `http://localhost:8080`, and it will automatically open in your default web browser.
+## Building a Standalone Executable (.exe)
 
-## Project Structure
+*This section will be completed once the necessary build tools (like Electron) are integrated into the project.*
 
-*   `index.html`: The main entry point of the application.
-*   `style.css`: The stylesheet for the entire application.
-*   `app.js`: The core JavaScript file that manages the OS environment and application logic.
-*   `profiles.json`: The configuration file for the different company profiles.
-*   `logos/`: A directory containing the logos for the different brands.
-*   `run.py`: The Python script for running the local web server.
-*   `tests/`: Contains the Playwright test suite for automated testing.
+---
+*This document will be updated as the project evolves.*

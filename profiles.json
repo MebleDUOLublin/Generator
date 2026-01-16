@@ -1,5 +1,38 @@
 {
   "profiles": {
+    "pesteczka": {
+      "key": "pesteczka",
+      "name": "Pesteczka",
+      "fullName": "Pesteczka Software Development",
+      "nip": "000-000-00-00",
+      "address": "ul. Wirtualna 1\n00-000 Warszawa",
+      "phone": "+48 123 456 789",
+      "email": "kontakt@pesteczka.com",
+      "bankAccount": "00 0000 0000 0000 0000 0000 0000",
+      "bankName": "Innovation Bank",
+      "logo": "logos/Pesteczka/logo.png",
+      "logoData": null,
+      "sellerName": "Piotr Stefański",
+      "sellerPosition": "Lead Developer",
+      "sellerPhone": "+48 123 456 789",
+      "sellerEmail": "p.stefanski@pesteczka.com",
+      "website": "www.pesteczka.com",
+      "theme": {
+        "primary": "#7c3aed",
+        "accent": "#00d1ff"
+      },
+      "desktopIcons": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
+        { "id": "snake", "name": "Neon Snake", "icon": "🐍" }
+      ],
+      "startMenuItems": [
+        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
+        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
+      ]
+    },
     "mebleduo": {
       "key": "mebleduo",
       "name": "Meble Duo",
@@ -19,7 +52,7 @@
       "website": "www.mebleduo.com",
       "theme": {
         "primary": "#dc2626",
-        "accent": "#b91c1c"
+        "accent": "#111827"
       },
       "desktopIcons": [
         { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
@@ -52,7 +85,7 @@
       "website": "www.alekrzesla.pl",
       "theme": {
         "primary": "#dc2626",
-        "accent": "#b91c1c"
+        "accent": "#111827"
       },
       "desktopIcons": [
         { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
