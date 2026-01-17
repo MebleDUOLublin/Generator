@@ -623,68 +623,67 @@ function setLogoPlaceholder() {
 // WINDOW MANAGEMENT
 // ============================================
 async function openWindow(windowId) {
-    return new Promise(async (resolve) => {
-        const win = document.getElementById(`window-${windowId}`);
-        if (!win) {
-            console.warn(`Window element #window-${windowId} not found. Cannot open.`);
-            return resolve();
-        }
+    const win = document.getElementById(`window-${windowId}`);
+    if (!win) {
+        console.warn(`Window element #window-${windowId} not found. Cannot open.`);
+        return;
+    }
 
-        const contentArea = win.querySelector('.window-content');
-        if (!contentArea) {
-            console.error(`Window #${windowId} is missing a .window-content child.`);
-            return resolve();
-        }
+    const contentArea = win.querySelector('.window-content');
+    if (!contentArea) {
+        console.error(`Window #${windowId} is missing a .window-content child.`);
+        return;
+    }
 
-        if (!contentArea.classList.contains('loaded')) {
-            const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
-            if (pluginAssets && pluginAssets.html) {
-                contentArea.innerHTML = pluginAssets.html;
-                contentArea.classList.add('loaded');
+    // Load plugin content only if it hasn't been loaded before
+    if (!contentArea.classList.contains('loaded')) {
+        const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
 
-                await new Promise(r => requestAnimationFrame(r));
+        if (pluginAssets && pluginAssets.html) {
+            contentArea.innerHTML = pluginAssets.html;
+            contentArea.classList.add('loaded');
 
-                try {
-                    const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
-                    if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
-                        console.log(`Initializing ${appObjectName}...`);
-                        window[appObjectName].init();
-                    }
-                } catch (e) {
-                    console.error(`Error initializing plugin ${windowId}:`, e);
+            // Wait for the next frame to ensure the new DOM is queryable
+            await new Promise(r => requestAnimationFrame(r));
+
+            try {
+                // Convention: app 'settings' has a global object `SettingsApp` with an `init` method
+                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
+                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
+                    console.log(`Initializing plugin: ${appObjectName}...`);
+                    window[appObjectName].init();
+                } else {
+                     console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
                 }
-
-            } else {
-                contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+            } catch (e) {
+                console.error(`Error initializing plugin ${windowId}:`, e);
             }
+        } else {
+            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
         }
+    }
 
-        win.style.display = 'flex';
-        win.classList.add('active');
-        win.classList.remove('minimized');
+    // Show and focus the window
+    win.style.display = 'flex';
+    win.classList.add('active');
+    win.classList.remove('minimized');
+    focusWindow(win);
 
-        focusWindow(win);
-
-        const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
-        if(taskbarIcon) {
-            taskbarIcon.classList.add('active');
-            taskbarIcon.classList.add('open');
-        }
-
-        if (windowId === 'offers') {
-            if(typeof initializeAdvancedUI === 'function') initializeAdvancedUI();
-            if (autosaveInterval) clearInterval(autosaveInterval);
-            autosaveInterval = setInterval(autosaveOffer, 60000);
-        }
-
-        resolve();
-    });
+    // Update taskbar icon state
+    const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+    if(taskbarIcon) {
+        taskbarIcon.classList.add('active');
+        taskbarIcon.classList.add('open');
+    }
 }
 
 function closeWindow(windowId) {
-    if (windowId === 'offers' && autosaveInterval) {
-        clearInterval(autosaveInterval);
-        autosaveInterval = null;
+    // A plugin might set a global interval (e.g., autosave). This is a temporary
+    // measure to clean it up. A better system would have plugin lifecycle hooks.
+    if (windowId === 'offers' && window.autosaveInterval) {
+        clearInterval(window.autosaveInterval);
+        window.autosaveInterval = null;
+        console.log('Cleared autosave interval for Offers app.');
     }
 
     const win = document.getElementById(`window-${windowId}`);

@@ -60,12 +60,19 @@ const PluginLoader = {
 
             // Load and execute JS
             const jsPath = `${app.basePath}/${app.entrypoints.js}`;
-            // We'll append the script to the head, which will execute it.
-            // A more robust system might use dynamic imports or a different mechanism.
-            const script = document.createElement('script');
-            script.src = jsPath;
-            script.type = 'module'; // Or 'text/javascript'
-            document.head.appendChild(script);
+
+            // --- FIX for Race Condition ---
+            // Wrap script loading in a promise to ensure it's loaded and parsed
+            // before we try to use any functions from it (like the app's init()).
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = jsPath;
+                script.type = 'text/javascript'; // Using module could create scope issues, stick to simple script
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load script: ${jsPath}`));
+                document.head.appendChild(script);
+            });
+            // --- END FIX ---
 
             return { html: htmlContent, jsPath: jsPath };
 
