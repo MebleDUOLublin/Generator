@@ -1,0 +1,10 @@
+{
+  "id": "settings",
+  "name": "Ustawienia",
+  "description": "Zarządzaj ustawieniami systemu i personalizacją.",
+  "icon": "⚙️",
+  "entrypoints": {
+    "html": "ui.html",
+    "js": "main.js"
+  }
+}

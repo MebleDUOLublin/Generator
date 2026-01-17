@@ -1,5 +1,28 @@
 {
   "profiles": {
+    "pesteczka": {
+      "key": "pesteczka",
+      "name": "Pesteczka",
+      "fullName": "Pesteczka Software Development",
+      "nip": "000-000-00-00",
+      "address": "ul. Wirtualna 1\n00-000 Warszawa",
+      "phone": "+48 123 456 789",
+      "email": "kontakt@pesteczka.com",
+      "bankAccount": "00 0000 0000 0000 0000 0000 0000",
+      "bankName": "Innovation Bank",
+      "logo": "src/assets/logos/Pesteczka/logo.png",
+      "logoData": null,
+      "sellerName": "Piotr Stefański",
+      "sellerPosition": "Lead Developer",
+      "sellerPhone": "+48 123 456 789",
+      "sellerEmail": "p.stefanski@pesteczka.com",
+      "website": "www.pesteczka.com",
+      "theme": {
+        "primary": "#7c3aed",
+        "accent": "#00d1ff"
+      },
+      "enabledApps": ["offers", "dashboard", "settings", "snake"]
+    },
     "mebleduo": {
       "key": "mebleduo",
       "name": "Meble Duo",
@@ -10,7 +33,7 @@
       "email": "biuro@mebleduo.com",
       "bankAccount": "84 1870 1045 2078 1088 4238 0001",
       "bankName": "NEST Bank S.A.",
-      "logo": "logos/Meble_Duo/logo.png",
+      "logo": "src/assets/logos/Meble_Duo/logo.png",
       "logoData": null,
       "sellerName": "Justyna Gancarz",
       "sellerPosition": "Kierownik Sprzedaży",
@@ -19,19 +42,9 @@
       "website": "www.mebleduo.com",
       "theme": {
         "primary": "#dc2626",
-        "accent": "#b91c1c"
+        "accent": "#111827"
       },
-      "desktopIcons": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "snake", "name": "Neon Snake", "icon": "🐍" }
-      ],
-      "startMenuItems": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" }
-      ]
+      "enabledApps": ["offers", "dashboard", "settings", "snake"]
     },
     "alekrzesla": {
       "key": "alekrzesla",
@@ -43,7 +56,7 @@
       "email": "biuro@alekrzesla.pl",
       "bankAccount": "93 2530 0008 2034 1098 4365 0001",
       "bankName": "NEST Bank S.A.",
-      "logo": "logos/Alekrzesla/logo.png",
+      "logo": "src/assets/logos/Alekrzesla/logo.png",
       "logoData": null,
       "sellerName": "Joanna Niedźwiadek",
       "sellerPosition": "Właściciel",
@@ -52,20 +65,9 @@
       "website": "www.alekrzesla.pl",
       "theme": {
         "primary": "#dc2626",
-        "accent": "#b91c1c"
+        "accent": "#111827"
       },
-      "desktopIcons": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
-      ],
-      "startMenuItems": [
-        { "id": "offers", "name": "Generator Ofert", "icon": "📄" },
-        { "id": "dashboard", "name": "Dashboard", "icon": "📊" },
-        { "id": "settings", "name": "Ustawienia", "icon": "⚙️" },
-        { "id": "domator", "name": "Zamówienie Domator", "icon": "🚚" }
-      ]
+      "enabledApps": ["offers", "dashboard", "settings", "domator"]
     }
   }
 }

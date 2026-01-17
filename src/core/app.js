@@ -63,72 +63,70 @@ function applyTheme(theme) {
 }
 
 function renderUIForProfile() {
-    if (!currentProfile) return;
+    if (!currentProfile || !window.AppRegistry) return;
 
-    // 1. Render Desktop Icons
+    // Get the full app objects for the apps enabled in the current profile.
+    const enabledApps = window.AppRegistry.filter(app =>
+        currentProfile.enabledApps && currentProfile.enabledApps.includes(app.id)
+    );
+
+    // Get containers
     const iconsContainer = document.getElementById('desktopIcons');
-    if (iconsContainer) {
-        iconsContainer.innerHTML = '';
-        if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
-            currentProfile.desktopIcons.forEach(iconData => {
-                const iconEl = document.createElement('div');
-                iconEl.className = 'desktop-icon';
-                iconEl.tabIndex = 0;
-                iconEl.setAttribute('role', 'button');
-                iconEl.setAttribute('aria-label', iconData.name);
-                iconEl.dataset.window = iconData.id;
-
-                iconEl.innerHTML = `
-                    <div class="desktop-icon-image">${iconData.icon}</div>
-                    <div class="desktop-icon-name">${iconData.name}</div>
-                `;
-                iconsContainer.appendChild(iconEl);
-            });
-        }
-    }
-
-    // 2. Render Taskbar Icons
     const taskbarCenter = document.querySelector('.taskbar-center');
-    if (taskbarCenter) {
-        const existingIcons = taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)');
-        existingIcons.forEach(icon => icon.remove());
-
-        if (currentProfile.desktopIcons && Array.isArray(currentProfile.desktopIcons)) {
-            currentProfile.desktopIcons.forEach(iconData => {
-                 const iconEl = document.createElement('div');
-                 iconEl.className = 'taskbar-icon';
-                 iconEl.dataset.window = iconData.id;
-                 iconEl.tabIndex = 0;
-                 iconEl.setAttribute('role', 'button');
-                 iconEl.setAttribute('aria-label', iconData.name);
-                 iconEl.innerHTML = iconData.icon;
-                 taskbarCenter.appendChild(iconEl);
-            });
-        }
-    }
-
-    // 3. Render Start Menu Items
     const startAppsGrid = document.querySelector('.start-apps-grid');
-    if (startAppsGrid) {
-        startAppsGrid.innerHTML = '';
-        if (currentProfile.startMenuItems && Array.isArray(currentProfile.startMenuItems)) {
-            currentProfile.startMenuItems.forEach(itemData => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'start-app';
-                itemEl.dataset.window = itemData.id;
-                itemEl.tabIndex = 0;
-                itemEl.setAttribute('role', 'menuitem');
 
-                itemEl.innerHTML = `
-                    <div class="start-app-icon">${itemData.icon}</div>
-                    <div class="start-app-name">${itemData.name}</div>
-                `;
-                startAppsGrid.appendChild(itemEl);
-            });
-        }
+    // Clear existing dynamic content
+    if (iconsContainer) iconsContainer.innerHTML = '';
+    if (taskbarCenter) {
+        taskbarCenter.querySelectorAll('.taskbar-icon:not(#startBtn)').forEach(icon => icon.remove());
     }
+    if (startAppsGrid) startAppsGrid.innerHTML = '';
 
-    // 4. Re-attach ALL relevant listeners for dynamic elements
+    // Render UI elements for each enabled app
+    enabledApps.forEach(app => {
+        // 1. Render Desktop Icon
+        if (iconsContainer) {
+            const iconEl = document.createElement('div');
+            iconEl.className = 'desktop-icon';
+            iconEl.tabIndex = 0;
+            iconEl.setAttribute('role', 'button');
+            iconEl.setAttribute('aria-label', app.name);
+            iconEl.dataset.window = app.id;
+            iconEl.innerHTML = `
+                <div class="desktop-icon-image">${app.icon}</div>
+                <div class="desktop-icon-name">${app.name}</div>
+            `;
+            iconsContainer.appendChild(iconEl);
+        }
+
+        // 2. Render Taskbar Icon
+        if (taskbarCenter) {
+            const taskbarIcon = document.createElement('div');
+            taskbarIcon.className = 'taskbar-icon';
+            taskbarIcon.dataset.window = app.id;
+            taskbarIcon.tabIndex = 0;
+            taskbarIcon.setAttribute('role', 'button');
+            taskbarIcon.setAttribute('aria-label', app.name);
+            taskbarIcon.innerHTML = app.icon;
+            taskbarCenter.appendChild(taskbarIcon);
+        }
+
+        // 3. Render Start Menu Item
+        if (startAppsGrid) {
+            const startItem = document.createElement('div');
+            startItem.className = 'start-app';
+            startItem.dataset.window = app.id;
+            startItem.tabIndex = 0;
+            startItem.setAttribute('role', 'menuitem');
+            startItem.innerHTML = `
+                <div class="start-app-icon">${app.icon}</div>
+                <div class="start-app-name">${app.name}</div>
+            `;
+            startAppsGrid.appendChild(startItem);
+        }
+    });
+
+    // Re-attach ALL relevant listeners for the newly created dynamic elements
     setupDesktopInteractions();
     setupDynamicAppLaunchers();
 }
@@ -217,50 +215,15 @@ function setupWindowManagement() {
 }
 
 function setupOfferGenerator() {
-    document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
-    document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
-    document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
-    document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
-
-    document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
-        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
-            products = [];
-            productImages = {};
-            updateProductView();
-            generateOfferNumber();
-            setTodayDate();
-            updateSummary();
-            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
-        }
-    });
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
-    });
+    // This function is now intentionally empty.
+    // The logic has been moved to the Offers plugin.
 }
 
 function setupSettings() {
-    const settingsWindow = document.getElementById('window-settings');
-    if (!settingsWindow) return;
-
-    // Tab switching logic
-    const tabs = settingsWindow.querySelectorAll('.tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', (e) => switchTab(tab.dataset.tab, e));
-    });
-
-    // Profile settings
-    document.getElementById('saveProfileSettingsBtn')?.addEventListener('click', saveProfileSettings);
-    document.getElementById('loadProfileSettingsBtn')?.addEventListener('click', loadProfileSettings);
-    document.getElementById('logoUploadInput')?.addEventListener('change', uploadLogoFromSettings);
-
-    // Wallpaper selection
-    document.querySelectorAll('.wallpaper-preview').forEach(preview => {
-        preview.addEventListener('click', () => {
-            changeWallpaper(preview.dataset.wallpaper);
-            document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
-            preview.classList.add('active');
-        });
-    });
+    // This function is now intentionally empty.
+    // The logic has been moved to the Settings plugin.
+    // It is kept here to avoid breaking the setupUI() call chain.
+    // In a future refactor, setupUI could be made dynamic.
 }
 
 function setupGlobalEventListeners() {
@@ -522,11 +485,15 @@ async function populateProfileSelector() {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
             profileCard.dataset.profileId = profile.key; // CRITICAL FIX
+            if (profile.key === 'pesteczka') {
+                profileCard.id = 'pesteczka-profile-card';
+            }
             profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
             
-            const logoHtml = profile.logo
-                ? `<img src="${profile.logo}" alt="${profile.name} Logo" class="profile-logo">`
+            const logoPath = profile.logo ? `src/assets/${profile.logo}` : '';
+            const logoHtml = logoPath
+                ? `<img src="${logoPath}" alt="${profile.name} Logo" class="profile-logo">`
                 : `<div class="profile-logo">${profile.name ? profile.name.substring(0, 1) : 'P'}</div>`;
 
 
@@ -546,6 +513,7 @@ async function populateProfileSelector() {
 
 async function loginAs(profileKey) {
     try {
+        await window.PluginLoader.init(); // Ensure plugins are loaded before proceeding
         currentProfile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
 
         if (!currentProfile) {
@@ -586,16 +554,15 @@ async function loginAs(profileKey) {
             setLogoPlaceholder();
         }
 
-        generateOfferNumber();
-        setTodayDate();
-
         document.getElementById('loginScreen').classList.add('hidden');
         document.body.classList.remove('login-page');
-        setTimeout(() => {
-            document.getElementById('desktop').classList.add('active');
-            UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
-            renderUIForProfile();
-        }, 500);
+        // Setup the main UI and apply wallpaper only AFTER login is successful
+        setupUI();
+        applySavedWallpaper();
+
+        document.getElementById('desktop').classList.add('active');
+        UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
+        renderUIForProfile();
     } catch (error) {
         console.error('Login failed:', error);
         UI.Feedback.show('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
@@ -655,38 +622,68 @@ function setLogoPlaceholder() {
 // ============================================
 // WINDOW MANAGEMENT
 // ============================================
-function openWindow(windowId) {
+async function openWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
-    if (!win) return;
-    
+    if (!win) {
+        console.warn(`Window element #window-${windowId} not found. Cannot open.`);
+        return;
+    }
+
+    const contentArea = win.querySelector('.window-content');
+    if (!contentArea) {
+        console.error(`Window #${windowId} is missing a .window-content child.`);
+        return;
+    }
+
+    // Load plugin content only if it hasn't been loaded before
+    if (!contentArea.classList.contains('loaded')) {
+        const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
+
+        if (pluginAssets && pluginAssets.html) {
+            contentArea.innerHTML = pluginAssets.html;
+            contentArea.classList.add('loaded');
+
+            // Wait for the next frame to ensure the new DOM is queryable
+            await new Promise(r => requestAnimationFrame(r));
+
+            try {
+                // Convention: app 'settings' has a global object `SettingsApp` with an `init` method
+                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
+                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
+                    console.log(`Initializing plugin: ${appObjectName}...`);
+                    window[appObjectName].init();
+                } else {
+                     console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
+                }
+            } catch (e) {
+                console.error(`Error initializing plugin ${windowId}:`, e);
+            }
+        } else {
+            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+        }
+    }
+
+    // Show and focus the window
     win.style.display = 'flex';
     win.classList.add('active');
     win.classList.remove('minimized');
-    
     focusWindow(win);
-    
+
+    // Update taskbar icon state
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
     if(taskbarIcon) {
         taskbarIcon.classList.add('active');
         taskbarIcon.classList.add('open');
     }
-    
-    if (windowId === 'settings') loadProfileSettings();
-    if (windowId === 'dashboard') Dashboard.init();
-    if (windowId === 'snake') NeonSnake.init('snakeCanvas');
-    if (windowId === 'domator') DomatorApp.init();
-
-    if (windowId === 'offers') {
-        initializeAdvancedUI();
-        if (autosaveInterval) clearInterval(autosaveInterval);
-        autosaveInterval = setInterval(autosaveOffer, 60000);
-    }
 }
 
 function closeWindow(windowId) {
-    if (windowId === 'offers' && autosaveInterval) {
-        clearInterval(autosaveInterval);
-        autosaveInterval = null;
+    // A plugin might set a global interval (e.g., autosave). This is a temporary
+    // measure to clean it up. A better system would have plugin lifecycle hooks.
+    if (windowId === 'offers' && window.autosaveInterval) {
+        clearInterval(window.autosaveInterval);
+        window.autosaveInterval = null;
+        console.log('Cleared autosave interval for Offers app.');
     }
 
     const win = document.getElementById(`window-${windowId}`);
@@ -785,15 +782,20 @@ function stopWindowDrag() {
 // TAB SWITCHING & START MENU
 // ============================================
 function switchTab(tabId, event) {
-    const tabsContainer = event.target.closest('.tabs');
-    const windowContent = event.target.closest('.window-content');
+    const clickedTab = event.target.closest('.tab');
+    if (!clickedTab) return;
+
+    const tabsContainer = clickedTab.closest('.tabs');
+    const windowContent = clickedTab.closest('.window-content');
 
     tabsContainer.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    event.target.classList.add('active');
+    clickedTab.classList.add('active');
 
     windowContent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     const activeTabContent = windowContent.querySelector(`#${tabId}-tab`);
-    if(activeTabContent) activeTabContent.classList.add('active');
+    if (activeTabContent) {
+        activeTabContent.classList.add('active');
+    }
 }
 
 function toggleStartMenu() {
@@ -1241,67 +1243,9 @@ async function loadOfferFromHistory(offerId) {
 // ============================================
 // SETTINGS WINDOW
 // ============================================
-function loadProfileSettings() {
-    if (!currentProfile) return;
-    const fields = {
-        'settingsName': currentProfile.name, 'settingsFullName': currentProfile.fullName,
-        'settingsNIP': currentProfile.nip, 'settingsPhone': currentProfile.phone,
-        'settingsAddress': currentProfile.address, 'settingsEmail': currentProfile.email,
-        'settingsBankAccount': currentProfile.bankAccount, 'settingsSellerName': currentProfile.sellerName,
-        'settingsSellerPosition': currentProfile.sellerPosition, 'settingsSellerPhone': currentProfile.sellerPhone,
-        'settingsSellerEmail': currentProfile.sellerEmail
-    };
-    Object.entries(fields).forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = value || '';
-    });
-    const preview = document.getElementById('logoPreview');
-    if (preview) {
-        preview.innerHTML = currentProfile.logoData ? `<img src="${currentProfile.logoData}" style="width: 100%; height: 100%; object-fit: contain;">` : '📋';
-    }
-}
-
-async function saveProfileSettings() {
-    if (!currentProfile) return;
-    const updatedProfile = {
-        ...currentProfile,
-        name: document.getElementById('settingsName')?.value,
-        fullName: document.getElementById('settingsFullName')?.value,
-        nip: document.getElementById('settingsNIP')?.value,
-        phone: document.getElementById('settingsPhone')?.value,
-        address: document.getElementById('settingsAddress')?.value,
-        email: document.getElementById('settingsEmail')?.value,
-        bankAccount: document.getElementById('settingsBankAccount')?.value,
-        sellerName: document.getElementById('settingsSellerName')?.value,
-        sellerPosition: document.getElementById('settingsSellerPosition')?.value,
-        sellerPhone: document.getElementById('settingsSellerPhone')?.value,
-        sellerEmail: document.getElementById('settingsSellerEmail')?.value,
-    };
-    
-    try {
-        await StorageSystem.ProfileManager.saveProfile(updatedProfile);
-        currentProfile = updatedProfile;
-        document.getElementById('sellerName').value = currentProfile.fullName || '';
-        UI.Feedback.toast('Ustawienia profilu zostały zaktualizowane.', 'success');
-        closeWindow('settings');
-    } catch (error) {
-        console.error('Save profile error:', error);
-        UI.Feedback.show('Błąd', 'Nie udało się zapisać ustawień.', 'error');
-    }
-}
-
-function uploadLogoFromSettings(event) {
-    const file = event.target.files[0];
-    if (!file || !currentProfile) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        currentProfile.logoData = e.target.result;
-        document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain;">`;
-        UI.Feedback.toast('📸 Logo gotowe do zapisania', 'info');
-    };
-    reader.readAsDataURL(file);
-}
+// All functions related to the settings window (loadProfileSettings,
+// saveProfileSettings, uploadLogoFromSettings, etc.) have been moved
+// to src/apps/settings/main.js
 
 // ============================================
 // UTILITY & UI HELPER FUNCTIONS
@@ -1339,10 +1283,10 @@ function changeWallpaper(wallpaper) {
     if (!desktop) return;
     const wallpapers = {
         default: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        wallpaper1: 'url(\'userData/wallpapers/wallpaper1.jpg\')',
-        wallpaper2: 'url(\'userData/wallpapers/wallpaper2.jpg\')',
-        wallpaper3: 'url(\'userData/wallpapers/wallpaper3.jpg\')',
-        wallpaper4: 'url(\'userData/wallpapers/wallpaper4.jpg\')'
+        wallpaper1: 'url(\'src/assets/userData/wallpapers/wallpaper1.jpg\')',
+        wallpaper2: 'url(\'src/assets/userData/wallpapers/wallpaper2.jpg\')',
+        wallpaper3: 'url(\'src/assets/userData/wallpapers/wallpaper3.jpg\')',
+        wallpaper4: 'url(\'src/assets/userData/wallpapers/wallpaper4.jpg\')'
     };
     if (wallpapers[wallpaper]) {
         desktop.style.backgroundImage = wallpapers[wallpaper];
@@ -1372,15 +1316,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Pesteczka OS Main App Script Started');
 
     try {
-        if (!window.StorageSystem || typeof window.StorageSystem.init !== 'function') {
-            throw new Error('StorageSystem not found or is not a valid module.');
+        if (!window.StorageSystem || !window.PluginLoader) {
+            throw new Error('Core systems (StorageSystem, PluginLoader) not found.');
         }
-        await window.StorageSystem.init();
+
+        // Initialize core systems in parallel
+        await Promise.all([
+            window.StorageSystem.init(),
+            window.PluginLoader.init()
+        ]);
 
         await populateProfileSelector();
-
-        setupUI();
-        applySavedWallpaper();
 
         console.log('✅ Pesteczka OS Initialized Successfully');
     } catch (error) {

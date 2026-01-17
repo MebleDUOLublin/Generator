@@ -1,0 +1,10 @@
+{
+  "id": "domator",
+  "name": "Zamówienie Domator",
+  "description": "Generator zamówień dla Domator.",
+  "icon": "🚚",
+  "entrypoints": {
+    "html": "ui.html",
+    "js": "main.js"
+  }
+}

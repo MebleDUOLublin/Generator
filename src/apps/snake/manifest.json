@@ -1,0 +1,10 @@
+{
+  "id": "snake",
+  "name": "Neon Snake",
+  "description": "Klasyczna gra w nowym, neonowym wydaniu.",
+  "icon": "🐍",
+  "entrypoints": {
+    "html": "ui.html",
+    "js": "main.js"
+  }
+}
