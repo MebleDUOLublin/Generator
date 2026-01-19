@@ -18,10 +18,10 @@ const CommandManager = (() => {
     const execute = (command) => {
         try {
             command.execute();
-            
+
             // Remove any redo history
             history = history.slice(0, currentIndex + 1);
-            
+
             // Add new command
             history.push(command);
             currentIndex++;
@@ -143,7 +143,7 @@ const ReactiveForm = (() => {
         // Handle input events
         element.addEventListener('input', (e) => {
             const newValue = e.target.value;
-            
+
             // Debounce for expensive operations
             clearTimeout(debounceTimers.get(fieldId));
             debounceTimers.set(fieldId, setTimeout(() => {
@@ -189,7 +189,7 @@ const ReactiveForm = (() => {
     const getValue = (fieldId) => {
         const element = document.getElementById(fieldId);
         if (!element) return null;
-        
+
         if (element.type === 'checkbox') {
             return element.checked;
         }
@@ -199,7 +199,7 @@ const ReactiveForm = (() => {
     const validateField = (fieldId, validator) => {
         const value = getValue(fieldId);
         const error = validator(value);
-        
+
         if (error) {
             validationErrors.set(fieldId, error);
             displayFieldError(fieldId, error);
@@ -245,7 +245,7 @@ const ReactiveForm = (() => {
 
         const data = {};
         const inputs = form.querySelectorAll('input, textarea, select');
-        
+
         inputs.forEach(input => {
             if (input.id) {
                 if (input.type === 'checkbox') {
@@ -387,7 +387,7 @@ const FormObserver = (() => {
 const UIFeedback = (() => {
     const toast = (message, type = 'info', duration = 3000) => {
         const container = document.getElementById('toast-container') || createToastContainer();
-        
+
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;

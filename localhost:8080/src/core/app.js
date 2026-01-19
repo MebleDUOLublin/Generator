@@ -17,7 +17,7 @@ let zIndexCounter = 1000;
 // ============================================
 function setupUI() {
     console.log('🎨 Setting up UI event listeners...');
-    
+
     updateClock();
     setInterval(updateClock, 1000);
 
@@ -266,9 +266,9 @@ async function populateProfileSelector() {
             console.error('Profile selector element not found in HTML');
             return;
         }
-        
+
         selector.innerHTML = '';
-        
+
         profiles.forEach((profile, index) => {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
@@ -278,7 +278,7 @@ async function populateProfileSelector() {
             }
             profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
-            
+
             const logoPath = profile.logo ? `src/assets/${profile.logo}` : '';
             const logoHtml = logoPath
                 ? `<img src="${logoPath}" alt="${profile.name} Logo" class="profile-logo">`
@@ -374,21 +374,21 @@ async function loadLogoAsBase64(logoPath) {
 
 function setLogoPlaceholder() {
     if (!currentProfile) return;
-    
+
     const canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 100;
     const ctx = canvas.getContext('2d');
-    
+
     ctx.fillStyle = currentProfile.color || '#dc2626';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 40px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText((currentProfile.name || 'U').substring(0, 2).toUpperCase(), 100, 50);
-    
+
     currentProfile.logoData = canvas.toDataURL('image/png');
 }
 
@@ -493,14 +493,14 @@ async function openWindow(windowId) {
             contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
         }
     }
-    
+
     // Show and focus the window
 
     win.style.display = 'flex';
     win.classList.add('active');
     win.classList.remove('minimized');
     focusWindow(win);
-    
+
     // Update taskbar icon state
 
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
@@ -539,7 +539,7 @@ function minimizeWindow(windowId) {
 function maximizeWindow(windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (!win) return;
-    
+
     if (win.classList.contains('maximized')) {
         win.classList.remove('maximized');
         win.style.top = win.dataset.prevTop || '50px';
@@ -569,14 +569,14 @@ function toggleWindow(windowId) {
 function startDrag(event, windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (!win || win.classList.contains('maximized')) return;
-    
+
     draggedWindow = win;
     focusWindow(win);
-    
+
     const rect = win.getBoundingClientRect();
     dragOffset.x = event.clientX - rect.left;
     dragOffset.y = event.clientY - rect.top;
-    
+
     event.preventDefault();
 }
 
@@ -585,7 +585,7 @@ function handleWindowDrag(event) {
     const desktop = document.getElementById('desktop');
     const headerHeight = 40;
     const taskbarHeight = 40;
-    
+
     const maxLeft = desktop.clientWidth - draggedWindow.clientWidth;
     const maxTop = desktop.clientHeight - draggedWindow.clientHeight - taskbarHeight;
 
@@ -594,7 +594,7 @@ function handleWindowDrag(event) {
 
     newX = Math.max(0, Math.min(newX, maxLeft));
     newY = Math.max(0, Math.min(newY, maxTop));
-    
+
     draggedWindow.style.left = newX + 'px';
     draggedWindow.style.top = newY + 'px';
 }
