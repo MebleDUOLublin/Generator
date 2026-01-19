@@ -482,7 +482,8 @@ async function openWindow(windowId) {
                 const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
                 if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
                     console.log(`Initializing plugin: ${appObjectName}...`);
-                    window[appObjectName].init();
+                    // Pass both the profile and the window element to the init function
+                    window[appObjectName].init(currentProfile, win);
                 } else {
                      console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
                 }

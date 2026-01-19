@@ -4,100 +4,93 @@ Pesteczka OS is a lightweight, modular operating system environment built for th
 
 **Created by Paweł Steczka ([pesteczka.com](https://pesteczka.com))**
 
-![Pesteczka OS Screenshot](https://i.imgur.com/qRSzDBc.png)
+![Screenshot of the Pesteczka OS desktop interface](https://i.imgur.com/qRSzDBc.png)
 
-## Core Philosophy
+## Key Features
 
-The system is designed like a microkernel operating system. The core is minimal and agnostic to the applications it runs. Its only responsibilities are:
+*   **Modular, Plugin-Based Architecture:** The entire system is built around plugins. Each application (like the Offer Generator or Settings) is a self-contained module, making the system easy to extend and maintain.
+*   **Multi-Profile System:** Easily manage different business entities. Each profile has its own data, branding (logo, color scheme), and set of enabled applications, allowing for tailored experiences.
+*   **Dynamic UI:** The desktop, taskbar, and start menu are all generated dynamically based on the applications enabled for the currently logged-in profile.
+*   **Offer Generator:** A powerful, built-in application to create, manage, and generate professional-looking PDF offers for clients.
+*   **Lightweight & Fast:** Built entirely with vanilla JavaScript, HTML, and CSS, ensuring a snappy and responsive user experience without the need for heavy frameworks.
+*   **Offline First:** Uses IndexedDB to store all data locally in the browser, making the application fully functional without an internet connection.
 
-1.  **Plugin Engine:** Dynamically discover and load applications (plugins).
-2.  **UI Shell:** Manage the main desktop, windows, and taskbar.
-3.  **Core Services:** Provide shared services like storage and notifications.
+## Getting Started
 
-Everything else, from the Offer Generator to the Settings panel, is an independent plugin.
+Follow these instructions to get the project running on your local machine for development and testing purposes.
+
+### Prerequisites
+
+You will need the following software installed on your system:
+
+*   **Python 3.x:** Required to run the local development server.
+*   **Node.js and npm:** Required for managing project dependencies (like `pdfmake`).
+
+### Installation & Setup
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/your-username/pesteczka-os.git
+    cd pesteczka-os
+    ```
+
+2.  **Install dependencies:**
+    The project uses a few Node.js packages for functionalities like PDF generation. Install them using npm:
+    ```sh
+    npm install
+    ```
+
+3.  **Run the development server:**
+    A simple Python web server is included to serve the application locally.
+    ```sh
+    python3 run.py
+    ```
+
+4.  **Open in browser:**
+    Once the server is running, you can access the application by navigating to:
+    [http://localhost:8080](http://localhost:8080)
 
 ## Project Structure
 
-The project is organized into a clean, modular structure:
+The project is organized with a clear separation between the core OS and its applications:
 
 ```
 /
 ├── src/
-│   ├── apps/
-│   │   └── settings/         # Example of a self-contained plugin
-│   │       ├── manifest.json
-│   │       ├── main.js
-│   │       └── ui.html
-│   ├── assets/               # All static assets
-│   │   ├── style.css
-│   │   ├── logos/
-│   │   └── vendor/
-│   └── core/                 # The OS microkernel
-│       ├── app.js
-│       ├── pluginLoader.js
-│       ├── storage.js
-│       └── ui.js
-├── index.html                # The main application shell
-└── run.py                    # Simple Python server for development
+│   ├── apps/               # Contains all self-contained application plugins
+│   │   └── offers/
+│   ├── assets/             # Shared static assets (CSS, logos, fonts)
+│   └── core/               # The OS "microkernel" (app logic, storage, UI)
+├── vendor/                 # Third-party libraries (e.g., pdfmake)
+├── index.html              # The main application shell
+├── profiles.json           # Default user/business profiles data
+└── run.py                  # Simple Python server for development
 ```
 
 ## Creating a New Application (Plugin)
 
-Creating a new application is simple:
+To extend the system, you can create your own application.
 
-1.  **Create a New Directory:** Add a new folder inside `src/apps/`. The folder name will be your app's ID (e.g., `src/apps/my-new-app`).
+1.  **Create a Directory:** Add a new folder in `src/apps/`. The folder name is your app's unique ID (e.g., `my-new-app`).
 
-2.  **Create a `manifest.json`:** This file describes your application to the OS.
+2.  **Create `manifest.json`:** This file describes your app to the OS.
 
     ```json
     {
       "id": "my-new-app",
       "name": "My New App",
-      "description": "A brief description of what this app does.",
+      "description": "A brief description.",
       "icon": "🚀",
-      "entrypoints": {
-        "html": "ui.html",
-        "js": "main.js"
-      }
+      "entrypoints": { "html": "ui.html", "js": "main.js" }
     }
     ```
 
-3.  **Create the UI (`ui.html`):** This file contains *only the HTML content* that goes inside the `.window-content` div. The window frame itself is handled by the OS.
+3.  **Create `ui.html`:** This file contains only the HTML for your app's content area.
 
-4.  **Create the Logic (`main.js`):** This file contains your app's JavaScript. It must expose an `init` function on a global object that matches the app's name (PascalCase + "App").
+4.  **Create `main.js`:** This file contains your app's logic. It must expose a global object (e.g., `window.MyNewAppApp`) with an `init(profile)` function.
 
-    ```javascript
-    // src/apps/my-new-app/main.js
+5.  **Register the Plugin:** Add the path to your new `manifest.json` in `src/core/pluginLoader.js` to make it discoverable.
 
-    function setupMyAppListeners() {
-        // Your event listener code here...
-    }
+## Building for Production
 
-    function init() {
-        console.log("My New App Initialized!");
-        setupMyAppListeners();
-    }
-
-    // Expose the init function
-    window.MyNewAppApp = {
-      init: init
-    };
-    ```
-
-5.  **Add to `pluginLoader.js`:** For now, you must manually add the path to your new manifest in `src/core/pluginLoader.js` for it to be discovered.
-
-## Development
-
-1.  **Prerequisites:** Python 3.x is required to run the local development server.
-2.  **Run the Server:**
-    ```bash
-    python3 run.py
-    ```
-3.  **Open in Browser:** Navigate to `http://localhost:8080`.
-
-## Building a Standalone Executable (.exe)
-
-*This section will be completed once the necessary build tools (like Electron) are integrated into the project.*
-
----
-*This document will be updated as the project evolves.*
+Currently, the project is designed for development and direct use from a web server. A build process for creating a standalone executable (e.g., using Electron) is planned for the future.

@@ -4,9 +4,42 @@
     let productImages = {};
     let productIdCounter = 0;
     let draggedElement = null;
+    let appProfile = null;
+    let appWindow = null; // Reference to the app's window element
 
-    function init() {
+    // Scoped query selector helper
+    const $ = (selector) => appWindow.querySelector(selector);
+    const $$ = (selector) => appWindow.querySelectorAll(selector);
+
+    function populateSellerForm(profile) {
+        if (!profile) {
+            console.log("populateSellerForm: No profile provided.");
+            return;
+        }
+        console.log("Populating seller form with profile:", profile);
+
+        const setValue = (id, value) => {
+            const el = $(`#${id}`);
+            if (el && value !== undefined && value !== null) {
+                el.value = value;
+            }
+        };
+
+        setValue('sellerName', profile.fullName);
+        setValue('sellerNIP', profile.nip);
+        setValue('sellerAddress', profile.address);
+        setValue('sellerPhone', profile.phone);
+        setValue('sellerEmail', profile.email);
+        setValue('sellerContact', profile.sellerName);
+        setValue('sellerBank', profile.bankAccount);
+    }
+
+    function init(profile, windowEl) {
         console.log("Offers App Initialized");
+        appProfile = profile;
+        appWindow = windowEl; // Store the window element
+
+        populateSellerForm(profile);
 
         if (window.autosaveInterval) clearInterval(window.autosaveInterval);
         window.autosaveInterval = setInterval(autosaveOffer, 60000);
@@ -18,12 +51,12 @@
     }
 
     function attachEventListeners() {
-        document.getElementById('addProductBtn')?.addEventListener('click', () => addProduct({}));
-        document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
-        document.getElementById('saveOfferBtn')?.addEventListener('click', saveOffer);
-        document.getElementById('loadOfferBtn')?.addEventListener('click', loadOffer);
+        $('#addProductBtn')?.addEventListener('click', () => addProduct({}));
+        $('#generatePdfBtn')?.addEventListener('click', generatePDF);
+        $('#saveOfferBtn')?.addEventListener('click', saveOffer);
+        $('#loadOfferBtn')?.addEventListener('click', loadOffer);
 
-        document.getElementById('clearFormBtn')?.addEventListener('click', async () => {
+        $('#clearFormBtn')?.addEventListener('click', async () => {
             if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
                 products = [];
                 productImages = {};
@@ -35,16 +68,17 @@
             }
         });
 
-        document.querySelectorAll('#window-offers .tabs .tab').forEach(tab => {
+        $$('.tabs .tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                if(typeof switchTab === 'function') {
-                    switchTab(tab.dataset.tab, e);
+                // Assuming switchTab is a global function on the main window
+                if (typeof window.switchTab === 'function') {
+                    window.switchTab(tab.dataset.tab, e);
                 }
             });
         });
 
-        document.getElementById('generateOfferNumberBtn')?.addEventListener('click', generateOfferNumber);
-        document.getElementById('setTodayDateBtn')?.addEventListener('click', setTodayDate);
+        $('#generateOfferNumberBtn')?.addEventListener('click', generateOfferNumber);
+        $('#setTodayDateBtn')?.addEventListener('click', setTodayDate);
     }
 
     function createProductCard(productId) {
@@ -71,7 +105,7 @@
             createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
             createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
         ]);
-        imageZone.onclick = () => document.getElementById(`productImage-${productId}`).click();
+        imageZone.onclick = () => $(`#productImage-${productId}`).click();
 
         const productDetails = createEl('div', { className: 'product-details' }, [
             createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
@@ -101,12 +135,12 @@
     }
 
     function updateProductView() {
-        const productsListEl = document.getElementById('productsList');
+        const productsListEl = $('#productsList');
         if (!productsListEl) return;
         const emptyStateEl = productsListEl.querySelector('.empty-state');
 
         if (products.length > 0) {
-            if(emptyStateEl) emptyStateEl.remove();
+            if (emptyStateEl) emptyStateEl.remove();
         } else if (!emptyStateEl) {
             productsListEl.innerHTML = `
                 <div class="empty-state">
@@ -122,10 +156,11 @@
         const newId = productData.id || Date.now() + productIdCounter++;
         products.push(newId);
         const productCard = createProductCard(newId);
-        document.getElementById('productsList').appendChild(productCard);
+        $('#productsList').appendChild(productCard);
 
         Object.entries(productData).forEach(([key, value]) => {
-            const el = document.getElementById(`product${key.charAt(0).toUpperCase() + key.slice(1)}-${newId}`);
+            const elId = `product${key.charAt(0).toUpperCase() + key.slice(1)}-${newId}`;
+            const el = $(`#${elId}`);
             if (el && key !== 'id') el.value = value;
         });
 
@@ -137,7 +172,7 @@
     }
 
     function removeProduct(productId) {
-        const productCard = document.getElementById(`product-${productId}`);
+        const productCard = $(`#product-${productId}`);
         if (productCard) {
             productCard.remove();
             products = products.filter(id => id !== productId);
@@ -148,7 +183,7 @@
     }
 
     function updateProductImage(productId) {
-        const preview = document.getElementById(`productImagePreview-${productId}`);
+        const preview = $(`#productImagePreview-${productId}`);
         if (preview) {
             if (productImages[productId]) {
                 preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
@@ -162,19 +197,19 @@
         const newId = Date.now() + productIdCounter++;
         const originalData = {
             id: newId,
-            name: document.getElementById(`productName-${originalId}`)?.value || '',
-            code: document.getElementById(`productCode-${originalId}`)?.value || '',
-            qty: document.getElementById(`productQty-${originalId}`)?.value || '1',
-            price: document.getElementById(`productPrice-${originalId}`)?.value || '0',
-            discount: document.getElementById(`productDiscount-${originalId}`)?.value || '0',
-            desc: document.getElementById(`productDesc-${originalId}`)?.value || '',
+            name: $(`#productName-${originalId}`)?.value || '',
+            code: $(`#productCode-${originalId}`)?.value || '',
+            qty: $(`#productQty-${originalId}`)?.value || '1',
+            price: $(`#productPrice-${originalId}`)?.value || '0',
+            discount: $(`#productDiscount-${originalId}`)?.value || '0',
+            desc: $(`#productDesc-${originalId}`)?.value || '',
         };
         const originalImage = productImages[originalId];
 
         addProduct(originalData);
         if (originalImage) {
-             productImages[newId] = originalImage;
-             updateProductImage(newId);
+            productImages[newId] = originalImage;
+            updateProductImage(newId);
         }
     }
 
@@ -192,7 +227,7 @@
     }
 
     function dragStart(event, productId) {
-        draggedElement = document.getElementById(`product-${productId}`);
+        draggedElement = $(`#product-${productId}`);
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', productId);
         setTimeout(() => {
@@ -209,10 +244,10 @@
         if (!draggedElement) return;
 
         const draggedId = parseInt(event.dataTransfer.getData('text/plain'));
-        const targetElement = document.getElementById(`product-${targetProductId}`);
+        const targetElement = $(`#product-${targetProductId}`);
 
         if (draggedId !== targetProductId && targetElement) {
-            const container = document.getElementById('productsList');
+            const container = $('#productsList');
             const rect = targetElement.getBoundingClientRect();
             const offsetY = event.clientY - rect.top;
 
@@ -233,20 +268,20 @@
     }
 
     function updateSummary() {
-        const tbody = document.getElementById('summaryTableBody');
-        if(!tbody) return;
+        const tbody = $('#summaryTableBody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         let totalNet = 0;
 
         const productData = products.map(id => ({
-            name: document.getElementById(`productName-${id}`)?.value || '',
-            qty: parseFloat(document.getElementById(`productQty-${id}`)?.value) || 0,
-            price: parseFloat(document.getElementById(`productPrice-${id}`)?.value) || 0,
-            discount: parseFloat(document.getElementById(`productDiscount-${id}`)?.value) || 0,
+            name: $(`#productName-${id}`)?.value || '',
+            qty: parseFloat($(`#productQty-${id}`)?.value) || 0,
+            price: parseFloat($(`#productPrice-${id}`)?.value) || 0,
+            discount: parseFloat($(`#productDiscount-${id}`)?.value) || 0,
         })).filter(p => p.name.trim());
 
-        if(productData.length === 0) {
+        if (productData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 2rem;">Brak produktów</td></tr>';
         } else {
             productData.forEach((p, index) => {
@@ -270,65 +305,68 @@
         const vat = totalNet * 0.23;
         const gross = totalNet + vat;
 
-        document.getElementById('totalNet').textContent = totalNet.toFixed(2) + ' zł';
-        document.getElementById('totalVat').textContent = vat.toFixed(2) + ' zł';
-        document.getElementById('totalGross').textContent = gross.toFixed(2) + ' zł';
+        $('#totalNet').textContent = totalNet.toFixed(2) + ' zł';
+        $('#totalVat').textContent = vat.toFixed(2) + ' zł';
+        $('#totalGross').textContent = gross.toFixed(2) + ' zł';
     }
 
     async function generatePDF() {
-        if (!currentProfile) {
+        if (!appProfile) {
             UI.Feedback.show('Błąd', 'Brak aktywnego profilu.', 'error');
             return;
         }
 
+        const getValue = (id) => $(`#${id}`)?.value || '';
+
         const offerData = {
-            number: document.getElementById('offerNumber')?.value || '',
-            date: document.getElementById('offerDate')?.value || '',
-            validUntil: document.getElementById('validUntil')?.value || '',
-            currency: document.getElementById('currency')?.value || 'PLN',
-            paymentTerms: document.getElementById('paymentTerms')?.value || '',
-            deliveryTime: document.getElementById('deliveryTime')?.value || '',
-            warranty: document.getElementById('warranty')?.value || '',
-            deliveryMethod: document.getElementById('deliveryMethod')?.value || '',
+            number: getValue('offerNumber'),
+            date: getValue('offerDate'),
+            validUntil: getValue('validUntil'),
+            currency: getValue('currency'),
+            paymentTerms: getValue('paymentTerms'),
+            deliveryTime: getValue('deliveryTime'),
+            warranty: getValue('warranty'),
+            deliveryMethod: getValue('deliveryMethod'),
             buyer: {
-                name: document.getElementById('buyerName')?.value || '',
-                nip: document.getElementById('buyerNIP')?.value || '',
-                address: document.getElementById('buyerAddress')?.value || '',
-                phone: document.getElementById('buyerPhone')?.value || '',
-                email: document.getElementById('buyerEmail')?.value || '',
+                name: getValue('buyerName'),
+                nip: getValue('buyerNIP'),
+                address: getValue('buyerAddress'),
+                phone: getValue('buyerPhone'),
+                email: getValue('buyerEmail'),
             },
-            notes: document.getElementById('orderNotes')?.value || ''
+            notes: getValue('orderNotes')
         };
 
         const pdfProducts = products.map(id => ({
             id: id,
-            name: document.getElementById(`productName-${id}`)?.value || '',
-            code: document.getElementById(`productCode-${id}`)?.value || '',
-            qty: document.getElementById(`productQty-${id}`)?.value || '1',
-            price: document.getElementById(`productPrice-${id}`)?.value || '0',
-            discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
-            desc: document.getElementById(`productDesc-${id}`)?.value || '',
+            name: getValue(`productName-${id}`),
+            code: getValue(`productCode-${id}`),
+            qty: getValue(`productQty-${id}`),
+            price: getValue(`productPrice-${id}`),
+            discount: getValue(`productDiscount-${id}`),
+            desc: getValue(`productDesc-${id}`),
             image: productImages[id] || null,
         }));
 
+        // This is a global element, so document is appropriate
         document.getElementById('loadingOverlay')?.classList.add('show');
 
         try {
             const sellerData = {
-                ...currentProfile,
-                fullName: document.getElementById('sellerName')?.value || '',
-                name: document.getElementById('sellerName')?.value || '',
-                nip: document.getElementById('sellerNIP')?.value || '',
-                address: document.getElementById('sellerAddress')?.value || '',
-                phone: document.getElementById('sellerPhone')?.value || '',
-                email: document.getElementById('sellerEmail')?.value || '',
-                bankAccount: document.getElementById('sellerBank')?.value || '',
-                sellerName: document.getElementById('sellerContact')?.value || '',
+                ...appProfile,
+                fullName: getValue('sellerName'),
+                name: getValue('sellerName'),
+                nip: getValue('sellerNIP'),
+                address: getValue('sellerAddress'),
+                phone: getValue('sellerPhone'),
+                email: getValue('sellerEmail'),
+                bankAccount: getValue('sellerBank'),
+                sellerName: getValue('sellerContact'),
             };
 
             const pdf = await PDFManager.generatePDF({
-                orientation: document.getElementById('pdfOrientation')?.value || 'portrait',
-                format: document.getElementById('pdfFormat')?.value || 'a4',
+                orientation: getValue('pdfOrientation'),
+                format: getValue('pdfFormat'),
                 seller: sellerData,
                 products: pdfProducts,
                 offerData: offerData
@@ -347,38 +385,38 @@
     }
 
     function collectOfferData() {
-        if (!currentProfile) return null;
-
+        if (!appProfile) return null;
+        const getValue = (id) => $(`#${id}`)?.value || '';
         return {
-            id: document.getElementById('offerNumber')?.value || `offer_${Date.now()}`,
-            profileKey: currentProfile.key,
+            id: getValue('offerNumber') || `offer_${Date.now()}`,
+            profileKey: appProfile.key,
             offer: {
-                number: document.getElementById('offerNumber')?.value || '',
-                date: document.getElementById('offerDate')?.value || '',
-                validUntil: document.getElementById('validUntil')?.value || '',
-                currency: document.getElementById('currency')?.value || 'PLN'
+                number: getValue('offerNumber'),
+                date: getValue('offerDate'),
+                validUntil: getValue('validUntil'),
+                currency: getValue('currency')
             },
             buyer: {
-                name: document.getElementById('buyerName')?.value || '',
-                nip: document.getElementById('buyerNIP')?.value || '',
-                address: document.getElementById('buyerAddress')?.value || '',
-                phone: document.getElementById('buyerPhone')?.value || '',
-                email: document.getElementById('buyerEmail')?.value || ''
+                name: getValue('buyerName'),
+                nip: getValue('buyerNIP'),
+                address: getValue('buyerAddress'),
+                phone: getValue('buyerPhone'),
+                email: getValue('buyerEmail')
             },
             terms: {
-                payment: document.getElementById('paymentTerms')?.value || '',
-                delivery: document.getElementById('deliveryTime')?.value || '',
-                warranty: document.getElementById('warranty')?.value || '',
-                deliveryMethod: document.getElementById('deliveryMethod')?.value || ''
+                payment: getValue('paymentTerms'),
+                delivery: getValue('deliveryTime'),
+                warranty: getValue('warranty'),
+                deliveryMethod: getValue('deliveryMethod')
             },
             products: products.map(id => ({
                 id,
-                name: document.getElementById(`productName-${id}`)?.value || '',
-                code: document.getElementById(`productCode-${id}`)?.value || '',
-                qty: document.getElementById(`productQty-${id}`)?.value || '1',
-                price: document.getElementById(`productPrice-${id}`)?.value || '0',
-                discount: document.getElementById(`productDiscount-${id}`)?.value || '0',
-                desc: document.getElementById(`productDesc-${id}`)?.value || '',
+                name: getValue(`productName-${id}`),
+                code: getValue(`productCode-${id}`),
+                qty: getValue(`productQty-${id}`),
+                price: getValue(`productPrice-${id}`),
+                discount: getValue(`productDiscount-${id}`),
+                desc: getValue(`productDesc-${id}`),
                 image: productImages[id] || null
             })),
             timestamp: new Date().toISOString()
@@ -391,7 +429,6 @@
 
         try {
             await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-            console.log(`[Autosave] Offer ${offerData.id} saved at ${new Date().toLocaleTimeString()}`);
         } catch (error) {
             console.error('Autosave offer error:', error);
         }
@@ -404,7 +441,7 @@
             return;
         }
 
-        const saveBtn = document.getElementById('saveOfferBtn');
+        const saveBtn = $('#saveOfferBtn');
         const originalBtnHTML = saveBtn.innerHTML;
 
         try {
@@ -422,13 +459,13 @@
     }
 
     async function loadOffer() {
-        if (!currentProfile) {
+        if (!appProfile) {
             UI.Feedback.show('Błąd', 'Zaloguj się, aby wczytać oferty.', 'error');
             return;
         }
 
         try {
-            const profileOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', currentProfile.key);
+            const profileOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', appProfile.key);
             profileOffers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             if (profileOffers.length === 0) {
@@ -446,6 +483,7 @@
             `).join('');
 
             UI.Modal.show('Wczytaj ofertę', `<div class="offers-history-list">${listHTML}</div>`, 'loadOfferModal');
+            // This needs to use document because modal is outside the app window
             document.querySelectorAll('.offer-history-item').forEach(item => {
                 item.addEventListener('click', () => loadOfferFromHistory(item.dataset.offerId));
             });
@@ -459,14 +497,11 @@
     async function loadOfferFromHistory(offerId) {
         try {
             const offer = await StorageSystem.db.get(StorageSystem.db.STORES.offers, offerId);
-            if (!offer) {
-                UI.Feedback.show('Błąd', 'Nie znaleziono oferty.', 'error');
-                return;
-            }
+            if (!offer) return;
 
             products = [];
             productImages = {};
-            document.getElementById('productsList').innerHTML = '';
+            $('#productsList').innerHTML = '';
 
             const fields = {
                 'offerNumber': offer.offer?.number, 'offerDate': offer.offer?.date, 'validUntil': offer.offer?.validUntil,
@@ -476,7 +511,7 @@
                 'deliveryMethod': offer.terms?.deliveryMethod
             };
             Object.entries(fields).forEach(([id, value]) => {
-                const el = document.getElementById(id);
+                const el = $(`#${id}`);
                 if (el && value) el.value = value;
             });
 
@@ -505,15 +540,15 @@
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        document.getElementById('offerNumber').value = `OF/${year}/${month}/${day}/${random}`;
+        $('#offerNumber').value = `OF/${year}/${month}/${day}/${random}`;
     }
 
     function setTodayDate() {
         const today = new Date().toISOString().split('T')[0];
-        document.getElementById('offerDate').value = today;
+        $('#offerDate').value = today;
         const validDate = new Date();
         validDate.setDate(validDate.getDate() + 30);
-        document.getElementById('validUntil').value = validDate.toISOString().split('T')[0];
+        $('#validUntil').value = validDate.toISOString().split('T')[0];
     }
 
     window.OffersApp = { init };
