@@ -212,6 +212,9 @@ function setupWindowManagement() {
 
         win.addEventListener('mousedown', () => focusWindow(win));
     });
+    // This function is now intentionally empty.
+    // Event listeners are added dynamically when windows are created
+    // in `createWindow` and `setupWindowManagementEventListeners`.
 }
 
 function setupOfferGenerator() {
@@ -629,6 +632,72 @@ async function openWindow(windowId) {
         return;
     }
 
+function createWindow(app) {
+    const windowEl = document.createElement('div');
+    windowEl.className = 'window';
+    windowEl.id = `window-${app.id}`;
+    windowEl.setAttribute('role', 'dialog');
+    windowEl.setAttribute('aria-labelledby', `window-${app.id}-title`);
+    windowEl.style.width = app.width || '800px';
+    windowEl.style.height = app.height || '600px';
+    windowEl.style.top = '100px';
+    windowEl.style.left = '150px';
+
+    windowEl.innerHTML = `
+        <div class="window-header">
+            <div class="window-title">
+                <span class="window-title-icon">${app.icon}</span>
+                <span id="window-${app.id}-title">${app.name}</span>
+            </div>
+            <div class="window-controls">
+                <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <!-- Content will be loaded from the plugin -->
+        </div>
+    `;
+
+    document.getElementById('desktop').appendChild(windowEl);
+    setupWindowManagementEventListeners(windowEl);
+    return windowEl;
+}
+
+function setupWindowManagementEventListeners(win) {
+    const windowId = win.id.replace('window-', '');
+    const header = win.querySelector('.window-header');
+
+    header?.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('.window-control-btn')) {
+            startDrag(e, windowId);
+        }
+    });
+
+    win.querySelectorAll('.window-control-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleWindowAction(btn.dataset.action, windowId);
+        });
+    });
+
+    win.addEventListener('mousedown', () => focusWindow(win));
+}
+
+async function openWindow(windowId) {
+    let win = document.getElementById(`window-${windowId}`);
+    const app = window.AppRegistry.find(a => a.id === windowId);
+
+    if (!app) {
+        console.error(`App with ID '${windowId}' not found in registry.`);
+        return;
+    }
+
+    if (!win) {
+        win = createWindow(app);
+    }
+
     const contentArea = win.querySelector('.window-content');
     if (!contentArea) {
         console.error(`Window #${windowId} is missing a .window-content child.`);
@@ -648,6 +717,9 @@ async function openWindow(windowId) {
 
             try {
                 // Convention: app 'settings' has a global object `SettingsApp` with an `init` method
+            await new Promise(r => requestAnimationFrame(r));
+
+            try {
                 const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
                 if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
                     console.log(`Initializing plugin: ${appObjectName}...`);
@@ -664,12 +736,14 @@ async function openWindow(windowId) {
     }
     
     // Show and focus the window
+
     win.style.display = 'flex';
     win.classList.add('active');
     win.classList.remove('minimized');
     focusWindow(win);
     
     // Update taskbar icon state
+
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
     if(taskbarIcon) {
         taskbarIcon.classList.add('active');

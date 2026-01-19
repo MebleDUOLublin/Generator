@@ -1,3 +1,8 @@
+<div class="dashboard-header">
+    <h1 id="dashboard-welcome">Witaj, Użytkowniku!</h1>
+    <p>Oto podsumowanie Twojej ostatniej aktywności.</p>
+</div>
+
 <div class="dashboard-grid">
     <div class="stat-card">
         <div class="stat-card-header">
@@ -6,6 +11,8 @@
         </div>
         <div class="stat-card-value" id="stats-total-offers">128</div>
         <div class="stat-card-change stat-card-change-positive">+12% vs. Poprzedni miesiąc</div>
+        <div class="stat-card-value" id="stats-total-offers">0</div>
+        <div class="stat-card-change">w tym miesiącu</div>
     </div>
     <div class="stat-card">
         <div class="stat-card-header">
@@ -14,6 +21,8 @@
         </div>
         <div class="stat-card-value" id="stats-total-value">245,6K zł</div>
         <div class="stat-card-change stat-card-change-positive">+25.3% vs. Poprzedni miesiąc</div>
+        <div class="stat-card-value" id="stats-total-value">0,00 zł</div>
+        <div class="stat-card-change">w tym miesiącu</div>
     </div>
     <div class="stat-card">
         <div class="stat-card-header">
@@ -34,4 +43,25 @@
 </div>
 <div class="dashboard-chart-container">
     <canvas id="offersChart"></canvas>
+        <div class="stat-card-value" id="stats-new-clients">0</div>
+        <div class="stat-card-change">w tym miesiącu</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-card-title">Najwyższa Oferta</div>
+            <div class="stat-card-icon">🏆</div>
+        </div>
+        <div class="stat-card-value" id="stats-top-offer">0,00 zł</div>
+        <div class="stat-card-change">w tym miesiącu</div>
+    </div>
+</div>
+
+<div class="dashboard-recent-activity">
+    <h2 class="section-title">Ostatnia Aktywność</h2>
+    <div id="recent-activity-list">
+        <div class="empty-state-small">
+            <div class="empty-state-icon">📂</div>
+            <p>Brak ostatniej aktywności do wyświetlenia.</p>
+        </div>
+    </div>
 </div>

@@ -1,6 +1,7 @@
 // src/apps/settings/main.js
 
 function initSettingsApp() {
+function init() {
     console.log("Settings App Initialized");
     setupEventListeners();
 }
@@ -176,4 +177,5 @@ async function saveAppSettings() {
 // Expose the init function to the global scope so the plugin loader can call it
 window.SettingsApp = {
   init: initSettingsApp
+  init: init
 };
