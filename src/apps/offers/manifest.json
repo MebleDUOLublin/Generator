@@ -1,0 +1,10 @@
+{
+  "id": "offers",
+  "name": "Generator Ofert",
+  "description": "Twórz i zarządzaj ofertami handlowymi.",
+  "icon": "📄",
+  "entrypoints": {
+    "html": "ui.html",
+    "js": "main.js"
+  }
+}
