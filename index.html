@@ -20,6 +20,7 @@
     <script src="src/assets/vendor/jspdf.umd.min.js"></script>
     <script src="src/assets/vendor/jspdf.plugin.autotable.min.js"></script>
     <script src="src/assets/vendor/pdfmake.min.js"></script>
+    <script src="src/assets/vendor/pdfmake.min.js"></script>
     <script src="src/assets/vendor/vfs_fonts.js"></script>
     <script src="src/assets/vendor/html2canvas.min.js"></script>
     
@@ -72,6 +73,95 @@
             <!-- Ikony pulpitu będą ładowane dynamicznie -->
         </div>
 
+        <!-- WINDOW: Zamówienie Domator -->
+        <div class="window" id="window-domator" role="dialog" aria-labelledby="window-domator-title" style="top: 60px; left: 120px; width: 85vw; height: 80vh;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">🚚</span>
+                    <span id="window-domator-title">Generator Zamówień Domator</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content domator-container">
+                <!-- Content will be loaded from the plugin -->
+            </div>
+        </div>
+
+        <!-- WINDOW: Generator Ofert -->
+        <div class="window" id="window-offers" role="dialog" aria-labelledby="window-offers-title" style="top: 40px; left: 80px; width: 92vw; height: 88vh;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">📄</span>
+                    <span id="window-offers-title">Generator Ofert Premium</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <!-- Content will be loaded from the plugin -->
+            </div>
+        </div>
+
+        <!-- WINDOW: Dashboard -->
+        <div class="window" id="window-dashboard" role="dialog" aria-labelledby="window-dashboard-title" style="top: 100px; left: 150px; width: 900px; height: 600px;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">📊</span>
+                    <span id="window-dashboard-title">Dashboard</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Content will be loaded from the plugin -->
+            </div>
+        </div>
+
+        <!-- WINDOW: Settings -->
+        <div class="window" id="window-settings" role="dialog" aria-labelledby="window-settings-title" style="top: 80px; left: 200px; width: 800px; height: 650px;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">⚙️</span>
+                    <span id="window-settings-title">Ustawienia</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <!-- Content will be loaded from the plugin -->
+            </div>
+        </div>
+
+        <!-- WINDOW: Neon Snake -->
+        <div class="window" id="window-snake" role="dialog" aria-labelledby="window-snake-title" style="top: 120px; left: 250px; width: 640px; height: 520px;">
+            <div class="window-header">
+                <div class="window-title">
+                    <span class="window-title-icon">🐍</span>
+                    <span id="window-snake-title">Neon Snake</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control-btn minimize" data-action="minimize" aria-label="Minimalizuj">−</button>
+                    <button class="window-control-btn maximize" data-action="maximize" aria-label="Maksymalizuj">□</button>
+                    <button class="window-control-btn close" data-action="close" aria-label="Zamknij">✕</button>
+                </div>
+            </div>
+            <div class="window-content" style="padding: 0; overflow: hidden; background: #0f172a;">
+                <canvas id="snakeCanvas"></canvas>
+            </div>
+        </div>
         <!-- Dynamic windows will be injected here by the Window Manager -->
 
         <!-- TASKBAR -->
