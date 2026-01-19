@@ -556,5 +556,3 @@ window.UI = {
     Feedback: UIFeedback,
     Command: CommandManager
 };
-
-console.log('✅ Advanced UI System v2.0 initialized');
