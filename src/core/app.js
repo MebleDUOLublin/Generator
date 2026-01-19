@@ -479,10 +479,6 @@ async function openWindow(windowId) {
             await new Promise(r => requestAnimationFrame(r));
 
             try {
-                // Convention: app 'settings' has a global object `SettingsApp` with an `init` method
-            await new Promise(r => requestAnimationFrame(r));
-
-            try {
                 const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
                 if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
                     console.log(`Initializing plugin: ${appObjectName}...`);
