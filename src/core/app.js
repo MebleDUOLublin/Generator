@@ -272,24 +272,33 @@ async function populateProfileSelector() {
         profiles.forEach((profile, index) => {
             const profileCard = document.createElement('div');
             profileCard.className = 'profile-card';
-            profileCard.dataset.profileId = profile.key; // CRITICAL FIX
+            profileCard.dataset.profileKey = profile.key;
             if (profile.key === 'pesteczka') {
                 profileCard.id = 'pesteczka-profile-card';
             }
-            profileCard.onclick = () => loginAs(profile.key);
             profileCard.style.setProperty('--card-delay', `${index * 100}ms`);
-            
-            const logoPath = profile.logo ? `src/assets/${profile.logo}` : '';
+
+            const logoPath = profile.logo || '';
             const logoHtml = logoPath
                 ? `<img src="${logoPath}" alt="${profile.name} Logo" class="profile-logo">`
                 : `<div class="profile-logo">${profile.name ? profile.name.substring(0, 1) : 'P'}</div>`;
-
 
             profileCard.innerHTML = `
                 ${logoHtml}
                 <h2 class="profile-name">${profile.name || 'Profil'}</h2>
                 <p class="profile-desc">${profile.fullName || ''}</p>
+                <button class="btn btn-primary">Zaloguj</button>
             `;
+
+            profileCard.querySelector('button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                loginAs(profile.key);
+            });
+
+            profileCard.addEventListener('click', () => {
+                loginAs(profile.key);
+            });
+
             selector.appendChild(profileCard);
         });
     } catch (error) {
