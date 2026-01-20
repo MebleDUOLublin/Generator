@@ -57,10 +57,10 @@ function applyTheme(theme) {
 }
 
 function renderUIForProfile() {
-    if (!PesteczkaOS.state.currentProfile || !window.AppRegistry) return;
+    if (!PesteczkaOS.state.currentProfile || !PesteczkaOS.state.AppRegistry) return;
 
     // Get the full app objects for the apps enabled in the current profile.
-    const enabledApps = window.AppRegistry.filter(app =>
+    const enabledApps = PesteczkaOS.state.AppRegistry.filter(app =>
         PesteczkaOS.state.currentProfile.enabledApps && PesteczkaOS.state.currentProfile.enabledApps.includes(app.id)
     );
 
@@ -252,7 +252,7 @@ function handleGlobalHotkeys(e) {
 // ============================================
 async function populateProfileSelector() {
     try {
-        const profiles = await StorageSystem.ProfileManager.getAllProfiles();
+        const profiles = await PesteczkaOS.core.StorageSystem.ProfileManager.getAllProfiles();
         console.log('Profiles fetched for UI rendering:', JSON.stringify(profiles, null, 2));
 
         if (!profiles || profiles.length === 0) {
@@ -311,8 +311,8 @@ async function populateProfileSelector() {
 
 async function loginAs(profileKey) {
     try {
-        await window.PluginLoader.init(); // Ensure plugins are loaded before proceeding
-        const profile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
+        // PluginLoader is now initialized on DOMContentLoaded, so we don't need to call it here.
+        const profile = await PesteczkaOS.core.StorageSystem.db.get(PesteczkaOS.core.StorageSystem.db.STORES.profiles, profileKey);
 
         if (!profile) {
             UI.Feedback.show('Błąd', 'Profil nie znaleziony', 'error');
@@ -371,7 +371,7 @@ async function loadLogoAsBase64(logoPath) {
         return new Promise((resolve, reject) => {
             reader.onloadend = () => {
                 PesteczkaOS.state.currentProfile.logoData = reader.result;
-                StorageSystem.db.set(StorageSystem.db.STORES.profiles, PesteczkaOS.state.currentProfile);
+                PesteczkaOS.core.StorageSystem.db.set(PesteczkaOS.core.StorageSystem.db.STORES.profiles, PesteczkaOS.state.currentProfile);
                 resolve(reader.result);
             };
             reader.onerror = reject;
@@ -460,14 +460,14 @@ function setupWindowManagementEventListeners(win) {
 }
 
 async function openWindow(windowId) {
-    let win = document.getElementById(`window-${windowId}`);
-    const app = window.AppRegistry.find(a => a.id === windowId);
-
+    const app = PesteczkaOS.state.AppRegistry.find(a => a.id === windowId);
     if (!app) {
         console.error(`App with ID '${windowId}' not found in registry.`);
         return;
     }
 
+    let win = document.getElementById(`window-${windowId}`);
+    // If window doesn't exist in DOM, create it
     if (!win) {
         win = createWindow(app);
     }
@@ -478,52 +478,46 @@ async function openWindow(windowId) {
         return;
     }
 
-    // Load plugin content only if it hasn't been loaded before
-    if (!contentArea.classList.contains('loaded')) {
-        const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
+    // Load plugin assets. The new PluginLoader handles caching.
+    const pluginAssets = await PesteczkaOS.core.PluginLoader.loadPlugin(windowId);
 
-        if (pluginAssets && pluginAssets.html) {
-            contentArea.innerHTML = pluginAssets.html;
-            contentArea.classList.add('loaded');
-
-            // Wait for the next frame to ensure the new DOM is queryable
-            await new Promise(r => requestAnimationFrame(r));
-
-            try {
-                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
-                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
-                    console.log(`Initializing plugin: ${appObjectName}...`);
-                    // Pass both the profile and the window element to the init function
-                    window[appObjectName].init(PesteczkaOS.state.currentProfile, win);
-                } else {
-                     console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
-                }
-            } catch (e) {
-                console.error(`Error initializing plugin ${windowId}:`, e);
-                contentArea.innerHTML = `<div class="plugin-error">
-                    <h2>Błąd aplikacji</h2>
-                    <p>Wystąpił błąd podczas inicjalizacji wtyczki <strong>${windowId}</strong>.</p>
-                    <pre>${e.stack}</pre>
-                </div>`;
-            }
-        } else {
-            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
-        }
+    // Always inject the content to ensure it's present after reopening a window.
+    if (pluginAssets && pluginAssets.html) {
+        contentArea.innerHTML = pluginAssets.html;
     }
-    
-    // Show and focus the window
 
+    // The script is now guaranteed to be loaded. We can now call init.
+    // This will run EVERY time the window is opened, allowing apps to
+    // re-initialize or refresh their state.
+    try {
+        const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
+        const appObject = window[appObjectName]; // App objects are global by design in their JS files
+
+        if (appObject && typeof appObject.init === 'function') {
+            console.log(`Calling init for already-loaded plugin: ${appObjectName}...`);
+            // Pass the window element so the app knows which instance it is
+            appObject.init(PesteczkaOS.state.currentProfile, win);
+        } else {
+            console.warn(`App object ${appObjectName} or its init() function not found.`);
+        }
+    } catch (e) {
+        console.error(`Error re-initializing plugin ${windowId}:`, e);
+        contentArea.innerHTML = `<div class="plugin-error">
+            <h2>Błąd aplikacji</h2>
+            <p>Wystąpił błąd podczas inicjalizacji wtyczki <strong>${windowId}</strong>.</p>
+            <pre>${e.message}</pre>
+        </div>`;
+    }
+
+    // --- Finalize: Show and focus the window ---
     win.style.display = 'flex';
+    win.classList.remove('minimized', 'closing');
     win.classList.add('active');
-    win.classList.remove('minimized');
     focusWindow(win);
-    
-    // Update taskbar icon state
 
     const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
-    if(taskbarIcon) {
-        taskbarIcon.classList.add('active');
-        taskbarIcon.classList.add('open');
+    if (taskbarIcon) {
+        taskbarIcon.classList.add('active', 'open');
     }
 }
 
@@ -698,14 +692,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Pesteczka OS Main App Script Started');
 
     try {
-        if (!window.StorageSystem || !window.PluginLoader) {
-            throw new Error('Core systems (StorageSystem, PluginLoader) not found.');
+        // Use the new global object for core systems
+        if (!PesteczkaOS.core.StorageSystem || !PesteczkaOS.core.PluginLoader) {
+            throw new Error('Core systems (StorageSystem, PluginLoader) not found on PesteczkaOS object.');
         }
 
         // Initialize core systems in parallel
         await Promise.all([
-            window.StorageSystem.init(),
-            window.PluginLoader.init()
+            PesteczkaOS.core.StorageSystem.init(),
+            PesteczkaOS.core.PluginLoader.init()
         ]);
 
         await populateProfileSelector();

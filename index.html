@@ -17,6 +17,7 @@
     <script src="src/assets/vendor/jspdf.umd.min.js"></script>
     <script src="src/assets/vendor/jspdf.plugin.autotable.min.js"></script>
     <script src="src/assets/vendor/pdfmake.min.js"></script>
+    <script src="src/assets/vendor/pdfmake.min.js.map"></script>
     <script src="src/assets/vendor/vfs_fonts.js"></script>
     <script src="src/assets/vendor/html2canvas.min.js"></script>
     
@@ -131,11 +132,12 @@
     </div>
 
     <!-- Scripts -->
+    <!-- Globals must be loaded first to create the PesteczkaOS namespace -->
+    <script src="src/core/globals.js"></script>
     <script src="src/core/storage.js"></script>
     <script src="src/core/ui.js"></script>
     <script src="src/core/pdf.js"></script>
     <script src="src/core/pluginLoader.js"></script>
-    <script src="src/core/globals.js"></script>
     <script src="src/core/app.js"></script>
 </body>
 </html>

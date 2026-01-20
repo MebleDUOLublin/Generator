@@ -39,7 +39,7 @@ const CompressionModule = (() => {
 // ============================================
 const IndexedDBStore = (() => {
     const DB_NAME = 'PesteczkaOS_DB';
-    const VERSION = 11; // Incremented to trigger profile data migration
+    const VERSION = 12; // Incremented to add profileKey index to offers
 
     const STORES = {
         profiles: 'profiles',
@@ -106,6 +106,18 @@ const IndexedDBStore = (() => {
                         }
                     };
                 }
+
+                // Migration for v12: Add profileKey index to 'offers' store
+                if (e.oldVersion < 12) {
+                    console.log("  - Running 'offers' migration for v12");
+                    if (transaction.objectStoreNames.contains('offers')) {
+                        const offersStore = transaction.objectStore('offers');
+                        if (!offersStore.indexNames.contains('profileKey')) {
+                            offersStore.createIndex('profileKey', 'profileKey', { unique: false });
+                             console.log("    - Created 'profileKey' index on 'offers' store.");
+                        }
+                    }
+                }
             };
         });
     };
@@ -167,6 +179,25 @@ const IndexedDBStore = (() => {
             } catch (e) {
                 console.warn('IndexedDB getAll failed:', e);
                 resolve([]);
+            }
+        });
+    };
+
+    const getAllByIndex = (storeName, indexName, query) => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!db) await initDB();
+
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                const index = store.index(indexName);
+                const request = index.getAll(query);
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result || []);
+            } catch (e) {
+                console.warn(`IndexedDB getAllByIndex failed for index '${indexName}':`, e);
+                reject(e);
             }
         });
     };
@@ -240,6 +271,7 @@ const IndexedDBStore = (() => {
         set,
         get,
         getAll,
+        getAllByIndex,
         delete: delete_,
         clear,
         subscribe,
@@ -698,8 +730,8 @@ const init = async () => {
     }
 };
 
-// Export for global use
-window.StorageSystem = {
+// Assign to the global PesteczkaOS object instead of window
+PesteczkaOS.core.StorageSystem = {
     init,
     db: IndexedDBStore,
     ProfileManager: ProfileManager,

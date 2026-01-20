@@ -5,6 +5,7 @@
     let productIdCounter = 0;
     let draggedElement = null;
     let appProfile = null;
+    let autosaveInterval = null;
     let appWindow = null; // Reference to the app's window element
 
     // Scoped query selector helper

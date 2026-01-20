@@ -1,18 +1,17 @@
 // src/core/pluginLoader.js
 
 const PluginLoader = {
+    // Keep track of loaded scripts to avoid re-injecting them
+    loadedScripts: new Set(),
+
     async init() {
         console.log("Initializing Plugin Loader...");
-        window.AppRegistry = await this.discoverPlugins();
-        console.log("App Registry populated:", window.AppRegistry);
+        // Use the global state object instead of window
+        PesteczkaOS.state.AppRegistry = await this.discoverPlugins();
+        console.log("App Registry populated:", PesteczkaOS.state.AppRegistry);
     },
 
     async discoverPlugins() {
-        // In a real Node.js/Electron app, we'd use the 'fs' module here.
-        // For this browser-based version, we'll simulate discovery by
-        // fetching a manifest list. In a future step, this could be
-        // a `manifest-list.json` file. For now, we hardcode the known plugins.
-
         const pluginManifestPaths = [
             'src/apps/settings/manifest.json',
             'src/apps/offers/manifest.json',
@@ -20,32 +19,23 @@ const PluginLoader = {
             'src/apps/snake/manifest.json',
             'src/apps/domator/manifest.json'
         ];
-
         const apps = [];
-
         for (const path of pluginManifestPaths) {
             try {
                 const response = await fetch(path);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch manifest at ${path}: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`Failed to fetch manifest at ${path}: ${response.statusText}`);
                 const manifest = await response.json();
-
-                // Store the path to the app's root directory for later use
                 manifest.basePath = path.substring(0, path.lastIndexOf('/'));
-
                 apps.push(manifest);
             } catch (error) {
                 console.error(`Error loading plugin from ${path}:`, error);
-                // In DEV_MODE, we could show a toast notification here.
             }
         }
-
         return apps;
     },
 
     async loadPlugin(appId) {
-        const app = window.AppRegistry.find(a => a.id === appId);
+        const app = PesteczkaOS.state.AppRegistry.find(a => a.id === appId);
         if (!app) {
             console.error(`App with ID "${appId}" not found in registry.`);
             return null;
@@ -58,26 +48,23 @@ const PluginLoader = {
             if (!htmlResponse.ok) throw new Error(`Failed to fetch HTML from ${htmlPath}`);
             const htmlContent = await htmlResponse.text();
 
-            // Load and execute JS
+            // Load JS content
             const jsPath = `${app.basePath}/${app.entrypoints.js}`;
 
-            // Check if the script is already loaded
-            if (document.querySelector(`script[src="${jsPath}"]`)) {
-                return { html: htmlContent, jsPath: jsPath };
+            // If script has not been loaded before, load it
+            if (!this.loadedScripts.has(jsPath)) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = jsPath;
+                    script.onload = () => {
+                        this.loadedScripts.add(jsPath);
+                        console.log(`Script loaded and registered: ${jsPath}`);
+                        resolve();
+                    };
+                    script.onerror = () => reject(new Error(`Failed to load script: ${jsPath}`));
+                    document.head.appendChild(script);
+                });
             }
-
-            // --- FIX for Race Condition ---
-            // Wrap script loading in a promise to ensure it's loaded and parsed
-            // before we try to use any functions from it (like the app's init()).
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = jsPath;
-                script.type = 'text/javascript'; // Using module could create scope issues, stick to simple script
-                script.onload = () => resolve();
-                script.onerror = () => reject(new Error(`Failed to load script: ${jsPath}`));
-                document.head.appendChild(script);
-            });
-            // --- END FIX ---
 
             return { html: htmlContent, jsPath: jsPath };
 
@@ -88,4 +75,5 @@ const PluginLoader = {
     }
 };
 
-window.PluginLoader = PluginLoader;
+// Assign to the global PesteczkaOS object instead of window
+PesteczkaOS.core.PluginLoader = PluginLoader;
