@@ -342,6 +342,7 @@ async function loginAs(profileKey) {
         // Apply wallpaper, then render the UI
         applySavedWallpaper();
         renderUIForProfile();
+        setupUI(); // ATTACH ALL EVENT LISTENERS
 
         document.getElementById('desktop').classList.add('active');
         UI.Feedback.toast(`Witaj, ${PesteczkaOS.state.currentProfile.name}!`, 'success');

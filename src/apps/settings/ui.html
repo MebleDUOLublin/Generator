@@ -1,14 +1,14 @@
 <div class="tabs" role="tablist">
-    <button class="tab active" role="tab" aria-selected="true" data-tab="personalization">
+    <button class="tab active" role="tab" aria-selected="true" data-tab="personalization" data-action="switchTab">
         <span>🎨</span> Personalizacja
     </button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="profile">
+    <button class="tab" role="tab" aria-selected="false" data-tab="profile" data-action="switchTab">
         <span>👤</span> Profil
     </button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="system-info">
+    <button class="tab" role="tab" aria-selected="false" data-tab="system-info" data-action="switchTab">
         <span>ℹ️</span> Informacje
     </button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="applications">
+    <button class="tab" role="tab" aria-selected="false" data-tab="applications" data-action="switchTab">
         <span>📦</span> Aplikacje
     </button>
 </div>
@@ -18,17 +18,18 @@
     <div class="section">
         <h2 class="section-title">🖼️ Tapeta Pulpitu</h2>
         <div class="wallpaper-selector">
-            <div class="wallpaper-preview" data-wallpaper="default"></div>
-            <div class="wallpaper-preview" data-wallpaper="wallpaper1"></div>
-            <div class="wallpaper-preview" data-wallpaper="wallpaper2"></div>
-            <div class="wallpaper-preview" data-wallpaper="wallpaper3"></div>
-            <div class="wallpaper-preview" data-wallpaper="wallpaper4"></div>
+            <div class="wallpaper-preview" data-wallpaper="default" data-action="selectWallpaper"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper1" data-action="selectWallpaper"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper2" data-action="selectWallpaper"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper3" data-action="selectWallpaper"></div>
+            <div class="wallpaper-preview" data-wallpaper="wallpaper4" data-action="selectWallpaper"></div>
         </div>
     </div>
-        <div class="section">
+    <div class="section">
         <h2 class="section-title">🎨 Motyw kolorystyczny</h2>
         <div class="theme-selector">
-            </div>
+            <!-- Theme selection can be implemented here -->
+        </div>
     </div>
 </div>
 
@@ -37,6 +38,7 @@
     <div class="section">
         <h2 class="section-title">📋 Dane Firmy</h2>
         <div class="form-grid">
+            <!-- Form fields remain the same -->
             <div class="form-group">
                 <label class="form-label" for="settingsName">Nazwa firmy</label>
                 <input type="text" class="form-input" id="settingsName">
@@ -70,6 +72,7 @@
     <div class="section">
         <h2 class="section-title">👤 Dane Sprzedawcy</h2>
         <div class="form-grid">
+            <!-- Form fields remain the same -->
             <div class="form-group">
                 <label class="form-label" for="settingsSellerName">Imię i nazwisko</label>
                 <input type="text" class="form-input" id="settingsSellerName">
@@ -101,10 +104,10 @@
         </div>
     </div>
     <div class="flex gap-4 mt-6">
-        <button class="btn btn-primary" id="saveProfileSettingsBtn">
+        <button class="btn btn-primary" data-action="saveProfile">
             <span>💾</span> Zapisz zmiany
         </button>
-        <button class="btn btn-outline" id="loadProfileSettingsBtn">
+        <button class="btn btn-outline" data-action="loadProfileSettings">
             <span>🔄</span> Odśwież
         </button>
     </div>
@@ -135,7 +138,7 @@
                 <span class="info-label">Opis:</span>
                 <span class="info-value">Profesjonalny system do generowania ofert, dostosowany do potrzeb nowoczesnego biznesu.</span>
             </div>
-                <div class="info-item full-width">
+            <div class="info-item full-width">
                 <span class="info-label">Technologie:</span>
                 <span class="info-value">HTML5, CSS3, JavaScript (ES6+), Python, Electron</span>
             </div>
@@ -152,7 +155,7 @@
             <!-- Application toggles will be dynamically inserted here -->
         </div>
         <div class="mt-6">
-            <button class="btn btn-primary" id="saveAppSettingsBtn">
+            <button class="btn btn-primary" data-action="saveApps">
                 <span>💾</span> Zapisz zmiany w aplikacjach
             </button>
         </div>

@@ -41,13 +41,14 @@
 
         populateSellerForm(profile);
 
-        if (window.autosaveInterval) clearInterval(window.autosaveInterval);
-        window.autosaveInterval = setInterval(autosaveOffer, 60000);
+        if (autosaveInterval) clearInterval(autosaveInterval);
+        autosaveInterval = setInterval(autosaveOffer, 60000);
 
         generateOfferNumber();
         setTodayDate();
         attachEventListeners();
         updateProductView();
+        updateAutosaveStatus('waiting');
     }
 
     function attachEventListeners() {
@@ -424,14 +425,40 @@
         };
     }
 
+    function updateAutosaveStatus(status) {
+        const statusEl = $('#autosave-status');
+        if (!statusEl) return;
+
+        switch (status) {
+            case 'waiting':
+                statusEl.innerHTML = ' zmiany są zapisywane automatycznie';
+                break;
+            case 'saving':
+                statusEl.innerHTML = 'Zapisywanie...';
+                break;
+            case 'saved':
+                const time = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                statusEl.innerHTML = `✅ Zapisano o ${time}`;
+                break;
+            case 'error':
+                statusEl.innerHTML = 'Błąd zapisu!';
+                break;
+        }
+    }
     async function autosaveOffer() {
         const offerData = collectOfferData();
-        if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
+        if (!offerData || !offerData.offer.number || !offerData.buyer.name) {
+            updateAutosaveStatus('waiting');
+            return;
+        }
 
+        updateAutosaveStatus('saving');
         try {
-            await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+            await PesteczkaOS.core.StorageSystem.db.set('offers', offerData);
+            updateAutosaveStatus('saved');
         } catch (error) {
             console.error('Autosave offer error:', error);
+            updateAutosaveStatus('error');
         }
     }
 
