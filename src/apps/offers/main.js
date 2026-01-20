@@ -443,11 +443,12 @@
         }
 
         const saveBtn = $('#saveOfferBtn');
+        if (!saveBtn) return;
         const originalBtnHTML = saveBtn.innerHTML;
 
         try {
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+            saveBtn.innerHTML = '<div class="loading-spinner" style="width: 20px; height: 20px; border-width: 2px; margin-right: 8px;"></div> Zapisywanie...';
             await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
             UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
         } catch (error) {

@@ -39,7 +39,7 @@ const CompressionModule = (() => {
 // ============================================
 const IndexedDBStore = (() => {
     const DB_NAME = 'PesteczkaOS_DB';
-    const VERSION = 10; // Incremented to trigger profile data migration
+    const VERSION = 11; // Incremented to trigger profile data migration
 
     const STORES = {
         profiles: 'profiles',
@@ -87,8 +87,9 @@ const IndexedDBStore = (() => {
                     }
                 });
 
-                // Migration for v10: Convert profiles from desktopIcons to enabledApps
-                if (e.oldVersion < 10) {
+                // Migration for v11: Convert profiles from desktopIcons to enabledApps
+                if (e.oldVersion < 11) {
+                    console.log('  - Running profile migration for v11');
                     const profileStore = transaction.objectStore('profiles');
                     profileStore.openCursor().onsuccess = (event) => {
                         const cursor = event.target.result;

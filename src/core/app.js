@@ -6,11 +6,12 @@
 // ============================================
 // GLOBAL STATE
 // ============================================
-let currentProfile = null;
-let draggedWindow = null;
-let dragOffset = { x: 0, y: 0 };
-let pastedImageData = null;
-let zIndexCounter = 1000;
+// All global state is now managed in `src/core/globals.js` under `PesteczkaOS.state`.
+// let currentProfile = null; // -> PesteczkaOS.state.currentProfile
+// let draggedWindow = null; // -> PesteczkaOS.state.draggedWindow
+// let dragOffset = { x: 0, y: 0 }; // -> PesteczkaOS.state.dragOffset
+// let pastedImageData = null; // -> PesteczkaOS.state.pastedImageData
+// let zIndexCounter = 1000; // -> PesteczkaOS.state.zIndexCounter
 
 // ============================================
 // UI SETUP
@@ -56,11 +57,11 @@ function applyTheme(theme) {
 }
 
 function renderUIForProfile() {
-    if (!currentProfile || !window.AppRegistry) return;
+    if (!PesteczkaOS.state.currentProfile || !window.AppRegistry) return;
 
     // Get the full app objects for the apps enabled in the current profile.
     const enabledApps = window.AppRegistry.filter(app =>
-        currentProfile.enabledApps && currentProfile.enabledApps.includes(app.id)
+        PesteczkaOS.state.currentProfile.enabledApps && PesteczkaOS.state.currentProfile.enabledApps.includes(app.id)
     );
 
     // Get containers
@@ -237,7 +238,7 @@ function handleWindowAction(action, windowId) {
 function focusWindow(win) {
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
-    win.style.zIndex = ++zIndexCounter;
+    win.style.zIndex = ++PesteczkaOS.state.zIndexCounter;
 }
 
 function handleGlobalHotkeys(e) {
@@ -311,40 +312,40 @@ async function populateProfileSelector() {
 async function loginAs(profileKey) {
     try {
         await window.PluginLoader.init(); // Ensure plugins are loaded before proceeding
-        currentProfile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
+        const profile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
 
-        if (!currentProfile) {
+        if (!profile) {
             UI.Feedback.show('Błąd', 'Profil nie znaleziony', 'error');
             return;
         }
+        PesteczkaOS.state.currentProfile = profile;
+
 
         // Apply the theme BEFORE rendering the rest of the UI
-        if (currentProfile.theme) {
-            console.log("Applying theme:", currentProfile.theme);
-            applyTheme(currentProfile.theme);
-        } else {
-            console.log("No theme found for profile. Using default.");
+        if (PesteczkaOS.state.currentProfile.theme) {
+            applyTheme(PesteczkaOS.state.currentProfile.theme);
         }
 
-        document.getElementById('userName').textContent = currentProfile.name || 'Użytkownik';
-        document.getElementById('userEmail').textContent = currentProfile.email || '';
-        document.getElementById('userAvatar').textContent = (currentProfile.name || 'U').substring(0, 2).toUpperCase();
+        document.getElementById('userName').textContent = PesteczkaOS.state.currentProfile.name || 'Użytkownik';
+        document.getElementById('userEmail').textContent = PesteczkaOS.state.currentProfile.email || '';
+        document.getElementById('userAvatar').textContent = (PesteczkaOS.state.currentProfile.name || 'U').substring(0, 2).toUpperCase();
 
-        if (!currentProfile.logoData && currentProfile.logo) {
-            await loadLogoAsBase64(currentProfile.logo);
-        } else if (!currentProfile.logoData) {
+        if (!PesteczkaOS.state.currentProfile.logoData && PesteczkaOS.state.currentProfile.logo) {
+            await loadLogoAsBase64(PesteczkaOS.state.currentProfile.logo);
+        } else if (!PesteczkaOS.state.currentProfile.logoData) {
             setLogoPlaceholder();
         }
 
         document.getElementById('loginScreen').classList.add('hidden');
         document.body.classList.remove('login-page');
-        // Setup the main UI and apply wallpaper only AFTER login is successful
-        setupUI();
+
+        // Apply wallpaper, then render the UI
         applySavedWallpaper();
+        renderUIForProfile();
 
         document.getElementById('desktop').classList.add('active');
-        UI.Feedback.toast(`Witaj, ${currentProfile.name}!`, 'success');
-        renderUIForProfile();
+        UI.Feedback.toast(`Witaj, ${PesteczkaOS.state.currentProfile.name}!`, 'success');
+
     } catch (error) {
         console.error('Login failed:', error);
         UI.Feedback.show('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
@@ -352,7 +353,7 @@ async function loginAs(profileKey) {
 }
 
 function logout() {
-    currentProfile = null;
+    PesteczkaOS.state.currentProfile = null;
     document.getElementById('desktop').classList.remove('active');
     document.body.classList.add('login-page');
     setTimeout(() => {
@@ -368,8 +369,8 @@ async function loadLogoAsBase64(logoPath) {
         const reader = new FileReader();
         return new Promise((resolve, reject) => {
             reader.onloadend = () => {
-                currentProfile.logoData = reader.result;
-                StorageSystem.db.set(StorageSystem.db.STORES.profiles, currentProfile);
+                PesteczkaOS.state.currentProfile.logoData = reader.result;
+                StorageSystem.db.set(StorageSystem.db.STORES.profiles, PesteczkaOS.state.currentProfile);
                 resolve(reader.result);
             };
             reader.onerror = reject;
@@ -382,23 +383,23 @@ async function loadLogoAsBase64(logoPath) {
 }
 
 function setLogoPlaceholder() {
-    if (!currentProfile) return;
+    if (!PesteczkaOS.state.currentProfile) return;
     
     const canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 100;
     const ctx = canvas.getContext('2d');
     
-    ctx.fillStyle = currentProfile.color || '#dc2626';
+    ctx.fillStyle = PesteczkaOS.state.currentProfile.color || '#dc2626';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 40px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText((currentProfile.name || 'U').substring(0, 2).toUpperCase(), 100, 50);
+    ctx.fillText((PesteczkaOS.state.currentProfile.name || 'U').substring(0, 2).toUpperCase(), 100, 50);
     
-    currentProfile.logoData = canvas.toDataURL('image/png');
+    PesteczkaOS.state.currentProfile.logoData = canvas.toDataURL('image/png');
 }
 
 // ============================================
@@ -492,12 +493,17 @@ async function openWindow(windowId) {
                 if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
                     console.log(`Initializing plugin: ${appObjectName}...`);
                     // Pass both the profile and the window element to the init function
-                    window[appObjectName].init(currentProfile, win);
+                    window[appObjectName].init(PesteczkaOS.state.currentProfile, win);
                 } else {
                      console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
                 }
             } catch (e) {
                 console.error(`Error initializing plugin ${windowId}:`, e);
+                contentArea.innerHTML = `<div class="plugin-error">
+                    <h2>Błąd aplikacji</h2>
+                    <p>Wystąpił błąd podczas inicjalizacji wtyczki <strong>${windowId}</strong>.</p>
+                    <pre>${e.stack}</pre>
+                </div>`;
             }
         } else {
             contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
@@ -580,37 +586,37 @@ function startDrag(event, windowId) {
     const win = document.getElementById(`window-${windowId}`);
     if (!win || win.classList.contains('maximized')) return;
     
-    draggedWindow = win;
+    PesteczkaOS.state.draggedWindow = win;
     focusWindow(win);
     
     const rect = win.getBoundingClientRect();
-    dragOffset.x = event.clientX - rect.left;
-    dragOffset.y = event.clientY - rect.top;
+    PesteczkaOS.state.dragOffset.x = event.clientX - rect.left;
+    PesteczkaOS.state.dragOffset.y = event.clientY - rect.top;
     
     event.preventDefault();
 }
 
 function handleWindowDrag(event) {
-    if (!draggedWindow) return;
+    if (!PesteczkaOS.state.draggedWindow) return;
     const desktop = document.getElementById('desktop');
     const headerHeight = 40;
     const taskbarHeight = 40;
     
-    const maxLeft = desktop.clientWidth - draggedWindow.clientWidth;
-    const maxTop = desktop.clientHeight - draggedWindow.clientHeight - taskbarHeight;
+    const maxLeft = desktop.clientWidth - PesteczkaOS.state.draggedWindow.clientWidth;
+    const maxTop = desktop.clientHeight - PesteczkaOS.state.draggedWindow.clientHeight - taskbarHeight;
 
-    let newX = event.clientX - dragOffset.x;
-    let newY = event.clientY - dragOffset.y;
+    let newX = event.clientX - PesteczkaOS.state.dragOffset.x;
+    let newY = event.clientY - PesteczkaOS.state.dragOffset.y;
 
     newX = Math.max(0, Math.min(newX, maxLeft));
     newY = Math.max(0, Math.min(newY, maxTop));
     
-    draggedWindow.style.left = newX + 'px';
-    draggedWindow.style.top = newY + 'px';
+    PesteczkaOS.state.draggedWindow.style.left = newX + 'px';
+    PesteczkaOS.state.draggedWindow.style.top = newY + 'px';
 }
 
 function stopWindowDrag() {
-    draggedWindow = null;
+    PesteczkaOS.state.draggedWindow = null;
 }
 
 // ============================================
