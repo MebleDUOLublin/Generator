@@ -169,6 +169,7 @@
             updateProductImage(newId);
         }
         updateSummary();
+        updateProductView();
     }
 
     function removeProduct(productId) {
