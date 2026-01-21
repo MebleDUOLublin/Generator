@@ -6,7 +6,7 @@ import threading
 import sys
 import logging
 from logging.handlers import RotatingFileHandler
-
+import json
 # --- Setup Logging ---
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 log_file = 'server.log'
@@ -43,6 +43,35 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # The directory is set here, using the globally determined BASE_DIR
         super().__init__(*args, directory=BASE_DIR, **kwargs)
+
+    def do_GET(self):
+        if self.path == '/api/apps':
+            self.handle_api_apps()
+        else:
+            super().do_GET()
+
+    def handle_api_apps(self):
+        """Scans for app manifests and returns them as JSON."""
+        try:
+            apps_dir = os.path.join(BASE_DIR, 'src', 'apps')
+            manifest_paths = []
+            if os.path.exists(apps_dir) and os.path.isdir(apps_dir):
+                for app_name in os.listdir(apps_dir):
+                    app_path = os.path.join(apps_dir, app_name)
+                    manifest_file = os.path.join(app_path, 'manifest.json')
+                    if os.path.isfile(manifest_file):
+                        web_path = f'src/apps/{app_name}/manifest.json'
+                        manifest_paths.append(web_path)
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(manifest_paths).encode('utf-8'))
+            logger.info(f"Successfully served app list: {manifest_paths}")
+
+        except Exception as e:
+            self.send_error(500, f"Error scanning for apps: {e}")
+            logger.error(f"Failed to handle /api/apps request: {e}")
 
     def do_POST(self):
         if self.path == '/shutdown':

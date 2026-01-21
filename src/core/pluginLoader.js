@@ -8,40 +8,40 @@ const PluginLoader = {
     },
 
     async discoverPlugins() {
-        // In a real Node.js/Electron app, we'd use the 'fs' module here.
-        // For this browser-based version, we'll simulate discovery by
-        // fetching a manifest list. In a future step, this could be
-        // a `manifest-list.json` file. For now, we hardcode the known plugins.
-
-        const pluginManifestPaths = [
-            'src/apps/settings/manifest.json',
-            'src/apps/offers/manifest.json',
-            'src/apps/dashboard/manifest.json',
-            'src/apps/snake/manifest.json',
-            'src/apps/domator/manifest.json'
-        ];
-
-        const apps = [];
-
-        for (const path of pluginManifestPaths) {
-            try {
-                const response = await fetch(path);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch manifest at ${path}: ${response.statusText}`);
-                }
-                const manifest = await response.json();
-
-                // Store the path to the app's root directory for later use
-                manifest.basePath = path.substring(0, path.lastIndexOf('/'));
-
-                apps.push(manifest);
-            } catch (error) {
-                console.error(`Error loading plugin from ${path}:`, error);
-                // In DEV_MODE, we could show a toast notification here.
+        try {
+            const response = await fetch('/api/apps');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch app list: ${response.statusText}`);
             }
-        }
+            const pluginManifestPaths = await response.json();
+            console.log("Discovered plugin manifests:", pluginManifestPaths);
 
-        return apps;
+            const apps = [];
+            for (const path of pluginManifestPaths) {
+                try {
+                    const manifestResponse = await fetch(path);
+                    if (!manifestResponse.ok) {
+                        throw new Error(`Failed to fetch manifest at ${path}`);
+                    }
+                    const manifest = await manifestResponse.json();
+                    // Basic manifest validation
+                    if (!manifest.id || !manifest.name || !manifest.entrypoints) {
+                        throw new Error(`Invalid manifest file at ${path}`);
+                    }
+                    manifest.basePath = path.substring(0, path.lastIndexOf('/'));
+                    apps.push(manifest);
+                } catch (error) {
+                    console.error(`Error loading plugin manifest from ${path}:`, error);
+                    // In a real app, you might want to show a notification to the user
+                    UI.Feedback.toast(`Błąd ładowania wtyczki: ${path}`, 'error');
+                }
+            }
+            return apps;
+        } catch (error) {
+            console.error('Failed to discover plugins:', error);
+            // Return an empty array or handle the error as appropriate
+            return [];
+        }
     },
 
     async loadPlugin(appId) {

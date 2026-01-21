@@ -1,186 +1,146 @@
 // src/apps/dashboard/main.js
 
-const Dashboard = {
-    init: function() {
-        console.log("Dashboard App Initialized");
-        this.renderChart();
-    },
-
-    renderChart: function() {
-        const ctx = document.getElementById('offersChart')?.getContext('2d');
-        if (!ctx) {
-            console.warn('Could not find offersChart canvas element.');
-            return;
-        }
-
-        const data = {
-            labels: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip'],
-            datasets: [
-                {
-                    label: 'Wartość Ofert (netto)',
-                    data: [12000, 19000, 15000, 22000, 18000, 25000, 28000],
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                },
-                {
-                    label: 'Ilość Ofert',
-                    data: [15, 22, 18, 25, 20, 28, 32],
-                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y1'
-                }
-            ]
-        };
-
-        const options = {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    type: 'linear',
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Wartość (zł)'
-                    }
-                },
-                y1: {
-                    beginAtZero: true,
-                    type: 'linear',
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Ilość'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Aktywność Ofert w Czasie'
-                }
-            }
-        };
-
-        new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: options
-        });
-    }
-};
-
-
 window.DashboardApp = {
-  init: Dashboard.init.bind(Dashboard)
-const DashboardApp = {
-    async init() {
-        console.log("Dashboard App Initialized");
+    profile: null,
+    windowEl: null,
+    chartInstance: null,
+
+    async init(profile, windowEl) {
+        this.profile = profile;
+        this.windowEl = windowEl;
+        console.log("Dashboard App Initialized for profile:", this.profile.key);
+
         this.updateWelcomeMessage();
         await this.loadAndRenderStats();
     },
 
     updateWelcomeMessage() {
-        const welcomeEl = document.getElementById('dashboard-welcome');
-        if (welcomeEl && currentProfile) {
-            welcomeEl.textContent = `Witaj, ${currentProfile.name}!`;
+        const welcomeEl = this.windowEl.querySelector('#dashboard-welcome');
+        if (welcomeEl) {
+            welcomeEl.textContent = `Witaj, ${this.profile.name}!`;
         }
     },
 
     async loadAndRenderStats() {
-        if (!currentProfile) return;
-
         try {
-            const allOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', currentProfile.key);
-            const thisMonthOffers = allOffers.filter(offer => new Date(offer.timestamp).getMonth() === new Date().getMonth());
+            const allOffers = await window.StorageSystem.db.getAllByIndex('offers', 'profileKey', this.profile.key);
 
-            this.renderStatCards(thisMonthOffers);
+            this.renderStatCards(allOffers);
             this.renderRecentActivity(allOffers);
+            this.renderChart(allOffers);
+
         } catch (error) {
             console.error("Failed to load dashboard stats:", error);
+            this.windowEl.querySelector('.dashboard-grid').innerHTML = "<p>Błąd ładowania danych.</p>";
         }
     },
 
-    renderStatCards(offers) {
-        const totalValue = offers.reduce((sum, offer) => {
-            return sum + (offer.products || []).reduce((offerSum, p) => {
-                const price = parseFloat(p.price) || 0;
-                const qty = parseInt(p.qty, 10) || 0;
-                const discount = parseFloat(p.discount) || 0;
-                return offerSum + (price * qty * (1 - discount / 100));
-            }, 0);
+    _calculateOfferNetValue(offer) {
+        return (offer.products || []).reduce((sum, p) => {
+            const price = parseFloat(p.price) || 0;
+            const qty = parseInt(p.qty, 10) || 0;
+            const discount = parseFloat(p.discount) || 0;
+            return sum + (price * qty * (1 - discount / 100));
         }, 0);
-
-        const newClients = new Set(offers.map(o => o.buyer?.name.trim().toLowerCase())).size;
-        const topOffer = Math.max(0, ...offers.map(offer => {
-             return (offer.products || []).reduce((offerSum, p) => {
-                const price = parseFloat(p.price) || 0;
-                const qty = parseInt(p.qty, 10) || 0;
-                const discount = parseFloat(p.discount) || 0;
-                return offerSum + (price * qty * (1 - discount / 100));
-            }, 0);
-        }));
-
-        document.getElementById('stats-total-offers').textContent = offers.length;
-        document.getElementById('stats-total-value').textContent = `${totalValue.toFixed(2)} zł`;
-        document.getElementById('stats-new-clients').textContent = newClients;
-        document.getElementById('stats-top-offer').textContent = `${topOffer.toFixed(2)} zł`;
     },
 
-    renderRecentActivity(offers) {
-        const activityList = document.getElementById('recent-activity-list');
-        if (!activityList) return;
+    renderStatCards(allOffers) {
+        const thisMonthOffers = allOffers.filter(offer => new Date(offer.timestamp).getMonth() === new Date().getMonth());
 
-        offers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        const recentOffers = offers.slice(0, 5);
+        const totalValue = thisMonthOffers.reduce((sum, offer) => sum + this._calculateOfferNetValue(offer), 0);
+        const newClients = new Set(thisMonthOffers.map(o => o.buyer?.name.trim().toLowerCase())).size;
+        const topOfferValue = Math.max(0, ...thisMonthOffers.map(o => this._calculateOfferNetValue(o)));
+
+        this.windowEl.querySelector('#stats-total-offers').textContent = thisMonthOffers.length;
+        this.windowEl.querySelector('#stats-total-value').textContent = `${totalValue.toFixed(2)} zł`;
+        this.windowEl.querySelector('#stats-new-clients').textContent = newClients;
+        this.windowEl.querySelector('#stats-top-offer').textContent = `${topOfferValue.toFixed(2)} zł`;
+    },
+
+    renderRecentActivity(allOffers) {
+        const activityList = this.windowEl.querySelector('#recent-activity-list');
+        allOffers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const recentOffers = allOffers.slice(0, 5);
 
         if (recentOffers.length === 0) {
-            activityList.innerHTML = `
-                <div class="empty-state-small">
-                    <div class="empty-state-icon">📂</div>
-                    <p>Brak ostatniej aktywności do wyświetlenia.</p>
-                </div>`;
+            activityList.innerHTML = `<div class="empty-state-small"><p>Brak ostatniej aktywności.</p></div>`;
             return;
         }
 
         activityList.innerHTML = recentOffers.map(offer => {
-            const value = (offer.products || []).reduce((sum, p) => {
-                 const price = parseFloat(p.price) || 0;
-                const qty = parseInt(p.qty, 10) || 0;
-                const discount = parseFloat(p.discount) || 0;
-                return sum + (price * qty * (1 - discount / 100));
-            }, 0);
-
+            const value = this._calculateOfferNetValue(offer);
             return `
                 <div class="activity-item">
-                    <div class="activity-icon">📄</div>
                     <div class="activity-details">
-                        <span class="activity-title">Nowa oferta: ${offer.offer.number}</span>
+                        <strong class="activity-title">Oferta ${offer.offer.number}</strong>
                         <span class="activity-subtitle">dla ${offer.buyer.name}</span>
                     </div>
                     <div class="activity-meta">
-                        <span class="activity-value">${value.toFixed(2)} zł</span>
-                        <span class="activity-time">${new Date(offer.timestamp).toLocaleDateString('pl-PL')}</span>
+                        <strong class="activity-value">${value.toFixed(2)} zł</strong>
+                        <time class="activity-time">${new Date(offer.timestamp).toLocaleDateString('pl-PL')}</time>
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
-    }
-};
+    },
 
-window.DashboardApp = {
-    init: DashboardApp.init.bind(DashboardApp)
+    renderChart(allOffers) {
+        const ctx = this.windowEl.querySelector('#offersChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            return { month: d.getMonth(), year: d.getFullYear() };
+        }).reverse();
+
+        const labels = months.map(m => new Date(m.year, m.month).toLocaleString('pl-PL', { month: 'short' }));
+
+        const monthlyData = months.map(({ month, year }) => {
+            const offersInMonth = allOffers.filter(o => {
+                const offerDate = new Date(o.timestamp);
+                return offerDate.getMonth() === month && offerDate.getFullYear() === year;
+            });
+            const totalValue = offersInMonth.reduce((sum, o) => sum + this._calculateOfferNetValue(o), 0);
+            return { count: offersInMonth.length, value: totalValue };
+        });
+
+        if (this.chartInstance) {
+            this.chartInstance.destroy();
+        }
+
+        this.chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Wartość Ofert (netto)',
+                        data: monthlyData.map(d => d.value),
+                        borderColor: 'var(--primary-500)',
+                        backgroundColor: 'rgba(var(--primary-500-rgb), 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        yAxisID: 'yValue'
+                    },
+                    {
+                        label: 'Ilość Ofert',
+                        data: monthlyData.map(d => d.count),
+                        borderColor: 'var(--accent-500)',
+                         backgroundColor: 'rgba(var(--accent-500-rgb), 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        yAxisID: 'yCount'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    yValue: { position: 'left', beginAtZero: true, title: { display: true, text: 'Wartość (zł)' } },
+                    yCount: { position: 'right', beginAtZero: true, title: { display: true, text: 'Ilość' }, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
 };

@@ -1,97 +1,123 @@
+# 🌰 Pesteczka OS - Profesjonalny System Biznesowy
 
-# Pesteczka OS - Modułowy System Biznesowy
+Pesteczka OS to nowoczesny, webowy system operacyjny zaprojektowany z myślą o małych i średnich przedsiębiorstwach. Jego głównym celem jest usprawnienie i automatyzacja codziennych zadań, takich jak generowanie ofert, zarządzanie danymi czy analiza wyników. Dzięki modułowej architekturze, system można łatwo rozbudowywać o nowe aplikacje, dostosowując go do specyficznych potrzeb każdej firmy.
 
-Pesteczka OS to lekkie, modułowe środowisko "systemu operacyjnego" działające w przeglądarce, zaprojektowane do uruchamiania zestawu aplikacji biznesowych. Jego główną filozofią jest architektura oparta na wtyczkach (pluginach), co pozwala na łatwą rozbudowę i utrzymanie.
+## ✨ Kluczowe Funkcje
 
-**Stworzone przez Paweł Steczka ([pesteczka.com](https://pesteczka.com))**
+*   **Wirtualny Pulpit:** Intuicyjny interfejs przypominający klasyczny system operacyjny, zapewniający łatwość obsługi.
+*   **System Profili:** Możliwość personalizacji ustawień, motywów i dostępu do aplikacji dla różnych firm lub oddziałów.
+*   **Generator Ofert:** Zaawansowana aplikacja do szybkiego tworzenia i zarządzania profesjonalnymi ofertami handlowymi w formacie PDF.
+*   **Dynamiczne Ładowanie Aplikacji:** Modułowa architektura pozwala na łatwe dodawanie nowych funkcji bez ingerencji w rdzeń systemu.
+*   **Nowoczesny Design:** Czysty i estetyczny interfejs zbudowany w oparciu o przemyślany design system.
 
-![Zrzut ekranu przedstawiający interfejs Pesteczka OS](https://i.imgur.com/qRSzDBc.png)
+## 🚀 Uruchomienie Środowiska
 
-## Kluczowe Funkcje
+Do uruchomienia i rozwoju Pesteczka OS potrzebujesz jedynie dwóch rzeczy:
 
-*   **Modułowa Architektura Oparta na Wtyczkach:** Cały system jest zbudowany wokół wtyczek. Każda aplikacja (jak Generator Ofert czy Ustawienia) jest samodzielnym modułem, co ułatwia rozbudowę i konserwację systemu.
-*   **System Wielu Profili:** Z łatwością zarządzaj różnymi podmiotami biznesowymi. Każdy profil posiada własne dane, branding (logo, kolorystykę) oraz zestaw włączonych aplikacji, co pozwala na dostosowanie środowiska do indywidualnych potrzeb.
-*   **Dynamiczny Interfejs Użytkownika:** Pulpit, pasek zadań i menu start są generowane dynamicznie na podstawie aplikacji włączonych dla aktualnie zalogowanego profilu.
-*   **Generator Ofert:** Potężna, wbudowana aplikacja do tworzenia, zarządzania i generowania profesjonalnie wyglądających ofert w formacie PDF dla klientów.
-*   **Lekki i Szybki:** Zbudowany w całości przy użyciu czystego JavaScriptu, HTML i CSS, co zapewnia błyskawiczne i responsywne działanie bez potrzeby korzystania z ciężkich frameworków.
-*   **Działanie Offline:** Wykorzystuje IndexedDB do przechowywania wszystkich danych lokalnie w przeglądarce, dzięki czemu aplikacja jest w pełni funkcjonalna bez połączenia z internetem.
+*   **Python 3:** Do uruchomienia lekkiego serwera WWW.
+*   **Przeglądarka internetowa:** Do obsługi interfejsu (rekomendowane Chrome, Firefox, Edge).
 
-## Pierwsze Kroki
+Aby uruchomić system, wykonaj poniższą komendę w głównym katalogu projektu:
 
-Postępuj zgodnie z poniższymi instrukcjami, aby uruchomić projekt na swojej lokalnej maszynie w celach deweloperskich i testowych.
-
-### Wymagania Wstępne
-
-Będziesz potrzebować następującego oprogramowania zainstalowanego na swoim systemie:
-
-*   **Python 3.x:** Wymagany do uruchomienia lokalnego serwera deweloperskiego.
-*   **Node.js i npm:** Wymagane do zarządzania zależnościami projektu (takimi jak `pdfmake`).
-
-### Instalacja i Uruchomienie
-
-1.  **Sklonuj repozytorium:**
-    ```sh
-    git clone https://github.com/MebleDUOLublin/Generator.git
-    cd Generator
-    ```
-
-2.  **Zainstaluj zależności:**
-    Projekt wykorzystuje kilka pakietów Node.js do obsługi takich funkcji jak generowanie PDF. Zainstaluj je za pomocą npm:
-    ```sh
-    npm install
-    ```
-
-3.  **Uruchom serwer deweloperski:**
-    Prosty serwer webowy w Pythonie jest dołączony, aby udostępniać aplikację lokalnie.
-    ```sh
-    python3 run.py
-    ```
-
-4.  **Otwórz w przeglądarce:**
-    Gdy serwer jest uruchomiony, możesz uzyskać dostęp do aplikacji, przechodząc pod adres:
-    [http://localhost:8080](http://localhost:8080)
-
-## Struktura Projektu
-
-Projekt jest zorganizowany z wyraźnym podziałem na rdzeń systemu (core) i jego aplikacje:
-
-```
-/
-├── src/
-│   ├── apps/               # Zawiera wszystkie samodzielne wtyczki (aplikacje)
-│   │   └── offers/         # Przykładowa aplikacja: Generator Ofert
-│   ├── assets/             # Współdzielone zasoby statyczne (CSS, loga, czcionki)
-│   └── core/               # "Mikrojądro" systemu (logika aplikacji, przechowywanie danych, UI)
-├── vendor/                 # Biblioteki zewnętrzne (np. pdfmake)
-├── index.html              # Główna powłoka aplikacji
-├── profiles.json           # Domyślne dane profili użytkowników/firm
-└── run.py                  # Prosty serwer w Pythonie do celów deweloperskich
+```bash
+python3 run.py
 ```
 
-## Tworzenie Nowej Aplikacji (Wtyczki)
+Serwer zostanie uruchomiony na porcie `8080`, a aplikacja otworzy się automatycznie w nowej karcie przeglądarki.
 
-Aby rozszerzyć system, możesz stworzyć własną aplikację. System automatycznie wykryje każdą nową wtyczkę umieszczoną w katalogu `src/apps/`.
+## 🛠️ Rozwój i Dodawanie Nowych Aplikacji
 
-1.  **Stwórz Katalog:** Dodaj nowy folder w `src/apps/`. Nazwa folderu jest unikalnym ID Twojej aplikacji (np. `moja-nowa-aplikacja`).
+Jedną z największych zalet Pesteczka OS jest jego modułowość. Każda aplikacja to samodzielny "plugin", który system automatycznie wykrywa i ładuje.
 
-2.  **Stwórz `manifest.json`:** Ten plik opisuje Twoją aplikację dla systemu operacyjnego.
+### Struktura Aplikacji
 
-    ```json
-    {
-      "id": "moja-nowa-aplikacja",
-      "name": "Moja Nowa Aplikacja",
-      "description": "Krótki opis aplikacji.",
-      "icon": "🚀",
-      "entrypoints": { "html": "ui.html", "js": "main.js" }
+Każda nowa aplikacja musi znajdować się w osobnym folderze wewnątrz katalogu `src/apps/`. Struktura folderu aplikacji powinna wyglądać następująco:
+
+```
+src/apps/moja-nowa-aplikacja/
+├── 📄 manifest.json
+├── 📄 ui.html
+└── 📄 main.js
+```
+
+### Plik `manifest.json`
+
+To serce każdej aplikacji. Zawiera wszystkie metadane potrzebne systemowi do jej załadowania.
+
+**Przykład:**
+
+```json
+{
+  "id": "moja-nowa-aplikacja",
+  "name": "Moja Nowa Aplikacja",
+  "version": "1.0.0",
+  "icon": "💡",
+  "entrypoints": {
+    "html": "ui.html",
+    "js": "main.js"
+  },
+  "window": {
+    "width": "800px",
+    "height": "600px"
+  }
+}
+```
+
+*   `id`: Unikalny identyfikator (używany w całym systemie).
+*   `name`: Pełna nazwa aplikacji.
+*   `icon`: Ikona emoji reprezentująca aplikację.
+*   `entrypoints`: Ścieżki do plików HTML (interfejs) i JS (logika).
+*   `window`: Domyślne wymiary okna aplikacji.
+
+### Plik `ui.html`
+
+Zawiera wyłącznie kod HTML interfejsu aplikacji, który zostanie wstrzyknięty do okna. Nie umieszczaj tu tagów `<html>` ani `<head>`.
+
+**Przykład:**
+
+```html
+<div class="moja-aplikacja-container">
+    <h1>Witaj w mojej aplikacji!</h1>
+    <button id="super-przycisk">Kliknij mnie</button>
+</div>
+```
+
+### Plik `main.js`
+
+Logika aplikacji. System automatycznie tworzy globalny obiekt o nazwie zgodnej z `id` aplikacji (z wielkiej litery i z dopiskiem "App"), np. `MojaNowaAplikacjaApp`. Musi on zawierać metodę `init()`, która jest wywoływana po załadowaniu interfejsu.
+
+**Przykład:**
+
+```javascript
+window.MojaNowaAplikacjaApp = {
+    init: function(profile, windowElement) {
+        console.log('Moja Nowa Aplikacja została zainicjowana!');
+        console.log('Aktualny profil:', profile);
+
+        // Dodajemy logikę do przycisku
+        const przycisk = windowElement.querySelector('#super-przycisk');
+        przycisk.addEventListener('click', () => {
+            alert('Przycisk kliknięty!');
+        });
     }
-    ```
+};
+```
 
-3.  **Stwórz `ui.html`:** Ten plik zawiera wyłącznie kod HTML dla obszaru treści Twojej aplikacji.
+### Aktywacja Aplikacji w Profilu
 
-4.  **Stwórz `main.js`:** Ten plik zawiera logikę Twojej aplikacji. Musi on eksportować globalny obiekt (np. `window.MojaNowaAplikacjaApp`) z funkcją `init(profil, elementOkna)`.
+Aby nowa aplikacja była widoczna dla danego użytkownika, dodaj jej `id` do tablicy `enabledApps` w pliku `profiles.json`:
 
-System automatycznie załaduje Twoją aplikację przy następnym uruchomieniu. Wystarczy, że włączysz ją w pliku `profiles.json` dla wybranego profilu.
+```json
+{
+  "profiles": {
+    "pesteczka": {
+      "key": "pesteczka",
+      "name": "Pesteczka",
+      // ... inne dane
+      "enabledApps": ["offers", "dashboard", "settings", "moja-nowa-aplikacja"]
+    }
+  }
+}
+```
 
-## Budowanie Wersji Produkcyjnej
-
-Obecnie projekt jest przeznaczony do użytku deweloperskiego i bezpośredniego uruchamiania z serwera WWW. Proces budowania samodzielnego pliku wykonywalnego (np. przy użyciu Electron) jest planowany w przyszłości.
+Po wykonaniu tych kroków i odświeżeniu aplikacji, nowa ikona pojawi się na pulpicie, w menu start oraz na pasku zadań, a aplikacja będzie w pełni funkcjonalna.

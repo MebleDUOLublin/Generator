@@ -1,556 +1,405 @@
 // src/apps/offers/main.js
-(function() {
-    let products = [];
-    let productImages = {};
-    let productIdCounter = 0;
-    let draggedElement = null;
-    let appProfile = null;
-    let appWindow = null; // Reference to the app's window element
 
-    // Scoped query selector helper
-    const $ = (selector) => appWindow.querySelector(selector);
-    const $$ = (selector) => appWindow.querySelectorAll(selector);
+window.OffersApp = {
+    // --- App State ---
+    profile: null,
+    windowEl: null,
+    products: [], // Source of truth for product data
+    autosaveTimer: null,
+    autosaveStatus: 'idle', // idle, waiting, saving, success, error
 
-    function populateSellerForm(profile) {
-        if (!profile) {
-            console.log("populateSellerForm: No profile provided.");
-            return;
-        }
-        console.log("Populating seller form with profile:", profile);
+    // --- Initialization ---
+    init: function(profile, windowEl) {
+        this.profile = profile;
+        this.windowEl = windowEl;
 
-        const setValue = (id, value) => {
-            const el = $(`#${id}`);
-            if (el && value !== undefined && value !== null) {
-                el.value = value;
-            }
+        this.populateSellerForm();
+        this.generateOfferNumber();
+        this.setTodayDate();
+        this.attachEventListeners();
+        this.render();
+
+        // Start autosave
+        if (this.autosaveTimer) clearInterval(this.autosaveTimer);
+        this.autosaveTimer = setInterval(() => this.autosaveOffer(), 30000); // Save every 30s
+        this.setAutosaveStatus('waiting');
+    },
+
+    // --- Event Handling ---
+    attachEventListeners: function() {
+        const el = (selector, event, handler) => {
+            this.windowEl.querySelector(selector)?.addEventListener(event, handler.bind(this));
         };
 
-        setValue('sellerName', profile.fullName);
-        setValue('sellerNIP', profile.nip);
-        setValue('sellerAddress', profile.address);
-        setValue('sellerPhone', profile.phone);
-        setValue('sellerEmail', profile.email);
-        setValue('sellerContact', profile.sellerName);
-        setValue('sellerBank', profile.bankAccount);
-    }
+        el('#addProductBtn', 'click', () => this.addProduct());
+        el('#generatePdfBtn', 'click', this.generatePDF);
+        el('#saveOfferBtn', 'click', this.saveOffer);
+        el('#loadOfferBtn', 'click', this.loadOffer);
+        el('#clearFormBtn', 'click', this.clearForm);
+        el('#generateOfferNumberBtn', 'click', this.generateOfferNumber);
+        el('#setTodayDateBtn', 'click', this.setTodayDate);
 
-    function init(profile, windowEl) {
-        console.log("Offers App Initialized");
-        appProfile = profile;
-        appWindow = windowEl; // Store the window element
-
-        populateSellerForm(profile);
-
-        if (window.autosaveInterval) clearInterval(window.autosaveInterval);
-        window.autosaveInterval = setInterval(autosaveOffer, 60000);
-
-        generateOfferNumber();
-        setTodayDate();
-        attachEventListeners();
-        updateProductView();
-    }
-
-    function attachEventListeners() {
-        $('#addProductBtn')?.addEventListener('click', () => addProduct({}));
-        $('#generatePdfBtn')?.addEventListener('click', generatePDF);
-        $('#saveOfferBtn')?.addEventListener('click', saveOffer);
-        $('#loadOfferBtn')?.addEventListener('click', loadOffer);
-
-        $('#clearFormBtn')?.addEventListener('click', async () => {
-            if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
-                products = [];
-                productImages = {};
-                updateProductView();
-                generateOfferNumber();
-                setTodayDate();
-                updateSummary();
-                UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
-            }
+        this.windowEl.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => this.handleTabSwitch(e));
         });
 
-        $$('.tabs .tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                // Assuming switchTab is a global function on the main window
-                if (typeof window.switchTab === 'function') {
-                    window.switchTab(tab.dataset.tab, e);
-                }
-            });
+        // Listen for changes in any form field to trigger autosave
+        this.windowEl.querySelector('.offers-main').addEventListener('input', () => {
+            this.setAutosaveStatus('waiting');
         });
+    },
 
-        $('#generateOfferNumberBtn')?.addEventListener('click', generateOfferNumber);
-        $('#setTodayDateBtn')?.addEventListener('click', setTodayDate);
-    }
+    handleTabSwitch: function(event) {
+        const tabButton = event.target.closest('.tab');
+        if (!tabButton) return;
+        const tabId = tabButton.dataset.tab;
 
-    function createProductCard(productId) {
-        const createEl = (tag, props = {}, children = []) => {
-            const el = document.createElement(tag);
-            Object.assign(el, props);
-            children.forEach(child => el.appendChild(child));
-            return el;
+        this.windowEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.windowEl.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tabButton.classList.add('active');
+        this.windowEl.querySelector(`#${tabId}-tab`).classList.add('active');
+    },
+
+    // --- Data & State Management ---
+
+    addProduct: function(data = {}) {
+        const newProduct = {
+            id: data.id || Date.now(),
+            name: data.name || '',
+            code: data.code || '',
+            qty: data.qty || 1,
+            price: data.price || 0,
+            discount: data.discount || 0,
+            desc: data.desc || '',
+            image: data.image || null,
         };
+        this.products.push(newProduct);
+        this.render();
+    },
 
-        const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
-        const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
-        const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
-
-        const productCard = createEl('div', {
-            id: `product-${productId}`,
-            className: 'product-card',
-        });
-
-        const dragHandle = createEl('div', { className: 'drag-handle', textContent: '☰', draggable: true });
-        dragHandle.ondragstart = (e) => dragStart(e, productId);
-
-        const imageZone = createEl('div', { className: 'product-image-zone' }, [
-            createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
-            createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
-        ]);
-        imageZone.onclick = () => $(`#productImage-${productId}`).click();
-
-        const productDetails = createEl('div', { className: 'product-details' }, [
-            createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
-            createEl('div', { className: 'form-grid-inner' }, [
-                createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
-                createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
-                createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
-                createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
-            ])
-        ]);
-
-        productCard.append(
-            dragHandle,
-            createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
-            createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
-            createEl('div', { className: 'product-actions' }, [
-                createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
-                createButton('🗑️ Usuń', () => removeProduct(productId), 'btn btn-outline btn-danger')
-            ])
-        );
-
-        productCard.addEventListener('dragover', dragOver);
-        productCard.addEventListener('drop', (e) => drop(e, productId));
-        productCard.addEventListener('dragenter', (e) => e.preventDefault());
-
-        return productCard;
-    }
-
-    function updateProductView() {
-        const productsListEl = $('#productsList');
-        if (!productsListEl) return;
-        const emptyStateEl = productsListEl.querySelector('.empty-state');
-
-        if (products.length > 0) {
-            if (emptyStateEl) emptyStateEl.remove();
-        } else if (!emptyStateEl) {
-            productsListEl.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📦</div>
-                    <div class="empty-state-title">Brak produktów</div>
-                    <div class="empty-state-desc">Kliknij "Dodaj produkt" aby rozpocząć</div>
-                </div>
-            `;
+    updateProduct: function(id, field, value) {
+        const product = this.products.find(p => p.id === id);
+        if (product) {
+            product[field] = value;
+            this.renderSummary(); // No need to re-render the whole product list
+            this.setAutosaveStatus('waiting');
         }
-    }
+    },
 
-    function addProduct(productData = {}) {
-        const newId = productData.id || Date.now() + productIdCounter++;
-        products.push(newId);
-        const productCard = createProductCard(newId);
-        $('#productsList').appendChild(productCard);
+    removeProduct: function(id) {
+        this.products = this.products.filter(p => p.id !== id);
+        this.render();
+    },
 
-        Object.entries(productData).forEach(([key, value]) => {
-            const elId = `product${key.charAt(0).toUpperCase() + key.slice(1)}-${newId}`;
-            const el = $(`#${elId}`);
-            if (el && key !== 'id') el.value = value;
-        });
-
-        if (productData.image) {
-            productImages[newId] = productData.image;
-            updateProductImage(newId);
+    duplicateProduct: function(id) {
+        const original = this.products.find(p => p.id === id);
+        if(original) {
+            const newProduct = {...original, id: Date.now()};
+            this.addProduct(newProduct);
         }
-        updateSummary();
-        updateProductView();
-    }
+    },
 
-    function removeProduct(productId) {
-        const productCard = $(`#product-${productId}`);
-        if (productCard) {
-            productCard.remove();
-            products = products.filter(id => id !== productId);
-            delete productImages[productId];
-        }
-        updateProductView();
-        updateSummary();
-    }
-
-    function updateProductImage(productId) {
-        const preview = $(`#productImagePreview-${productId}`);
-        if (preview) {
-            if (productImages[productId]) {
-                preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
-            } else {
-                preview.innerHTML = '📷';
-            }
-        }
-    }
-
-    function duplicateProduct(originalId) {
-        const newId = Date.now() + productIdCounter++;
-        const originalData = {
-            id: newId,
-            name: $(`#productName-${originalId}`)?.value || '',
-            code: $(`#productCode-${originalId}`)?.value || '',
-            qty: $(`#productQty-${originalId}`)?.value || '1',
-            price: $(`#productPrice-${originalId}`)?.value || '0',
-            discount: $(`#productDiscount-${originalId}`)?.value || '0',
-            desc: $(`#productDesc-${originalId}`)?.value || '',
-        };
-        const originalImage = productImages[originalId];
-
-        addProduct(originalData);
-        if (originalImage) {
-            productImages[newId] = originalImage;
-            updateProductImage(newId);
-        }
-    }
-
-    function uploadProductImage(productId, event) {
+    uploadProductImage: function(id, event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
-            productImages[productId] = e.target.result;
-            updateProductImage(productId);
-            UI.Feedback.toast('📸 Zdjęcie załadowane', 'success');
+            const product = this.products.find(p => p.id === id);
+            if (product) {
+                product.image = e.target.result;
+                this.renderProductImage(id);
+                this.setAutosaveStatus('waiting');
+                UI.Feedback.toast('📸 Zdjęcie dodane', 'success');
+            }
         };
         reader.readAsDataURL(file);
-    }
+    },
 
-    function dragStart(event, productId) {
-        draggedElement = $(`#product-${productId}`);
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', productId);
-        setTimeout(() => {
-            if (draggedElement) draggedElement.classList.add('dragging');
-        }, 0);
-    }
+    // --- Rendering ---
 
-    function dragOver(event) {
-        event.preventDefault();
-    }
+    render: function() {
+        this.renderProductsList();
+        this.renderSummary();
+    },
 
-    function drop(event, targetProductId) {
-        event.preventDefault();
-        if (!draggedElement) return;
+    renderProductsList: function() {
+        const container = this.windowEl.querySelector('#productsList');
+        container.innerHTML = ''; // Clear existing
 
-        const draggedId = parseInt(event.dataTransfer.getData('text/plain'));
-        const targetElement = $(`#product-${targetProductId}`);
-
-        if (draggedId !== targetProductId && targetElement) {
-            const container = $('#productsList');
-            const rect = targetElement.getBoundingClientRect();
-            const offsetY = event.clientY - rect.top;
-
-            if (offsetY > rect.height / 2) {
-                container.insertBefore(draggedElement, targetElement.nextSibling);
-            } else {
-                container.insertBefore(draggedElement, targetElement);
-            }
-
-            const draggedIndex = products.indexOf(draggedId);
-            products.splice(draggedIndex, 1);
-            const newNodes = Array.from(container.querySelectorAll('.product-card')).map(node => parseInt(node.id.replace('product-', '')));
-            products = newNodes;
-        }
-
-        draggedElement.classList.remove('dragging');
-        draggedElement = null;
-    }
-
-    function updateSummary() {
-        const tbody = $('#summaryTableBody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        let totalNet = 0;
-
-        const productData = products.map(id => ({
-            name: $(`#productName-${id}`)?.value || '',
-            qty: parseFloat($(`#productQty-${id}`)?.value) || 0,
-            price: parseFloat($(`#productPrice-${id}`)?.value) || 0,
-            discount: parseFloat($(`#productDiscount-${id}`)?.value) || 0,
-        })).filter(p => p.name.trim());
-
-        if (productData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 2rem;">Brak produktów</td></tr>';
-        } else {
-            productData.forEach((p, index) => {
-                const discountedPrice = p.price * (1 - p.discount / 100);
-                const total = p.qty * discountedPrice;
-                totalNet += total;
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${p.name}</td>
-                        <td>${p.qty}</td>
-                        <td>${p.price.toFixed(2)} zł</td>
-                        <td>${p.discount}%</td>
-                        <td>${total.toFixed(2)} zł</td>
-                    </tr>
-                `;
-            });
-        }
-
-        const vat = totalNet * 0.23;
-        const gross = totalNet + vat;
-
-        $('#totalNet').textContent = totalNet.toFixed(2) + ' zł';
-        $('#totalVat').textContent = vat.toFixed(2) + ' zł';
-        $('#totalGross').textContent = gross.toFixed(2) + ' zł';
-    }
-
-    async function generatePDF() {
-        if (!appProfile) {
-            UI.Feedback.show('Błąd', 'Brak aktywnego profilu.', 'error');
+        if (this.products.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📦</div>
+                    <h3 class="empty-state-title">Brak produktów</h3>
+                    <p class="empty-state-desc">Kliknij "Dodaj produkt", aby rozpocząć.</p>
+                </div>`;
             return;
         }
 
-        const getValue = (id) => $(`#${id}`)?.value || '';
+        this.products.forEach(p => {
+            const card = this.createProductCard(p);
+            container.appendChild(card);
+        });
+    },
 
-        const offerData = {
-            number: getValue('offerNumber'),
-            date: getValue('offerDate'),
-            validUntil: getValue('validUntil'),
-            currency: getValue('currency'),
-            paymentTerms: getValue('paymentTerms'),
-            deliveryTime: getValue('deliveryTime'),
-            warranty: getValue('warranty'),
-            deliveryMethod: getValue('deliveryMethod'),
-            buyer: {
-                name: getValue('buyerName'),
-                nip: getValue('buyerNIP'),
-                address: getValue('buyerAddress'),
-                phone: getValue('buyerPhone'),
-                email: getValue('buyerEmail'),
-            },
-            notes: getValue('orderNotes')
-        };
+    createProductCard: function(product) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.id = `product-${product.id}`;
+        card.innerHTML = `
+            <div class="drag-handle" draggable="true">☰</div>
+            <div class="product-content-wrapper">
+                <div class="product-image-zone">
+                    <div class="product-image-preview" id="preview-${product.id}">📷</div>
+                    <input type="file" id="upload-${product.id}" class="hidden" accept="image/*">
+                </div>
+                <div class="product-details">
+                    <div class="form-group">
+                        <label class="form-label">Nazwa produktu</label>
+                        <input type="text" class="form-input" data-field="name" value="${product.name}">
+                    </div>
+                    <div class="form-grid-inner">
+                        <div class="form-group"><label>Kod</label><input type="text" class="form-input" data-field="code" value="${product.code}"></div>
+                        <div class="form-group"><label>Ilość</label><input type="number" class="form-input" data-field="qty" value="${product.qty}"></div>
+                        <div class="form-group"><label>Cena netto</label><input type="number" class="form-input" data-field="price" value="${product.price}"></div>
+                        <div class="form-group"><label>Rabat (%)</label><input type="number" class="form-input" data-field="discount" value="${product.discount}"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Opis produktu</label>
+                <textarea class="form-textarea" data-field="desc" rows="2" placeholder="• Cecha 1\n• Cecha 2">${product.desc}</textarea>
+            </div>
+            <div class="product-actions">
+                <button class="btn btn-outline btn-sm" data-action="duplicate">📋 Duplikuj</button>
+                <button class="btn btn-danger btn-sm" data-action="remove">🗑️ Usuń</button>
+            </div>
+        `;
 
-        const pdfProducts = products.map(id => ({
-            id: id,
-            name: getValue(`productName-${id}`),
-            code: getValue(`productCode-${id}`),
-            qty: getValue(`productQty-${id}`),
-            price: getValue(`productPrice-${id}`),
-            discount: getValue(`productDiscount-${id}`),
-            desc: getValue(`productDesc-${id}`),
-            image: productImages[id] || null,
-        }));
+        // Add event listeners
+        card.querySelector('.product-image-zone').addEventListener('click', () => card.querySelector(`#upload-${product.id}`).click());
+        card.querySelector(`#upload-${product.id}`).addEventListener('change', (e) => this.uploadProductImage(product.id, e));
+        card.querySelector('[data-action="duplicate"]').addEventListener('click', () => this.duplicateProduct(product.id));
+        card.querySelector('[data-action="remove"]').addEventListener('click', () => this.removeProduct(product.id));
 
-        // This is a global element, so document is appropriate
-        document.getElementById('loadingOverlay')?.classList.add('show');
-
-        try {
-            const sellerData = {
-                ...appProfile,
-                fullName: getValue('sellerName'),
-                name: getValue('sellerName'),
-                nip: getValue('sellerNIP'),
-                address: getValue('sellerAddress'),
-                phone: getValue('sellerPhone'),
-                email: getValue('sellerEmail'),
-                bankAccount: getValue('sellerBank'),
-                sellerName: getValue('sellerContact'),
-            };
-
-            const pdf = await PDFManager.generatePDF({
-                orientation: getValue('pdfOrientation'),
-                format: getValue('pdfFormat'),
-                seller: sellerData,
-                products: pdfProducts,
-                offerData: offerData
+        card.querySelectorAll('input, textarea').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
+                this.updateProduct(product.id, e.target.dataset.field, value);
             });
+        });
 
-            const filename = `Oferta_${offerData.number.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        this.renderProductImage(product.id, card);
+        return card;
+    },
+
+    renderProductImage: function(id, parentNode = this.windowEl) {
+        const product = this.products.find(p => p.id === id);
+        const preview = parentNode.querySelector(`#preview-${id}`);
+        if (preview && product) {
+            preview.innerHTML = product.image ? `<img src="${product.image}" alt="Podgląd">` : '📷';
+        }
+    },
+
+    renderSummary: function() {
+        const tbody = this.windowEl.querySelector('#summaryTableBody');
+        tbody.innerHTML = '';
+        let totalNet = 0;
+
+        if (this.products.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-8">Brak produktów</td></tr>';
+            return;
+        }
+
+        this.products.forEach((p, index) => {
+            const netValue = p.qty * (p.price * (1 - p.discount / 100));
+            totalNet += netValue;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${p.name || '<i>Brak nazwy</i>'}</td>
+                <td>${p.qty}</td>
+                <td>${p.price.toFixed(2)} zł</td>
+                <td>${p.discount}%</td>
+                <td>${netValue.toFixed(2)} zł</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        const vatRate = parseFloat(this.windowEl.querySelector('#vatRate').value) / 100;
+        const totalVat = totalNet * vatRate;
+        const totalGross = totalNet + totalVat;
+
+        this.windowEl.querySelector('#totalNet').textContent = `${totalNet.toFixed(2)} zł`;
+        this.windowEl.querySelector('#totalVat').textContent = `${totalVat.toFixed(2)} zł`;
+        this.windowEl.querySelector('#totalGross').textContent = `${totalGross.toFixed(2)} zł`;
+    },
+
+    // --- Actions ---
+
+    clearForm: async function() {
+        if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić cały formularz? Niezapisane zmiany zostaną utracone.')) {
+            this.products = [];
+            this.generateOfferNumber();
+            this.setTodayDate();
+            this.render();
+            UI.Feedback.toast('🗑️ Formularz wyczyszczony', 'info');
+        }
+    },
+
+    generatePDF: async function() {
+        const getValue = (id) => this.windowEl.querySelector(`#${id}`).value;
+        const offerData = {
+            number: getValue('offerNumber'), date: getValue('offerDate'), validUntil: getValue('validUntil'),
+            currency: getValue('currency'), paymentTerms: getValue('paymentTerms'), deliveryTime: getValue('deliveryTime'),
+            warranty: getValue('warranty'), deliveryMethod: getValue('deliveryMethod'), notes: getValue('orderNotes'),
+            buyer: { name: getValue('buyerName'), nip: getValue('buyerNIP'), address: getValue('buyerAddress'),
+                     phone: getValue('buyerPhone'), email: getValue('buyerEmail') }
+        };
+        const sellerData = { ...this.profile, fullName: getValue('sellerName'), nip: getValue('sellerNIP'),
+                             address: getValue('sellerAddress'), phone: getValue('sellerPhone'), email: getValue('sellerEmail'),
+                             bankAccount: getValue('sellerBank'), sellerName: getValue('sellerContact') };
+
+        document.getElementById('loadingOverlay')?.classList.add('show');
+        try {
+            const pdf = await PDFManager.generatePDF({
+                orientation: getValue('pdfOrientation'), format: getValue('pdfFormat'),
+                vatRate: parseFloat(getValue('vatRate')),
+                seller: sellerData, products: this.products, offerData: offerData
+            });
+            const filename = `Oferta_${offerData.number.replace(/[\/\\?%*:|"<>]/g, '-')}.pdf`;
             PDFManager.savePDF(pdf, filename);
-
-            UI.Feedback.toast('PDF wygenerowany!', 'success');
+            UI.Feedback.toast('PDF wygenerowany pomyślnie!', 'success');
         } catch (error) {
             console.error('PDF Generation Error:', error);
-            UI.Feedback.show('Błąd', 'Nie udało się wygenerować PDF: ' + error.message, 'error');
+            UI.Feedback.show('Błąd PDF', 'Wystąpił błąd podczas generowania dokumentu: ' + error.message, 'error');
         } finally {
             document.getElementById('loadingOverlay')?.classList.remove('show');
         }
-    }
+    },
 
-    function collectOfferData() {
-        if (!appProfile) return null;
-        const getValue = (id) => $(`#${id}`)?.value || '';
+    // --- Persistence (Save/Load/Autosave) ---
+
+    collectOfferData: function() {
+        const getValue = (id) => this.windowEl.querySelector(`#${id}`).value;
         return {
             id: getValue('offerNumber') || `offer_${Date.now()}`,
-            profileKey: appProfile.key,
-            offer: {
-                number: getValue('offerNumber'),
-                date: getValue('offerDate'),
-                validUntil: getValue('validUntil'),
-                currency: getValue('currency')
-            },
-            buyer: {
-                name: getValue('buyerName'),
-                nip: getValue('buyerNIP'),
-                address: getValue('buyerAddress'),
-                phone: getValue('buyerPhone'),
-                email: getValue('buyerEmail')
-            },
-            terms: {
-                payment: getValue('paymentTerms'),
-                delivery: getValue('deliveryTime'),
-                warranty: getValue('warranty'),
-                deliveryMethod: getValue('deliveryMethod')
-            },
-            products: products.map(id => ({
-                id,
-                name: getValue(`productName-${id}`),
-                code: getValue(`productCode-${id}`),
-                qty: getValue(`productQty-${id}`),
-                price: getValue(`productPrice-${id}`),
-                discount: getValue(`productDiscount-${id}`),
-                desc: getValue(`productDesc-${id}`),
-                image: productImages[id] || null
-            })),
+            profileKey: this.profile.key,
+            offer: { number: getValue('offerNumber'), date: getValue('offerDate'), validUntil: getValue('validUntil'), currency: getValue('currency') },
+            buyer: { name: getValue('buyerName'), nip: getValue('buyerNIP'), address: getValue('buyerAddress'), phone: getValue('buyerPhone'), email: getValue('buyerEmail') },
+            terms: { payment: getValue('paymentTerms'), delivery: getValue('deliveryTime'), warranty: getValue('warranty'), deliveryMethod: getValue('deliveryMethod') },
+            products: this.products,
             timestamp: new Date().toISOString()
         };
-    }
+    },
 
-    async function autosaveOffer() {
-        const offerData = collectOfferData();
-        if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
+    setAutosaveStatus: function(status) {
+        this.autosaveStatus = status;
+        const indicator = this.windowEl.querySelector('#autosaveStatus');
+        if (!indicator) return;
 
+        switch (status) {
+            case 'waiting': indicator.innerHTML = ' zmiany...'; break;
+            case 'saving': indicator.innerHTML = 'Zapisywanie...'; break;
+            case 'success': indicator.innerHTML = 'Zapisano ✔'; break;
+            case 'error': indicator.innerHTML = 'Błąd zapisu ❌'; break;
+            default: indicator.innerHTML = '';
+        }
+    },
+
+    autosaveOffer: async function() {
+        if (this.autosaveStatus !== 'waiting') return;
+        const offerData = this.collectOfferData();
+        if (!offerData.offer.number || !offerData.buyer.name) return;
+
+        this.setAutosaveStatus('saving');
         try {
             await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+            this.setAutosaveStatus('success');
         } catch (error) {
-            console.error('Autosave offer error:', error);
+            console.error('Autosave error:', error);
+            this.setAutosaveStatus('error');
         }
-    }
+    },
 
-    async function saveOffer() {
-        const offerData = collectOfferData();
-        if (!offerData) {
-            UI.Feedback.show('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
-            return;
+    saveOffer: async function() {
+        this.autosaveStatus = 'waiting'; // Force save
+        await this.autosaveOffer();
+        if (this.autosaveStatus === 'success') {
+            UI.Feedback.toast('Oferta została pomyślnie zapisana.', 'success');
         }
+    },
 
-        const saveBtn = $('#saveOfferBtn');
-        const originalBtnHTML = saveBtn.innerHTML;
-
+    loadOffer: async function() {
         try {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
-            await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-            UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
-        } catch (error) {
-            console.error('Save offer error:', error);
-            UI.Feedback.show('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalBtnHTML;
-        }
-    }
-
-    async function loadOffer() {
-        if (!appProfile) {
-            UI.Feedback.show('Błąd', 'Zaloguj się, aby wczytać oferty.', 'error');
-            return;
-        }
-
-        try {
-            const profileOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', appProfile.key);
-            profileOffers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-            if (profileOffers.length === 0) {
+            const offers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', this.profile.key);
+            offers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            if (offers.length === 0) {
                 UI.Feedback.toast('Brak zapisanych ofert dla tego profilu.', 'info');
                 return;
             }
-
-            const listHTML = profileOffers.map(offer => `
-                <div class="offer-history-item" data-offer-id="${offer.id}">
-                    <div class="offer-number">${offer.offer?.number || offer.id}</div>
-                    <div class="offer-buyer">${offer.buyer?.name || 'Brak nabywcy'}</div>
-                    <div class="offer-date">${new Date(offer.timestamp).toLocaleString('pl-PL')}</div>
-                    <div class="offer-products">${offer.products?.length || 0} prod.</div>
-                </div>
-            `).join('');
-
-            UI.Modal.show('Wczytaj ofertę', `<div class="offers-history-list">${listHTML}</div>`, 'loadOfferModal');
-            // This needs to use document because modal is outside the app window
+            const listHTML = offers.map(o => `
+                <div class="offer-history-item" data-id="${o.id}">
+                    <strong class="offer-number">${o.offer.number}</strong>
+                    <span>${o.buyer.name}</span>
+                    <span class="text-muted">${new Date(o.timestamp).toLocaleString('pl-PL')}</span>
+                </div>`).join('');
+            UI.Modal.show('Wczytaj Ofertę', `<div class="offers-history-list">${listHTML}</div>`, 'loadOfferModal');
             document.querySelectorAll('.offer-history-item').forEach(item => {
-                item.addEventListener('click', () => loadOfferFromHistory(item.dataset.offerId));
+                item.addEventListener('click', () => this.applyLoadedOffer(item.dataset.id));
             });
-
         } catch (error) {
-            console.error('Load offer error:', error);
-            UI.Feedback.show('Błąd wczytywania', 'Nie udało się wczytać historii ofert.', 'error');
+            UI.Feedback.show('Błąd', 'Nie udało się wczytać historii ofert.', 'error');
         }
+    },
+
+    applyLoadedOffer: async function(id) {
+        const offer = await StorageSystem.db.get(StorageSystem.db.STORES.offers, id);
+        if (!offer) return;
+
+        const setValue = (selector, value) => { this.windowEl.querySelector(selector).value = value || ''; };
+        setValue('#offerNumber', offer.offer.number);
+        setValue('#offerDate', offer.offer.date);
+        setValue('#validUntil', offer.offer.validUntil);
+        setValue('#currency', offer.offer.currency);
+        setValue('#buyerName', offer.buyer.name);
+        setValue('#buyerNIP', offer.buyer.nip);
+        setValue('#buyerAddress', offer.buyer.address);
+        setValue('#buyerPhone', offer.buyer.phone);
+        setValue('#buyerEmail', offer.buyer.email);
+        setValue('#paymentTerms', offer.terms.payment);
+        setValue('#deliveryTime', offer.terms.delivery);
+        setValue('#warranty', offer.terms.warranty);
+        setValue('#deliveryMethod', offer.terms.deliveryMethod);
+
+        this.products = offer.products || [];
+        this.render();
+        UI.Modal.hide('loadOfferModal');
+        UI.Feedback.toast(`Załadowano ofertę ${id}.`, 'success');
+    },
+
+    // --- Utilities ---
+    populateSellerForm: function() {
+        const setValue = (id, value) => { this.windowEl.querySelector(`#${id}`).value = value || ''; };
+        setValue('sellerName', this.profile.fullName);
+        setValue('sellerNIP', this.profile.nip);
+        setValue('sellerAddress', this.profile.address);
+        setValue('sellerPhone', this.profile.phone);
+        setValue('sellerEmail', this.profile.email);
+        setValue('sellerContact', this.profile.sellerName);
+        setValue('sellerBank', this.profile.bankAccount);
+    },
+
+    generateOfferNumber: function() {
+        const d = new Date();
+        const num = `OF/${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+        this.windowEl.querySelector('#offerNumber').value = num;
+    },
+
+    setTodayDate: function() {
+        const today = new Date();
+        this.windowEl.querySelector('#offerDate').value = today.toISOString().split('T')[0];
+        today.setDate(today.getDate() + 30);
+        this.windowEl.querySelector('#validUntil').value = today.toISOString().split('T')[0];
     }
-
-    async function loadOfferFromHistory(offerId) {
-        try {
-            const offer = await StorageSystem.db.get(StorageSystem.db.STORES.offers, offerId);
-            if (!offer) return;
-
-            products = [];
-            productImages = {};
-            $('#productsList').innerHTML = '';
-
-            const fields = {
-                'offerNumber': offer.offer?.number, 'offerDate': offer.offer?.date, 'validUntil': offer.offer?.validUntil,
-                'currency': offer.offer?.currency, 'buyerName': offer.buyer?.name, 'buyerNIP': offer.buyer?.nip,
-                'buyerAddress': offer.buyer?.address, 'buyerPhone': offer.buyer?.phone, 'buyerEmail': offer.buyer?.email,
-                'paymentTerms': offer.terms?.payment, 'deliveryTime': offer.terms?.delivery, 'warranty': offer.terms?.warranty,
-                'deliveryMethod': offer.terms?.deliveryMethod
-            };
-            Object.entries(fields).forEach(([id, value]) => {
-                const el = $(`#${id}`);
-                if (el && value) el.value = value;
-            });
-
-            if (offer.products?.length > 0) {
-                offer.products.forEach(p => {
-                    addProduct(p);
-                    const newId = products[products.length - 1];
-                    if(p.image) {
-                         productImages[newId] = p.image;
-                         updateProductImage(newId);
-                    }
-                });
-            }
-            updateSummary();
-            UI.Modal.hide('loadOfferModal');
-            UI.Feedback.toast(`Załadowano ofertę ${offer.id}.`, 'success');
-        } catch (error) {
-            console.error('Load from history error:', error);
-            UI.Feedback.show('Błąd', 'Nie udało się wczytać wybranej oferty.', 'error');
-        }
-    }
-
-    function generateOfferNumber() {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        $('#offerNumber').value = `OF/${year}/${month}/${day}/${random}`;
-    }
-
-    function setTodayDate() {
-        const today = new Date().toISOString().split('T')[0];
-        $('#offerDate').value = today;
-        const validDate = new Date();
-        validDate.setDate(validDate.getDate() + 30);
-        $('#validUntil').value = validDate.toISOString().split('T')[0];
-    }
-
-    window.OffersApp = { init };
-})();
+};
