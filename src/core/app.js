@@ -30,23 +30,9 @@
     // ============================================
 
     const PDFManager = (() => {
-        const loadScript = (src) => new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = () => reject(new Error(`Script load error for ${src}`));
-            document.head.appendChild(script);
-        });
-
         const generatePDF = async (options) => {
             try {
-                await Promise.all([
-                    loadScript('src/assets/vendor/pdfmake.min.js'),
-                    loadScript('src/assets/vendor/html2canvas.min.js'),
-                    loadScript('src/assets/vendor/jspdf.umd.min.js')
-                ]);
-
-                console.log('All PDF libraries loaded.');
+                console.log('All PDF libraries should be pre-loaded.');
                 const {
                     orientation = 'portrait', format = 'a4', seller = {}, offerData = {}
                 } = options;
