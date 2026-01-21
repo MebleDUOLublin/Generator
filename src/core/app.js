@@ -206,11 +206,40 @@
     // ============================================
     // CORE API & OTHER FUNCTIONS
     // ============================================
-    const PDFManager = (() => { /* ... Full PDF Manager code ... */
-        return {
-            generatePDF: async (options) => { /* Stub */ console.log("Generating PDF..."); },
-            savePDF: (pdf, filename) => { /* Stub */ console.log("Saving PDF..."); }
+    const PDFManager = (() => {
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error(`Script load error for ${src}`));
+            document.head.appendChild(script);
+        });
+
+        const generatePDF = async (options) => {
+            if (typeof pdfMake === 'undefined') {
+                await loadScript('src/assets/vendor/pdfmake.min.js');
+            }
+            if (typeof vfs_fonts === 'undefined') {
+                 await loadScript('src/assets/vendor/vfs_fonts.js');
+            }
+            pdfMake.vfs = vfs_fonts.pdfMake.vfs;
+
+            // ... Full implementation of generatePDF ...
+            const docDefinition = {
+                content: [
+                    'First paragraph',
+                    'Another paragraph, this time a little bit longer to make sure, this line will be divided into at least two lines'
+                ]
+            };
+
+            return pdfMake.createPdf(docDefinition);
         };
+
+        const savePDF = (pdf, filename) => {
+            pdf.download(filename);
+        };
+
+        return { generatePDF, savePDF };
     })();
     const UI = (() => {
         const toast = (message, type = 'info', duration = 3000) => {
@@ -270,9 +299,11 @@
         const desktop = document.getElementById('desktop');
         if (!desktop) return;
         const wallpapers = {
-            default: 'url("src/assets/userData/wallpapers/default.jpg")',
+            default: 'url("src/assets/userData/wallpapers/wallpaper1.jpg")',
             wallpaper1: 'url("src/assets/userData/wallpapers/wallpaper1.jpg")',
             wallpaper2: 'url("src/assets/userData/wallpapers/wallpaper2.jpg")',
+            wallpaper3: 'url("src/assets/userData/wallpapers/wallpaper3.jpg")',
+            wallpaper4: 'url("src/assets/userData/wallpapers/wallpaper4.jpg")',
         };
         if(wallpapers[wallpaper]) {
             desktop.style.backgroundImage = wallpapers[wallpaper];
