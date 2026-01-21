@@ -51,19 +51,19 @@ const PluginLoader = {
             // Load JS content
             const jsPath = `${app.basePath}/${app.entrypoints.js}`;
 
-            // If script has not been loaded before, load it
+            // The script loading logic is now simplified.
+            // The check `!this.loadedScripts.has(jsPath)` is the key.
             if (!this.loadedScripts.has(jsPath)) {
-                await new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = jsPath;
-                    script.onload = () => {
-                        this.loadedScripts.add(jsPath);
-                        console.log(`Script loaded and registered: ${jsPath}`);
-                        resolve();
-                    };
-                    script.onerror = () => reject(new Error(`Failed to load script: ${jsPath}`));
-                    document.head.appendChild(script);
-                });
+                try {
+                    // Using a more robust async/await pattern for script loading
+                    await this.loadScriptAsync(jsPath);
+                    this.loadedScripts.add(jsPath);
+                    console.log(`Script loaded and registered: ${jsPath}`);
+                } catch (error) {
+                    console.error(`Failed to load script: ${jsPath}`, error);
+                    // Re-throw to be caught by the outer catch block
+                    throw error;
+                }
             }
 
             return { html: htmlContent, jsPath: jsPath };
@@ -72,6 +72,16 @@ const PluginLoader = {
             console.error(`Error loading plugin assets for "${appId}":`, error);
             return null;
         }
+    },
+
+    loadScriptAsync(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 };
 
