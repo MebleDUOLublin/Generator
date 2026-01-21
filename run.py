@@ -64,9 +64,17 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             # Fallback for other POST requests
             super().do_POST()
 
+    def log_request(self, code='-', size='-'):
+        # Log the full path for debugging 404s
+        full_path = os.path.join(BASE_DIR, self.path.lstrip('/'))
+        if code == 404:
+            logger.warning(f"HTTP 404 - File not found. Path: {self.path} -> Full resolved path: {full_path}")
+        else:
+            logger.info(f'"{self.requestline}" {code} {size}')
+
     def log_message(self, format, *args):
-        # Override to direct server logs to our logger
-        logger.info(f"HTTP Request: {self.address_string()} - {args[0]} {args[1]}")
+        # Silencing default log_message to avoid duplicate logs
+        pass
 
 def open_browser():
     """Opens the web browser in a separate thread."""
