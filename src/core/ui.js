@@ -428,6 +428,12 @@ const UIFeedback = (() => {
         return container;
     };
 
+    const showError = (title, message) => {
+        // For now, showError is a wrapper around the toast function,
+        // but it could be replaced with a more prominent modal dialog in the future.
+        toast(`${title}: ${message}`, 'error', 5000);
+    };
+
     const confirm = (message) => {
         return new Promise((resolve) => {
             const backdrop = document.createElement('div');
@@ -488,7 +494,8 @@ const UIFeedback = (() => {
 
     return {
         toast,
-        confirm
+        confirm,
+        showError,
     };
 })();
 

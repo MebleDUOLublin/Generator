@@ -1,4 +1,3 @@
-
 # Pesteczka OS - Modułowy System Biznesowy
 
 Pesteczka OS to lekkie, modułowe środowisko "systemu operacyjnego" działające w przeglądarce, zaprojektowane do uruchamiania zestawu aplikacji biznesowych. Jego główną filozofią jest architektura oparta na wtyczkach (pluginach), co pozwala na łatwą rozbudowę i utrzymanie.
@@ -9,25 +8,23 @@ Pesteczka OS to lekkie, modułowe środowisko "systemu operacyjnego" działając
 
 ## Kluczowe Funkcje
 
-*   **Modułowa Architektura Oparta na Wtyczkach:** Cały system jest zbudowany wokół wtyczek. Każda aplikacja (jak Generator Ofert czy Ustawienia) jest samodzielnym modułem, co ułatwia rozbudowę i konserwację systemu.
-*   **System Wielu Profili:** Z łatwością zarządzaj różnymi podmiotami biznesowymi. Każdy profil posiada własne dane, branding (logo, kolorystykę) oraz zestaw włączonych aplikacji, co pozwala na dostosowanie środowiska do indywidualnych potrzeb.
-*   **Dynamiczny Interfejs Użytkownika:** Pulpit, pasek zadań i menu start są generowane dynamicznie na podstawie aplikacji włączonych dla aktualnie zalogowanego profilu.
-*   **Generator Ofert:** Potężna, wbudowana aplikacja do tworzenia, zarządzania i generowania profesjonalnie wyglądających ofert w formacie PDF dla klientów.
-*   **Lekki i Szybki:** Zbudowany w całości przy użyciu czystego JavaScriptu, HTML i CSS, co zapewnia błyskawiczne i responsywne działanie bez potrzeby korzystania z ciężkich frameworków.
-*   **Działanie Offline:** Wykorzystuje IndexedDB do przechowywania wszystkich danych lokalnie w przeglądarce, dzięki czemu aplikacja jest w pełni funkcjonalna bez połączenia z internetem.
+*   **W pełni modułowa architektura:** System został zaprojektowany od podstaw z myślą o modułowości. Każda aplikacja to niezależna wtyczka, co umożliwia łatwe dodawanie nowych funkcjonalności bez ingerencji w rdzeń systemu.
+*   **Dynamiczne ładowanie aplikacji:** Pesteczka OS automatycznie wykrywa i ładuje wszystkie dostępne aplikacje przy starcie. Wystarczy dodać folder z nową aplikacją, a system sam zajmie się resztą.
+*   **System profili:** Umożliwia zarządzanie wieloma firmami lub użytkownikami w jednej instalacji. Każdy profil ma własne logo, motyw kolorystyczny, dane oraz przypisane aplikacje.
+*   **Zaawansowany generator ofert:** Jedna z kluczowych aplikacji, która pozwala na intuicyjne tworzenie, zarządzanie i eksportowanie profesjonalnych ofert do formatu PDF.
+*   **Lekkość i szybkość:** Dzięki zastosowaniu czystego JavaScriptu, HTML i CSS, system działa niezwykle szybko i responsywnie, nawet na starszym sprzęcie.
+*   **Praca w trybie offline:** Wszystkie dane przechowywane są lokalnie w przeglądarce dzięki IndexedDB, co zapewnia pełną funkcjonalność nawet bez dostępu do internetu.
 
 ## Pierwsze Kroki
 
-Postępuj zgodnie z poniższymi instrukcjami, aby uruchomić projekt na swojej lokalnej maszynie w celach deweloperskich i testowych.
+Aby uruchomić projekt lokalnie, postępuj zgodnie z poniższymi krokami.
 
-### Wymagania Wstępne
+### Wymagania
 
-Będziesz potrzebować następującego oprogramowania zainstalowanego na swoim systemie:
+*   **Python 3.x:** Niezbędny do uruchomienia lokalnego serwera deweloperskiego.
+*   **Node.js i npm:** Używane do zarządzania zależnościami, np. do generowania plików PDF.
 
-*   **Python 3.x:** Wymagany do uruchomienia lokalnego serwera deweloperskiego.
-*   **Node.js i npm:** Wymagane do zarządzania zależnościami projektu (takimi jak `pdfmake`).
-
-### Instalacja i Uruchomienie
+### Instalacja
 
 1.  **Sklonuj repozytorium:**
     ```sh
@@ -36,62 +33,54 @@ Będziesz potrzebować następującego oprogramowania zainstalowanego na swoim s
     ```
 
 2.  **Zainstaluj zależności:**
-    Projekt wykorzystuje kilka pakietów Node.js do obsługi takich funkcji jak generowanie PDF. Zainstaluj je za pomocą npm:
     ```sh
     npm install
     ```
 
-3.  **Uruchom serwer deweloperski:**
-    Prosty serwer webowy w Pythonie jest dołączony, aby udostępniać aplikację lokalnie.
+3.  **Uruchom serwer:**
     ```sh
     python3 run.py
     ```
 
 4.  **Otwórz w przeglądarce:**
-    Gdy serwer jest uruchomiony, możesz uzyskać dostęp do aplikacji, przechodząc pod adres:
-    [http://localhost:8080](http://localhost:8080)
+    Aplikacja będzie dostępna pod adresem [http://localhost:8080](http://localhost:8080).
 
 ## Struktura Projektu
 
-Projekt jest zorganizowany z wyraźnym podziałem na rdzeń systemu (core) i jego aplikacje:
+Projekt ma przejrzystą strukturę, która oddziela rdzeń systemu od poszczególnych aplikacji:
 
 ```
 /
 ├── src/
-│   ├── apps/               # Zawiera wszystkie samodzielne wtyczki (aplikacje)
-│   │   └── offers/         # Przykładowa aplikacja: Generator Ofert
-│   ├── assets/             # Współdzielone zasoby statyczne (CSS, loga, czcionki)
-│   └── core/               # "Mikrojądro" systemu (logika aplikacji, przechowywanie danych, UI)
-├── vendor/                 # Biblioteki zewnętrzne (np. pdfmake)
-├── index.html              # Główna powłoka aplikacji
-├── profiles.json           # Domyślne dane profili użytkowników/firm
-└── run.py                  # Prosty serwer w Pythonie do celów deweloperskich
+│   ├── apps/               # Katalog na wszystkie aplikacje (wtyczki)
+│   │   └── offers/         # Przykład aplikacji do generowania ofert
+│   ├── assets/             # Wspólne zasoby: style, czcionki, obrazki
+│   └── core/               # Rdzeń systemu: zarządzanie oknami, wtyczkami, danymi
+├── index.html              # Główny plik HTML
+├── profiles.json           # Domyślna konfiguracja profili
+└── run.py                  # Serwer deweloperski w Pythonie
 ```
 
-## Tworzenie Nowej Aplikacji (Wtyczki)
+## Tworzenie Nowej Aplikacji
 
-Aby rozszerzyć system, możesz stworzyć własną aplikację. System automatycznie wykryje każdą nową wtyczkę umieszczoną w katalogu `src/apps/`.
+Dzięki dynamicznemu ładowaniu, tworzenie nowych aplikacji jest niezwykle proste.
 
-1.  **Stwórz Katalog:** Dodaj nowy folder w `src/apps/`. Nazwa folderu jest unikalnym ID Twojej aplikacji (np. `moja-nowa-aplikacja`).
+1.  **Stwórz nowy folder** w katalogu `src/apps/`. Nazwa folderu będzie identyfikatorem Twojej aplikacji (np. `faktury`).
 
-2.  **Stwórz `manifest.json`:** Ten plik opisuje Twoją aplikację dla systemu operacyjnego.
+2.  **Dodaj plik `manifest.json`:** Jest to plik konfiguracyjny, który informuje system o Twojej aplikacji.
 
     ```json
     {
-      "id": "moja-nowa-aplikacja",
-      "name": "Moja Nowa Aplikacja",
-      "description": "Krótki opis aplikacji.",
-      "icon": "🚀",
+      "id": "faktury",
+      "name": "Faktury",
+      "description": "Aplikacja do zarządzania fakturami.",
+      "icon": "📄",
       "entrypoints": { "html": "ui.html", "js": "main.js" }
     }
     ```
 
-3.  **Stwórz `ui.html`:** Ten plik zawiera wyłącznie kod HTML dla obszaru treści Twojej aplikacji.
+3.  **Stwórz plik `ui.html`:** Będzie on zawierał strukturę HTML Twojej aplikacji.
 
-4.  **Stwórz `main.js`:** Ten plik zawiera logikę Twojej aplikacji. Musi on eksportować globalny obiekt (np. `window.MojaNowaAplikacjaApp`) z funkcją `init(profil, elementOkna)`.
+4.  **Stwórz plik `main.js`:** Tutaj umieścisz całą logikę aplikacji. Pamiętaj, aby na końcu pliku zdefiniować globalny obiekt, np. `window.FakturyApp`, który będzie zawierał metodę `init(profil, elementOkna)`.
 
-System automatycznie załaduje Twoją aplikację przy następnym uruchomieniu. Wystarczy, że włączysz ją w pliku `profiles.json` dla wybranego profilu.
-
-## Budowanie Wersji Produkcyjnej
-
-Obecnie projekt jest przeznaczony do użytku deweloperskiego i bezpośredniego uruchamiania z serwera WWW. Proces budowania samodzielnego pliku wykonywalnego (np. przy użyciu Electron) jest planowany w przyszłości.
+Po wykonaniu tych kroków, Twoja aplikacja zostanie automatycznie załadowana przy następnym uruchomieniu systemu. Aby ją aktywować dla wybranego profilu, dodaj jej `id` do tablicy `enabledApps` w pliku `profiles.json`.

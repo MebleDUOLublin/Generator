@@ -314,7 +314,8 @@ async function loginAs(profileKey) {
         currentProfile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
 
         if (!currentProfile) {
-            UI.Feedback.show('Błąd', 'Profil nie znaleziony', 'error');
+            // Use the new, standardized error display
+            UI.Feedback.showError('Błąd logowania', 'Nie znaleziono wybranego profilu.');
             return;
         }
 
@@ -347,7 +348,7 @@ async function loginAs(profileKey) {
         renderUIForProfile();
     } catch (error) {
         console.error('Login failed:', error);
-        UI.Feedback.show('Błąd logowania', 'Nie można załadować profilu: ' + error.message, 'error');
+        UI.Feedback.showError('Błąd logowania', `Nie można załadować profilu: ${error.message}`);
     }
 }
 
