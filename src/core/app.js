@@ -480,27 +480,39 @@ async function openWindow(windowId) {
     if (!contentArea.classList.contains('loaded')) {
         const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
 
-        if (pluginAssets && pluginAssets.html) {
+        if (pluginAssets && pluginAssets.html && pluginAssets.appObject) {
             contentArea.innerHTML = pluginAssets.html;
             contentArea.classList.add('loaded');
 
-            // Wait for the next frame to ensure the new DOM is queryable
+            // Wait for the next frame to ensure the new DOM is queryable and rendered
             await new Promise(r => requestAnimationFrame(r));
 
+            // DEV MODE: Wrap init in a try-catch to prevent one app from crashing the entire OS.
             try {
-                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
-                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
-                    console.log(`Initializing plugin: ${appObjectName}...`);
-                    // Pass both the profile and the window element to the init function
-                    window[appObjectName].init(currentProfile, win);
+                if (typeof pluginAssets.appObject.init === 'function') {
+                    console.log(`Initializing plugin: ${windowId}...`);
+                    pluginAssets.appObject.init(currentProfile, win);
                 } else {
-                     console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
+                    throw new Error(`Plugin object does not have an init() method.`);
                 }
-            } catch (e) {
-                console.error(`Error initializing plugin ${windowId}:`, e);
+            } catch (error) {
+                console.error(`ERROR INITIALIZING PLUGIN: ${windowId}`, error);
+                contentArea.innerHTML = `<div style="padding: 20px; text-align: center; color: #ff6b6b; font-family: 'JetBrains Mono', monospace;">
+                    <strong style="font-size: 1.2em; color: #f00;">Błąd Aplikacji</strong><br><br>
+                    <p style="text-align: left; margin-bottom: 1em;">Wystąpił błąd podczas uruchamiania aplikacji "${windowId}".</p>
+                    <pre style="background: #2d2d2d; color: #ccc; padding: 15px; border-radius: 8px; text-align: left; font-size: 0.9em; white-space: pre-wrap; word-break: break-all;">${error.stack || error.message}</pre>
+                </div>`;
+                // Also show a non-blocking toast notification
+                if (window.UI && window.UI.Feedback) {
+                    UI.Feedback.toast(`Błąd ładowania aplikacji: ${windowId}`, 'error');
+                }
             }
+
         } else {
-            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+            contentArea.innerHTML = `<div style="padding: 20px; text-align: center; color: #ff6b6b;">
+                <strong>Błąd Aplikacji</strong><br>
+                Nie można było załadować zasobów dla "${windowId}". Sprawdź konsolę (F12), aby uzyskać więcej informacji.
+            </div>`;
         }
     }
     

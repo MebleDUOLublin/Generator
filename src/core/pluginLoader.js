@@ -8,40 +8,40 @@ const PluginLoader = {
     },
 
     async discoverPlugins() {
-        // In a real Node.js/Electron app, we'd use the 'fs' module here.
-        // For this browser-based version, we'll simulate discovery by
-        // fetching a manifest list. In a future step, this could be
-        // a `manifest-list.json` file. For now, we hardcode the known plugins.
-
-        const pluginManifestPaths = [
-            'src/apps/settings/manifest.json',
-            'src/apps/offers/manifest.json',
-            'src/apps/dashboard/manifest.json',
-            'src/apps/snake/manifest.json',
-            'src/apps/domator/manifest.json'
-        ];
-
-        const apps = [];
-
-        for (const path of pluginManifestPaths) {
-            try {
-                const response = await fetch(path);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch manifest at ${path}: ${response.statusText}`);
-                }
-                const manifest = await response.json();
-
-                // Store the path to the app's root directory for later use
-                manifest.basePath = path.substring(0, path.lastIndexOf('/'));
-
-                apps.push(manifest);
-            } catch (error) {
-                console.error(`Error loading plugin from ${path}:`, error);
-                // In DEV_MODE, we could show a toast notification here.
+        console.log('Discovering plugins from API...');
+        try {
+            const response = await fetch('/api/apps');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch app list: ${response.statusText}`);
             }
-        }
+            const pluginManifestPaths = await response.json();
+            console.log('Found manifests:', pluginManifestPaths);
 
-        return apps;
+            const apps = [];
+            for (const path of pluginManifestPaths) {
+                try {
+                    const manifestResponse = await fetch(path);
+                    if (!manifestResponse.ok) {
+                        throw new Error(`Failed to fetch manifest at ${path}`);
+                    }
+                    const manifest = await manifestResponse.json();
+                    manifest.basePath = path.substring(0, path.lastIndexOf('/'));
+                    apps.push(manifest);
+                } catch (error) {
+                    console.error(`Error loading individual plugin from ${path}:`, error);
+                }
+            }
+            return apps;
+        } catch (error) {
+            console.error('Failed to discover plugins:', error);
+            // Fallback to a hardcoded list or show a critical error
+            UI.Feedback.show(
+                'Błąd Krytyczny',
+                'Nie można załadować listy aplikacji z serwera. Upewnij się, że serwer (`run.py`) jest uruchomiony.',
+                'error'
+            );
+            return []; // Return empty array on failure
+        }
     },
 
     async loadPlugin(appId) {
@@ -72,14 +72,22 @@ const PluginLoader = {
             await new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = jsPath;
-                script.type = 'text/javascript'; // Using module could create scope issues, stick to simple script
+                script.type = 'text/javascript';
                 script.onload = () => resolve();
                 script.onerror = () => reject(new Error(`Failed to load script: ${jsPath}`));
                 document.head.appendChild(script);
             });
             // --- END FIX ---
 
-            return { html: htmlContent, jsPath: jsPath };
+            // Construct the conventional app object name (e.g., "settings" -> "SettingsApp")
+            const appObjectName = `${appId.charAt(0).toUpperCase() + appId.slice(1)}App`;
+            const appObject = window[appObjectName];
+
+            if (!appObject) {
+                console.warn(`Plugin ${appObjectName} loaded, but the main object was not found on the window.`);
+            }
+
+            return { html: htmlContent, appObject: appObject };
 
         } catch (error) {
             console.error(`Error loading plugin assets for "${appId}":`, error);
