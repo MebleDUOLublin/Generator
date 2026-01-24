@@ -6,6 +6,7 @@ import threading
 import sys
 import logging
 from logging.handlers import RotatingFileHandler
+import json
 
 # --- Setup Logging ---
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -43,6 +44,31 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # The directory is set here, using the globally determined BASE_DIR
         super().__init__(*args, directory=BASE_DIR, **kwargs)
+
+    def do_GET(self):
+        if self.path == '/api/apps':
+            self.list_apps()
+        else:
+            super().do_GET()
+
+    def list_apps(self):
+        apps_dir = os.path.join(BASE_DIR, 'src', 'apps')
+        manifests = []
+        try:
+            for app_name in os.listdir(apps_dir):
+                manifest_path = os.path.join(apps_dir, app_name, 'manifest.json')
+                if os.path.isfile(manifest_path):
+                    # We need to return the web-accessible path, not the filesystem path
+                    web_path = f'src/apps/{app_name}/manifest.json'
+                    manifests.append(web_path)
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(manifests).encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Failed to list apps: {e}")
+            self.send_error(500, "Internal Server Error")
 
     def do_POST(self):
         if self.path == '/shutdown':

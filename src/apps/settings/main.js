@@ -35,6 +35,7 @@ function setupEventListeners() {
         preview.addEventListener('click', () => {
             if (window.changeWallpaper) {
                 window.changeWallpaper(preview.dataset.wallpaper);
+                UI.Feedback.toast('Zmieniono tapetę!', 'success');
             }
             document.querySelectorAll('.wallpaper-preview').forEach(p => p.classList.remove('active'));
             preview.classList.add('active');

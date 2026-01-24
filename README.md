@@ -1,4 +1,3 @@
-
 # Pesteczka OS - Modułowy System Biznesowy
 
 Pesteczka OS to lekkie, modułowe środowisko "systemu operacyjnego" działające w przeglądarce, zaprojektowane do uruchamiania zestawu aplikacji biznesowych. Jego główną filozofią jest architektura oparta na wtyczkach (pluginach), co pozwala na łatwą rozbudowę i utrzymanie.
@@ -9,7 +8,7 @@ Pesteczka OS to lekkie, modułowe środowisko "systemu operacyjnego" działając
 
 ## Kluczowe Funkcje
 
-*   **Modułowa Architektura Oparta na Wtyczkach:** Cały system jest zbudowany wokół wtyczek. Każda aplikacja (jak Generator Ofert czy Ustawienia) jest samodzielnym modułem, co ułatwia rozbudowę i konserwację systemu.
+*   **Dynamiczna Architektura Oparta na Wtyczkach:** Cały system jest zbudowany wokół wtyczek. Każda aplikacja (jak Generator Ofert czy Ustawienia) jest samodzielnym modułem. System automatycznie wykrywa i ładuje wszystkie aplikacje umieszczone w folderze `src/apps`, co eliminuje potrzebę ręcznej konfiguracji.
 *   **System Wielu Profili:** Z łatwością zarządzaj różnymi podmiotami biznesowymi. Każdy profil posiada własne dane, branding (logo, kolorystykę) oraz zestaw włączonych aplikacji, co pozwala na dostosowanie środowiska do indywidualnych potrzeb.
 *   **Dynamiczny Interfejs Użytkownika:** Pulpit, pasek zadań i menu start są generowane dynamicznie na podstawie aplikacji włączonych dla aktualnie zalogowanego profilu.
 *   **Generator Ofert:** Potężna, wbudowana aplikacja do tworzenia, zarządzania i generowania profesjonalnie wyglądających ofert w formacie PDF dla klientów.
@@ -25,7 +24,7 @@ Postępuj zgodnie z poniższymi instrukcjami, aby uruchomić projekt na swojej l
 Będziesz potrzebować następującego oprogramowania zainstalowanego na swoim systemie:
 
 *   **Python 3.x:** Wymagany do uruchomienia lokalnego serwera deweloperskiego.
-*   **Node.js i npm:** Wymagane do zarządzania zależnościami projektu (takimi jak `pdfmake`).
+*   **Node.js i npm:** Wymagane do zarządzania zależnościami projektu (takimi jak `electron`).
 
 ### Instalacja i Uruchomienie
 
@@ -62,15 +61,14 @@ Projekt jest zorganizowany z wyraźnym podziałem na rdzeń systemu (core) i jeg
 │   │   └── offers/         # Przykładowa aplikacja: Generator Ofert
 │   ├── assets/             # Współdzielone zasoby statyczne (CSS, loga, czcionki)
 │   └── core/               # "Mikrojądro" systemu (logika aplikacji, przechowywanie danych, UI)
-├── vendor/                 # Biblioteki zewnętrzne (np. pdfmake)
 ├── index.html              # Główna powłoka aplikacji
 ├── profiles.json           # Domyślne dane profili użytkowników/firm
-└── run.py                  # Prosty serwer w Pythonie do celów deweloperskich
+└── run.py                  # Serwer w Pythonie, który obsługuje dynamiczne wykrywanie wtyczek
 ```
 
 ## Tworzenie Nowej Aplikacji (Wtyczki)
 
-Aby rozszerzyć system, możesz stworzyć własną aplikację. System automatycznie wykryje każdą nową wtyczkę umieszczoną w katalogu `src/apps/`.
+Aby rozszerzyć system, możesz stworzyć własną aplikację. System **automatycznie wykryje** każdą nową wtyczkę umieszczoną w katalogu `src/apps/`.
 
 1.  **Stwórz Katalog:** Dodaj nowy folder w `src/apps/`. Nazwa folderu jest unikalnym ID Twojej aplikacji (np. `moja-nowa-aplikacja`).
 
@@ -94,4 +92,14 @@ System automatycznie załaduje Twoją aplikację przy następnym uruchomieniu. W
 
 ## Budowanie Wersji Produkcyjnej
 
-Obecnie projekt jest przeznaczony do użytku deweloperskiego i bezpośredniego uruchamiania z serwera WWW. Proces budowania samodzielnego pliku wykonywalnego (np. przy użyciu Electron) jest planowany w przyszłości.
+Projekt jest skonfigurowany do budowania jako aplikacja desktopowa za pomocą Electron.
+
+*   Aby uruchomić aplikację w trybie deweloperskim Electron:
+    ```sh
+    npm start
+    ```
+*   Aby zbudować plik wykonywalny dla Twojego systemu operacyjnego:
+    ```sh
+    npm run dist
+    ```
+Pliki wynikowe znajdą się w folderze `dist/`.

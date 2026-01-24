@@ -425,39 +425,74 @@
     }
 
     async function autosaveOffer() {
-        const offerData = collectOfferData();
-        if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
+    const offerData = collectOfferData();
+    if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
 
-        try {
-            await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-        } catch (error) {
-            console.error('Autosave offer error:', error);
-        }
+    const statusEl = $('#saveStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Zapisywanie...';
+        statusEl.classList.remove('saved', 'error');
+        statusEl.classList.add('saving');
     }
 
-    async function saveOffer() {
-        const offerData = collectOfferData();
-        if (!offerData) {
-            UI.Feedback.show('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
-            return;
+    try {
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+        if (statusEl) {
+            statusEl.textContent = `Zapisano o ${new Date().toLocaleTimeString()}`;
+            statusEl.classList.remove('saving');
+            statusEl.classList.add('saved');
         }
-
-        const saveBtn = $('#saveOfferBtn');
-        const originalBtnHTML = saveBtn.innerHTML;
-
-        try {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
-            await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-            UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
-        } catch (error) {
-            console.error('Save offer error:', error);
-            UI.Feedback.show('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalBtnHTML;
+    } catch (error) {
+        console.error('Autosave offer error:', error);
+        if (statusEl) {
+            statusEl.textContent = 'Błąd zapisu';
+            statusEl.classList.remove('saving');
+            statusEl.classList.add('error');
         }
     }
+}
+
+async function saveOffer() {
+    const offerData = collectOfferData();
+    if (!offerData) {
+        UI.Feedback.show('Błąd', 'Zaloguj się, aby zapisać ofertę.', 'error');
+        return;
+    }
+
+    const saveBtn = $('#saveOfferBtn');
+    const statusEl = $('#saveStatus');
+    const originalBtnHTML = saveBtn.innerHTML;
+
+    try {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
+        if (statusEl) {
+            statusEl.textContent = 'Zapisywanie...';
+            statusEl.classList.remove('saved', 'error');
+            statusEl.classList.add('saving');
+        }
+
+        await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+
+        UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+        if (statusEl) {
+            statusEl.textContent = `Zapisano o ${new Date().toLocaleTimeString()}`;
+            statusEl.classList.remove('saving');
+            statusEl.classList.add('saved');
+        }
+    } catch (error) {
+        console.error('Save offer error:', error);
+        UI.Feedback.show('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
+        if (statusEl) {
+            statusEl.textContent = 'Błąd zapisu';
+            statusEl.classList.remove('saving');
+            statusEl.classList.add('error');
+        }
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnHTML;
+    }
+}
 
     async function loadOffer() {
         if (!appProfile) {
