@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import webbrowser
 import os
+import json
 import threading
 import sys
 import logging
@@ -43,6 +44,35 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # The directory is set here, using the globally determined BASE_DIR
         super().__init__(*args, directory=BASE_DIR, **kwargs)
+
+    def do_GET(self):
+        if self.path == '/api/apps':
+            self.handle_api_apps()
+        else:
+            super().do_GET()
+
+    def handle_api_apps(self):
+        try:
+            apps_dir = os.path.join(BASE_DIR, 'src', 'apps')
+            manifest_paths = []
+            if os.path.exists(apps_dir) and os.path.isdir(apps_dir):
+                for app_name in os.listdir(apps_dir):
+                    app_path = os.path.join(apps_dir, app_name)
+                    manifest_file = os.path.join(app_path, 'manifest.json')
+                    if os.path.isdir(app_path) and os.path.exists(manifest_file):
+                        # Use forward slashes for web paths
+                        web_path = f'src/apps/{app_name}/manifest.json'
+                        manifest_paths.append(web_path)
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(manifest_paths).encode('utf-8'))
+            logger.info(f"Responded to /api/apps with {len(manifest_paths)} manifests.")
+
+        except Exception as e:
+            logger.error(f"Error handling /api/apps: {e}")
+            self.send_error(500, "Internal Server Error")
 
     def do_POST(self):
         if self.path == '/shutdown':
