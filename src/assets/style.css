@@ -372,7 +372,7 @@ body.login-page {
     padding: var(--space-3);
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all var(--transition-base), transform 0.2s ease-out;
     user-select: none;
 }
 
@@ -1023,7 +1023,7 @@ body.login-page {
     font-size: 0.9rem;
     font-weight: 600;
     font-family: inherit;
-    transition: all var(--transition-base);
+    transition: background-color var(--transition-base), transform var(--transition-fast), box-shadow var(--transition-base);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2022,4 +2022,70 @@ body.login-page {
 
 .theme-color-block {
     flex: 1;
+}
+
+/* ===== SAVE STATUS INDICATOR ===== */
+.save-status-container {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.save-status {
+    font-size: 13px;
+    color: var(--gray-500);
+    text-align: center;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    background-color: var(--gray-100);
+    transition: all 0.3s ease;
+    position: relative;
+    padding-left: 28px;
+}
+
+.save-status::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--gray-400);
+    transition: background-color 0.3s ease;
+}
+
+.save-status.waiting::before { background-color: var(--gray-400); }
+.save-status.waiting { color: var(--gray-500); }
+
+.save-status.saving {
+    color: var(--info-600);
+    background-color: rgba(37, 99, 235, 0.1);
+}
+.save-status.saving::before {
+    background-color: var(--info-500);
+    animation: pulse 1.5s infinite;
+}
+
+.save-status.saved {
+    color: var(--success-600);
+    background-color: rgba(5, 150, 105, 0.1);
+}
+.save-status.saved::before {
+    background-color: var(--success-500);
+}
+
+.save-status.error {
+    color: var(--danger-600);
+    background-color: rgba(220, 38, 38, 0.1);
+}
+.save-status.error::before {
+    background-color: var(--danger-500);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
 }

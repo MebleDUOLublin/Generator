@@ -15,6 +15,7 @@ Pesteczka OS to lekkie, modułowe środowisko "systemu operacyjnego" działając
 *   **Generator Ofert:** Potężna, wbudowana aplikacja do tworzenia, zarządzania i generowania profesjonalnie wyglądających ofert w formacie PDF dla klientów.
 *   **Lekki i Szybki:** Zbudowany w całości przy użyciu czystego JavaScriptu, HTML i CSS, co zapewnia błyskawiczne i responsywne działanie bez potrzeby korzystania z ciężkich frameworków.
 *   **Działanie Offline:** Wykorzystuje IndexedDB do przechowywania wszystkich danych lokalnie w przeglądarce, dzięki czemu aplikacja jest w pełni funkcjonalna bez połączenia z internetem.
+*   **Dopracowany Interfejs Użytkownika:** Płynne animacje i natychmiastowe informacje zwrotne (np. wskaźnik statusu zapisu) zapewniają komfortową i niezawodną pracę.
 
 ## Pierwsze Kroki
 

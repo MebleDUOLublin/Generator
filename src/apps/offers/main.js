@@ -42,7 +42,7 @@
         populateSellerForm(profile);
 
         if (window.autosaveInterval) clearInterval(window.autosaveInterval);
-        window.autosaveInterval = setInterval(autosaveOffer, 60000);
+        window.autosaveInterval = setInterval(autosaveOffer, 30000); // Zwiększona częstotliwość
 
         generateOfferNumber();
         setTodayDate();
@@ -424,14 +424,37 @@
         };
     }
 
+    function updateSaveStatus(status, message) {
+        const statusEl = $('#saveStatus');
+        if (!statusEl) return;
+
+        // Usuń poprzednie klasy statusu
+        statusEl.classList.remove('saving', 'saved', 'error', 'waiting');
+
+        // Dodaj nową klasę statusu
+        if (status) {
+            statusEl.classList.add(status);
+        }
+
+        statusEl.textContent = message;
+    }
+
     async function autosaveOffer() {
         const offerData = collectOfferData();
-        if (!offerData || !offerData.offer.number || !offerData.buyer.name) return;
+        if (!offerData || !offerData.offer.number || !offerData.buyer.name) {
+            updateSaveStatus('waiting', 'Oczekuje na dane...');
+            return;
+        }
 
+        updateSaveStatus('saving', 'Zapisuję...');
         try {
             await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
+            setTimeout(() => {
+                updateSaveStatus('saved', `Zapisano ${new Date().toLocaleTimeString()}`);
+            }, 1000); // Małe opóźnienie dla lepszego UX
         } catch (error) {
             console.error('Autosave offer error:', error);
+            updateSaveStatus('error', 'Błąd zapisu!');
         }
     }
 
@@ -442,20 +465,27 @@
             return;
         }
 
+        updateSaveStatus('saving', 'Zapisywanie...');
         const saveBtn = $('#saveOfferBtn');
         const originalBtnHTML = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
 
         try {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span>💾</span> Zapisywanie...';
             await StorageSystem.db.set(StorageSystem.db.STORES.offers, offerData);
-            UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+            setTimeout(() => {
+                updateSaveStatus('saved', `Zapisano ręcznie ${new Date().toLocaleTimeString()}`);
+                UI.Feedback.toast('Zapisano!', `Oferta ${offerData.id} została zapisana.`, 'success');
+            }, 500);
         } catch (error) {
             console.error('Save offer error:', error);
+            updateSaveStatus('error', 'Błąd zapisu!');
             UI.Feedback.show('Błąd zapisu', 'Nie udało się zapisać oferty.', 'error');
         } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalBtnHTML;
+            setTimeout(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalBtnHTML;
+            }, 500);
         }
     }
 
