@@ -70,7 +70,7 @@ Projekt jest zorganizowany z wyraźnym podziałem na rdzeń systemu (core) i jeg
 
 ## Tworzenie Nowej Aplikacji (Wtyczki)
 
-Aby rozszerzyć system, możesz stworzyć własną aplikację. System automatycznie wykryje każdą nową wtyczkę umieszczoną w katalogu `src/apps/`.
+Aby rozszerzyć system, możesz stworzyć własną aplikację. System jest zaprojektowany tak, aby automatycznie wykrywać i ładować nowe wtyczki bez potrzeby modyfikacji kodu źródłowego rdzenia.
 
 1.  **Stwórz Katalog:** Dodaj nowy folder w `src/apps/`. Nazwa folderu jest unikalnym ID Twojej aplikacji (np. `moja-nowa-aplikacja`).
 
@@ -91,6 +91,8 @@ Aby rozszerzyć system, możesz stworzyć własną aplikację. System automatycz
 4.  **Stwórz `main.js`:** Ten plik zawiera logikę Twojej aplikacji. Musi on eksportować globalny obiekt (np. `window.MojaNowaAplikacjaApp`) z funkcją `init(profil, elementOkna)`.
 
 System automatycznie załaduje Twoją aplikację przy następnym uruchomieniu. Wystarczy, że włączysz ją w pliku `profiles.json` dla wybranego profilu.
+
+**Jak to działa?** Serwer deweloperski (`run.py`) przy starcie skanuje katalog `src/apps/`, identyfikuje wszystkie prawidłowe wtyczki na podstawie ich plików `manifest.json` i udostępnia tę listę poprzez wewnętrzne API. Aplikacja frontendowa odpytuje to API, aby dynamicznie zbudować rejestr dostępnych aplikacji.
 
 ## Budowanie Wersji Produkcyjnej
 
