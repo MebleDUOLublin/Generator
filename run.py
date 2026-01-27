@@ -4,6 +4,7 @@ import webbrowser
 import os
 import threading
 import sys
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -43,6 +44,28 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # The directory is set here, using the globally determined BASE_DIR
         super().__init__(*args, directory=BASE_DIR, **kwargs)
+
+    def do_GET(self):
+        if self.path == '/api/apps':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+
+            apps_dir = os.path.join(BASE_DIR, 'src', 'apps')
+            manifests = []
+            if os.path.exists(apps_dir):
+                for app_name in os.listdir(apps_dir):
+                    manifest_path = os.path.join(apps_dir, app_name, 'manifest.json')
+                    if os.path.isfile(manifest_path):
+                        # Return the relative path for the frontend
+                        relative_path = os.path.join('src', 'apps', app_name, 'manifest.json').replace('\\', '/')
+                        manifests.append(relative_path)
+
+            self.wfile.write(json.dumps(manifests).encode('utf-8'))
+            return
+
+        # Fallback to the default SimpleHTTPRequestHandler for other GET requests
+        return super().do_GET()
 
     def do_POST(self):
         if self.path == '/shutdown':

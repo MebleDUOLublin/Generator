@@ -310,7 +310,6 @@ async function populateProfileSelector() {
 
 async function loginAs(profileKey) {
     try {
-        await window.PluginLoader.init(); // Ensure plugins are loaded before proceeding
         currentProfile = await StorageSystem.db.get(StorageSystem.db.STORES.profiles, profileKey);
 
         if (!currentProfile) {
@@ -698,7 +697,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize core systems in parallel
         await Promise.all([
             window.StorageSystem.init(),
-            window.PluginLoader.init()
+            window.PluginLoader.init() // This now fetches from the API
         ]);
 
         await populateProfileSelector();
