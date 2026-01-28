@@ -171,12 +171,25 @@ const PDFManager = (() => {
         };
     };
 
-    const generatePDF = async (options) => {
+    const generatePDF = async (offerData) => {
         console.log('Checking for pdfMake library:', typeof pdfMake);
-        const { orientation = 'portrait', format = 'a4', seller = {}, offerData = {} } = options;
+        // Unpack the new, nested offerData object
+        const {
+            products = [],
+            seller = {},
+            offer = {},
+            buyer = {},
+            terms = {},
+            notes = '',
+            pdfSettings = {}
+        } = offerData;
+
+        const { orientation = 'portrait', format = 'a4' } = pdfSettings;
+
+        const optionsForPrepare = { products, orientation, templateType: TEMPLATE_TYPES.OFFER };
 
         try {
-            const { pageBreaks, template, enrichedProducts } = _preparePdfData(options);
+            const { pageBreaks, template, enrichedProducts } = _preparePdfData(optionsForPrepare);
             const grandTotal = calculatePageTotals(enrichedProducts);
             console.log(`📄 Generating PDF: ${pageBreaks.length} pages`);
 
@@ -187,8 +200,8 @@ const PDFManager = (() => {
             for (let i = 0; i < pageBreaks.length; i++) {
                 if (i > 0) pdf.addPage();
 
+                // Pass the correctly unpacked objects to the render function
                 const pageOptions = {
-                    ...options,
                     pageProducts: pageBreaks[i],
                     pageNum: i + 1,
                     totalPages: pageBreaks.length,
@@ -196,11 +209,17 @@ const PDFManager = (() => {
                     isLastPage: i === pageBreaks.length - 1,
                     template,
                     grandTotal,
+                    seller,
+                    offer,
+                    buyer,
+                    terms,
+                    notes,
+                    orientation
                 };
                 await renderPDFPage(pdf, pageWidth, pageHeight, pageOptions);
             }
 
-            setMetadata(pdf, offerData, seller);
+            setMetadata(pdf, offer, seller, buyer);
             return pdf;
 
         } catch (error) {
@@ -220,10 +239,12 @@ const PDFManager = (() => {
             quality,
             template,
             seller,
-            offerData,
+            offer,
+            buyer,
+            terms,
+            notes,
             grandTotal,
         } = options;
-        const buyer = offerData.buyer;
 
         const tempContainer = document.createElement('div');
         tempContainer.style.position = 'fixed';
@@ -240,7 +261,7 @@ const PDFManager = (() => {
         let pageHTML = '<div class="pdf-page">';
 
         if (isFirstPage) {
-            pageHTML += buildHeader(template, seller, buyer, offerData);
+            pageHTML += buildHeader(template, seller, buyer, offer);
         }
 
         pageHTML += buildProductsTable(pageProducts, pageNum, totalPages);
@@ -248,11 +269,11 @@ const PDFManager = (() => {
         if (isLastPage) {
             pageHTML += buildSummary(grandTotal, template);
 
-            if (offerData.notes) {
-                pageHTML += buildNotes(offerData.notes);
+            if (notes) {
+                pageHTML += buildNotes(notes);
             }
 
-            pageHTML += buildFooter(template, seller, offerData, pageNum, totalPages);
+            pageHTML += buildFooter(template, seller, terms, offer, pageNum, totalPages);
         } else {
             pageHTML += `<div style="text-align: center; margin-top: 20px; color: #999;">
                             Strona ${pageNum} z ${totalPages}
@@ -288,7 +309,7 @@ const PDFManager = (() => {
         }
     };
 
-    const buildHeader = (template, seller, buyer, offerData) => {
+    const buildHeader = (template, seller, buyer, offer) => {
         return `
             <header style="display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb;">
                 <div style="flex: 1;">
@@ -308,9 +329,9 @@ const PDFManager = (() => {
                     ${template.name}
                 </h1>
                 <div style="margin-top: 10px; font-size: 12px; color: #4b5563;">
-                    <span style="margin: 0 12px;"><strong>Nr:</strong> ${offerData.number || ''}</span>
-                    <span style="margin: 0 12px;"><strong>Data:</strong> ${offerData.date || new Date().toLocaleDateString('pl-PL')}</span>
-                    <span style="margin: 0 12px;"><strong>Ważna do:</strong> ${offerData.validUntil || ''}</span>
+                    <span style="margin: 0 12px;"><strong>Nr:</strong> ${offer.number || ''}</span>
+                    <span style="margin: 0 12px;"><strong>Data:</strong> ${offer.date || new Date().toLocaleDateString('pl-PL')}</span>
+                    <span style="margin: 0 12px;"><strong>Ważna do:</strong> ${offer.validUntil || ''}</span>
                 </div>
             </div>
 
@@ -422,7 +443,7 @@ const PDFManager = (() => {
         `;
     };
 
-    const buildFooter = (template, seller, offerData, pageNum, totalPages) => {
+    const buildFooter = (template, seller, terms, offer, pageNum, totalPages) => {
         const year = new Date().getFullYear();
         const website = seller.website || 'www.example.com';
         const companyName = seller.name || 'Twoja Firma';
@@ -433,17 +454,17 @@ const PDFManager = (() => {
                     <div style="flex: 1;">
                         <div style="font-weight: 700; margin-bottom: 8px;">WARUNKI HANDLOWE:</div>
                         <ul style="margin: 0; padding-left: 20px; font-size: 10px;">
-                            <li><strong>Płatność:</strong> ${offerData.paymentTerms || 'zgodnie z umową'}</li>
-                            <li><strong>Realizacja:</strong> ${offerData.deliveryTime || 'do 14 dni'}</li>
-                            <li><strong>Dostawa:</strong> ${offerData.deliveryMethod || 'bezpłatnie'}</li>
-                            <li><strong>Gwarancja:</strong> ${offerData.warranty || '24 miesiące'}</li>
+                            <li><strong>Płatność:</strong> ${terms.payment || 'zgodnie z umową'}</li>
+                            <li><strong>Realizacja:</strong> ${terms.delivery || 'do 14 dni'}</li>
+                            <li><strong>Dostawa:</strong> ${terms.deliveryMethod || 'bezpłatnie'}</li>
+                            <li><strong>Gwarancja:</strong> ${terms.warranty || '24 miesiące'}</li>
                         </ul>
                     </div>
                     <div style="background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 10px; min-width: 250px;">
                         <div style="font-weight: 700; margin-bottom: 8px;">DANE DO PRZELEWU:</div>
                         <div style="margin-bottom: 6px;"><span style="color: #666;">Odbiorca:</span> ${seller.bankName || seller.fullName}</div>
                         <div style="margin-bottom: 6px;"><span style="color: #666;">Nr konta:</span> <strong>${seller.bankAccount || ''}</strong></div>
-                        <div><span style="color: #666;">Tytuł:</span> ${offerData.number || 'Oferta'}</div>
+                        <div><span style="color: #666;">Tytuł:</span> ${offer.number || 'Oferta'}</div>
                     </div>
                 </div>
                 <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
@@ -457,10 +478,10 @@ const PDFManager = (() => {
         `;
     };
 
-    const setMetadata = (pdf, offerData, seller) => {
-        const buyerName = (offerData.buyer && offerData.buyer.name) ? ` dla ${offerData.buyer.name}` : '';
+    const setMetadata = (pdf, offer, seller, buyer) => {
+        const buyerName = (buyer && buyer.name) ? ` dla ${buyer.name}` : '';
         pdf.setProperties({
-            title: `Oferta ${offerData.number || 'bez numeru'}${buyerName}`,
+            title: `Oferta ${offer.number || 'bez numeru'}${buyerName}`,
             subject: `Oferta cenowa - ${seller.name || 'Pesteczka OS'}`,
             author: seller.fullName || 'Pesteczka OS',
             keywords: `oferta, ${seller.name || ''}`,
