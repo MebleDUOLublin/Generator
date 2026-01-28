@@ -7,6 +7,9 @@
             <button class="btn btn-secondary" id="saveOfferBtn">
                 <span>💾</span> Zapisz ofertę
             </button>
+            <div class="save-status-container">
+                <span id="save-status" class="save-status"></span>
+            </div>
             <button class="btn btn-outline" id="loadOfferBtn">
                 <span>📂</span> Wczytaj ofertę
             </button>
@@ -172,6 +175,57 @@
         </div>
     </div>
 </div>
+
+<template id="product-card-template">
+    <div class="product-card">
+        <div class="drag-handle" draggable="true">☰</div>
+        <div class="product-content-wrapper">
+            <div class="product-image-zone">
+                <div class="product-image-preview" data-role="image-preview">
+                    <span class="placeholder-icon">📷</span>
+                    <span class="placeholder-text">Upuść obraz lub kliknij</span>
+                </div>
+                <input type="file" accept="image/*" class="product-image-input" data-role="image-input" style="display: none;">
+            </div>
+            <div class="product-details">
+                <div class="form-group">
+                    <label class="form-label">Nazwa produktu <span class="required">*</span></label>
+                    <input type="text" class="form-input" data-role="product-name" placeholder="Np. Krzesło biurowe 'Prestige'">
+                </div>
+                <div class="form-grid-inner">
+                    <div class="form-group">
+                        <label class="form-label">Kod</label>
+                        <input type="text" class="form-input" data-role="product-code" placeholder="KB-PRESTIGE">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ilość</label>
+                        <input type="number" class="form-input" data-role="product-qty" value="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cena netto</label>
+                        <input type="number" class="form-input" data-role="product-price" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rabat (%)</label>
+                        <input type="number" class="form-input" data-role="product-discount" value="0" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group full-width">
+            <label class="form-label">Opis produktu</label>
+            <textarea class="form-textarea" data-role="product-desc" rows="2" placeholder="• Wymiary: 50x50x90cm&#10;• Materiał: Skóra ekologiczna, chrom"></textarea>
+        </div>
+        <div class="product-actions">
+            <button class="btn btn-outline" data-action="duplicate">
+                <span>📋</span> Duplikuj
+            </button>
+            <button class="btn btn-outline btn-danger" data-action="delete">
+                <span>🗑️</span> Usuń
+            </button>
+        </div>
+    </div>
+</template>
 
 <!-- TAB: Produkty -->
 <div id="products-tab" class="tab-content" role="tabpanel">
