@@ -48,7 +48,8 @@ const IndexedDBStore = (() => {
         domator: 'domator',
         settings: 'settings',
         history: 'history',
-        cache: 'cache'
+        cache: 'cache',
+        windowState: 'windowState'
     };
 
     let db = null;
