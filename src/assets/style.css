@@ -2023,3 +2023,13 @@ body.login-page {
 .theme-color-block {
     flex: 1;
 }
+
+/* ===== VISUAL FEEDBACK ===== */
+.btn:active,
+.window-control-btn:active,
+.desktop-icon:active,
+.taskbar-icon:active,
+.start-app:active {
+    transform: scale(0.95);
+    transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
