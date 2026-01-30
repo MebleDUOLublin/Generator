@@ -427,6 +427,10 @@ function createWindow(app) {
             </div>
         </div>
         <div class="window-content">
+            <div class="app-loading-container">
+                <div class="app-loading-spinner"></div>
+                <p class="app-loading-text">Ładowanie aplikacji...</p>
+            </div>
             <!-- Content will be loaded from the plugin -->
         </div>
     `;
@@ -477,29 +481,44 @@ async function openWindow(windowId) {
 
     // Load plugin content only if it hasn't been loaded before
     if (!contentArea.classList.contains('loaded')) {
-        const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
+        try {
+            const pluginAssets = await window.PluginLoader.loadPlugin(windowId);
 
-        if (pluginAssets && pluginAssets.html) {
-            contentArea.innerHTML = pluginAssets.html;
+            if (!pluginAssets || !pluginAssets.html) {
+                throw new Error(`Failed to load assets for app: ${windowId}.`);
+            }
+
+            const loader = contentArea.querySelector('.app-loading-container');
+
+            // Use insertAdjacentHTML which is more performant and doesn't invalidate the 'loader' reference.
+            contentArea.insertAdjacentHTML('beforeend', pluginAssets.html);
             contentArea.classList.add('loaded');
 
-            // Wait for the next frame to ensure the new DOM is queryable
+            // Wait for the next frame to ensure the new DOM is queryable for the init script
             await new Promise(r => requestAnimationFrame(r));
 
-            try {
-                const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
-                if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
-                    console.log(`Initializing plugin: ${appObjectName}...`);
-                    // Pass both the profile and the window element to the init function
-                    window[appObjectName].init(currentProfile, win);
-                } else {
-                     console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
-                }
-            } catch (e) {
-                console.error(`Error initializing plugin ${windowId}:`, e);
+            const appObjectName = `${windowId.charAt(0).toUpperCase() + windowId.slice(1)}App`;
+            if (window[appObjectName] && typeof window[appObjectName].init === 'function') {
+                console.log(`Initializing plugin: ${appObjectName}...`);
+                // This init is wrapped in the outer try...catch, so errors will be displayed.
+                window[appObjectName].init(currentProfile, win);
+            } else {
+                 console.warn(`Plugin ${appObjectName} loaded, but no init() function was found.`);
             }
-        } else {
-            contentArea.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load app: ${windowId}.</div>`;
+
+            // Successfully loaded and initialized, so remove the loader.
+            if (loader) loader.remove();
+
+        } catch (error) {
+            console.error(`Error loading or initializing plugin ${windowId}:`, error);
+            contentArea.innerHTML = `
+                <div class="app-error-container">
+                    <div class="app-error-icon">⚠️</div>
+                    <h3 class="app-error-title">Błąd ładowania aplikacji</h3>
+                    <p class="app-error-message">Wystąpił problem podczas ładowania lub inicjalizacji "${windowId}".</p>
+                    <pre class="app-error-details">${error.stack || error.message}</pre>
+                </div>
+            `;
         }
     }
     

@@ -540,6 +540,7 @@ body.login-page {
     flex: 1;
     overflow: auto;
     background: white;
+    position: relative;
 }
 
 /* ===== TASKBAR ===== */
@@ -2022,4 +2023,80 @@ body.login-page {
 
 .theme-color-block {
     flex: 1;
+}
+
+/* ===== APP LOADING & ERROR STATES ===== */
+@keyframes app-loader-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.app-loading-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    transition: opacity 0.3s ease;
+}
+
+.app-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid var(--gray-200);
+    border-top-color: var(--primary-500);
+    border-radius: 50%;
+    animation: app-loader-spin 1s linear infinite;
+}
+
+.app-loading-text {
+    margin-top: var(--space-4);
+    font-weight: 500;
+    color: var(--gray-600);
+}
+
+.app-error-container {
+    padding: var(--space-8);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.app-error-icon {
+    font-size: 3rem;
+    color: var(--danger-500);
+    margin-bottom: var(--space-4);
+}
+
+.app-error-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: var(--space-2);
+}
+
+.app-error-message {
+    color: var(--gray-600);
+    margin-bottom: var(--space-6);
+}
+
+.app-error-details {
+    background: var(--gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--gray-700);
+    text-align: left;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--gray-200);
 }
