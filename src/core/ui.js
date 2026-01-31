@@ -495,20 +495,21 @@ const UIFeedback = (() => {
 // ============================================
 // INITIALIZE UI SYSTEM
 // ============================================
-const initializeAdvancedUI = () => {
-    const actionsBar = document.querySelector('#window-offers .actions-bar');
-    if (actionsBar && !document.getElementById('undoBtn')) {
+const initializeAdvancedUI = (containerSelector) => {
+    const container = document.querySelector(containerSelector);
+    if (!container) return;
+
+    const actionsBar = container.querySelector('.actions-bar');
+    if (actionsBar && !actionsBar.querySelector('.undo-btn')) {
         const undoBtn = document.createElement('button');
-        undoBtn.id = 'undoBtn';
-        undoBtn.className = 'btn btn-outline';
+        undoBtn.className = 'btn btn-outline undo-btn';
         undoBtn.textContent = '↩️ Cofnij';
         undoBtn.disabled = true;
         undoBtn.onclick = () => CommandManager.undo();
         actionsBar.appendChild(undoBtn);
 
         const redoBtn = document.createElement('button');
-        redoBtn.id = 'redoBtn';
-        redoBtn.className = 'btn btn-outline';
+        redoBtn.className = 'btn btn-outline redo-btn';
         redoBtn.textContent = '↪️ Ponów';
         redoBtn.disabled = true;
         redoBtn.onclick = () => CommandManager.redo();
@@ -522,14 +523,6 @@ const initializeAdvancedUI = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize reactive fields
-    ReactiveForm.createField('offerNumber', {
-        onValidate: (value) => value.trim() ? null : 'Numer oferty jest wymagany.'
-    });
-    ReactiveForm.createField('buyerName', {
-        onValidate: (value) => value.trim() ? null : 'Nazwa nabywcy jest wymagana.'
-    });
-
     // Shutdown logic
     const closeAppBtn = document.getElementById('closeAppBtn');
     if (closeAppBtn) {
@@ -554,5 +547,6 @@ window.UI = {
     Form: ReactiveForm,
     Observer: FormObserver,
     Feedback: UIFeedback,
-    Command: CommandManager
+    Command: CommandManager,
+    initAdvanced: initializeAdvancedUI
 };

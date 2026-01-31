@@ -238,6 +238,16 @@ function focusWindow(win) {
     document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
     win.classList.add('focused');
     win.style.zIndex = ++zIndexCounter;
+
+    // Update taskbar icons to show which window is focused
+    const windowId = win.id.replace('window-', '');
+    document.querySelectorAll('.taskbar-icon').forEach(icon => {
+        if (icon.dataset.window === windowId) {
+            icon.classList.add('active');
+        } else {
+            icon.classList.remove('active');
+        }
+    });
 }
 
 function handleGlobalHotkeys(e) {
@@ -524,7 +534,7 @@ function closeWindow(windowId) {
     if (win) {
         win.classList.add('closing');
         win.addEventListener('animationend', () => {
-            win.classList.remove('active', 'focused', 'closing');
+            win.classList.remove('active', 'focused', 'closing', 'minimized', 'maximized');
             win.style.display = 'none';
         }, { once: true });
     }
@@ -542,6 +552,11 @@ function minimizeWindow(windowId) {
         setTimeout(() => {
              win.style.display = 'none';
         }, 200);
+
+        const taskbarIcon = document.querySelector(`.taskbar-icon[data-window="${windowId}"]`);
+        if (taskbarIcon) {
+            taskbarIcon.classList.remove('active');
+        }
     }
 }
 
@@ -592,17 +607,24 @@ function startDrag(event, windowId) {
 function handleWindowDrag(event) {
     if (!draggedWindow) return;
     const desktop = document.getElementById('desktop');
-    const headerHeight = 40;
-    const taskbarHeight = 40;
+    const taskbarHeight = 72; // Consistent with CSS
     
-    const maxLeft = desktop.clientWidth - draggedWindow.clientWidth;
-    const maxTop = desktop.clientHeight - draggedWindow.clientHeight - taskbarHeight;
+    const snapThreshold = 20;
+    const desktopWidth = desktop.clientWidth;
+    const desktopHeight = desktop.clientHeight - taskbarHeight;
 
     let newX = event.clientX - dragOffset.x;
     let newY = event.clientY - dragOffset.y;
 
-    newX = Math.max(0, Math.min(newX, maxLeft));
-    newY = Math.max(0, Math.min(newY, maxTop));
+    // Boundary constraints (don't let the header go off-screen)
+    newX = Math.max(-draggedWindow.clientWidth + 100, Math.min(newX, desktopWidth - 100));
+    newY = Math.max(0, Math.min(newY, desktopHeight - 40));
+
+    // Snapping to edges
+    if (Math.abs(newX) < snapThreshold) newX = 0;
+    if (Math.abs(newX + draggedWindow.clientWidth - desktopWidth) < snapThreshold) newX = desktopWidth - draggedWindow.clientWidth;
+    if (Math.abs(newY) < snapThreshold) newY = 0;
+    if (Math.abs(newY + draggedWindow.clientHeight - desktopHeight) < snapThreshold) newY = desktopHeight - draggedWindow.clientHeight;
     
     draggedWindow.style.left = newX + 'px';
     draggedWindow.style.top = newY + 'px';

@@ -173,6 +173,50 @@
     </div>
 </div>
 
+<template id="productCardTemplate">
+    <div class="product-card" draggable="false">
+        <div class="drag-handle" draggable="true">☰</div>
+        <div class="product-content-wrapper">
+            <div class="product-image-zone">
+                <div class="product-image-preview">📷</div>
+                <input type="file" accept="image/*" style="display:none" class="product-image-input">
+            </div>
+            <div class="product-details">
+                <div class="form-group">
+                    <label class="form-label">Nazwa produktu</label>
+                    <input type="text" class="form-input product-name" placeholder="np. Krzesło biurowe Premium">
+                </div>
+                <div class="form-grid-inner">
+                    <div class="form-group">
+                        <label class="form-label">Kod</label>
+                        <input type="text" class="form-input product-code" placeholder="KOD-001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ilość</label>
+                        <input type="number" class="form-input product-qty" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cena netto</label>
+                        <input type="number" class="form-input product-price" value="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rabat (%)</label>
+                        <input type="number" class="form-input product-discount" value="0" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group mt-4">
+            <label class="form-label">Opis produktu</label>
+            <textarea class="form-textarea product-desc" rows="2" placeholder="• Cecha 1&#10;• Cecha 2"></textarea>
+        </div>
+        <div class="product-actions">
+            <button class="btn btn-outline btn-duplicate">📋 Duplikuj</button>
+            <button class="btn btn-outline btn-danger btn-delete">🗑️ Usuń</button>
+        </div>
+    </div>
+</template>
+
 <!-- TAB: Produkty -->
 <div id="products-tab" class="tab-content" role="tabpanel">
     <div class="section">

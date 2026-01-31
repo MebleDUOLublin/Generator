@@ -105,9 +105,9 @@ const PDFManager = (() => {
         }));
     };
 
-    const calculatePageTotals = (pageProducts) => {
+    const calculatePageTotals = (pageProducts, vatRate = 23) => {
         const net = pageProducts.reduce((sum, p) => sum + p.total, 0);
-        const vat = net * 0.23;
+        const vat = net * (parseFloat(vatRate) / 100);
         const gross = net + vat;
 
         return { net, vat, gross };
@@ -173,11 +173,11 @@ const PDFManager = (() => {
 
     const generatePDF = async (options) => {
         console.log('Checking for pdfMake library:', typeof pdfMake);
-        const { orientation = 'portrait', format = 'a4', seller = {}, offerData = {} } = options;
+        const { orientation = 'portrait', format = 'a4', seller = {}, offerData = {}, vatRate = 23 } = options;
 
         try {
             const { pageBreaks, template, enrichedProducts } = _preparePdfData(options);
-            const grandTotal = calculatePageTotals(enrichedProducts);
+            const grandTotal = calculatePageTotals(enrichedProducts, vatRate);
             console.log(`📄 Generating PDF: ${pageBreaks.length} pages`);
 
             const { jsPDF } = window.jspdf;
@@ -246,7 +246,7 @@ const PDFManager = (() => {
         pageHTML += buildProductsTable(pageProducts, pageNum, totalPages);
 
         if (isLastPage) {
-            pageHTML += buildSummary(grandTotal, template);
+            pageHTML += buildSummary(grandTotal, template, options.vatRate);
 
             if (offerData.notes) {
                 pageHTML += buildNotes(offerData.notes);
@@ -386,7 +386,7 @@ const PDFManager = (() => {
         `;
     };
 
-    const buildSummary = (totals, template) => {
+    const buildSummary = (totals, template, vatRate = 23) => {
         return `
             <div style="display: flex; justify-content: flex-end; margin-bottom: 25px;">
                 <table style="width: 350px; border-collapse: collapse;">
@@ -397,7 +397,7 @@ const PDFManager = (() => {
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding: 8px 12px; font-size: 12px; text-align: right;">VAT 23%:</td>
+                        <td style="padding: 8px 12px; font-size: 12px; text-align: right;">VAT ${vatRate}%:</td>
                         <td style="padding: 8px 12px; font-size: 12px; text-align: right; font-weight: 600;">
                             ${totals.vat.toFixed(2)} zł
                         </td>
