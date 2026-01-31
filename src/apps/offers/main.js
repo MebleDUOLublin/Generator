@@ -48,6 +48,19 @@
         setTodayDate();
         attachEventListeners();
         updateProductView();
+
+        // Advanced UI Features
+        if (window.UI && typeof window.UI.initAdvanced === 'function') {
+            window.UI.initAdvanced(`#window-offers`);
+
+            // Setup validation for dynamically loaded fields
+            window.UI.Form.createField('offerNumber', {
+                onValidate: (value) => value.trim() ? null : 'Numer oferty jest wymagany.'
+            });
+            window.UI.Form.createField('buyerName', {
+                onValidate: (value) => value.trim() ? null : 'Nazwa nabywcy jest wymagana.'
+            });
+        }
     }
 
     function attachEventListeners() {
@@ -60,6 +73,7 @@
             if (await UI.Feedback.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
                 products = [];
                 productImages = {};
+                $('#productsList').innerHTML = '';
                 updateProductView();
                 generateOfferNumber();
                 setTodayDate();
@@ -70,7 +84,6 @@
 
         $$('.tabs .tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                // Assuming switchTab is a global function on the main window
                 if (typeof window.switchTab === 'function') {
                     window.switchTab(tab.dataset.tab, e);
                 }
@@ -82,56 +95,44 @@
     }
 
     function createProductCard(productId) {
-        const createEl = (tag, props = {}, children = []) => {
-            const el = document.createElement(tag);
-            Object.assign(el, props);
-            children.forEach(child => el.appendChild(child));
-            return el;
-        };
+        const template = $('#productCardTemplate');
+        if (!template) {
+            console.error("Product card template not found!");
+            return null;
+        }
 
-        const createFormGroup = (label, input) => createEl('div', { className: 'form-group' }, [createEl('label', { className: 'form-label', textContent: label }), input]);
-        const createInput = (id, type, value, oninput) => createEl('input', { id, type, value, oninput, className: 'form-input' });
-        const createButton = (text, onclick, className) => createEl('button', { textContent: text, onclick, className });
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.product-card');
+        card.id = `product-${productId}`;
 
-        const productCard = createEl('div', {
-            id: `product-${productId}`,
-            className: 'product-card',
+        // Elements
+        const nameInput = card.querySelector('.product-name');
+        const qtyInput = card.querySelector('.product-qty');
+        const priceInput = card.querySelector('.product-price');
+        const discountInput = card.querySelector('.product-discount');
+        const imageZone = card.querySelector('.product-image-zone');
+        const imageInput = card.querySelector('.product-image-input');
+        const dragHandle = card.querySelector('.drag-handle');
+        const deleteBtn = card.querySelector('.btn-delete');
+        const duplicateBtn = card.querySelector('.btn-duplicate');
+
+        // Event listeners for real-time summary update
+        [nameInput, qtyInput, priceInput, discountInput].forEach(el => {
+            el.addEventListener('input', updateSummary);
         });
 
-        const dragHandle = createEl('div', { className: 'drag-handle', textContent: '☰', draggable: true });
+        imageZone.onclick = () => imageInput.click();
+        imageInput.onchange = (e) => uploadProductImage(productId, e, card);
+
         dragHandle.ondragstart = (e) => dragStart(e, productId);
+        deleteBtn.onclick = () => removeProduct(productId);
+        duplicateBtn.onclick = () => duplicateProduct(productId);
 
-        const imageZone = createEl('div', { className: 'product-image-zone' }, [
-            createEl('div', { id: `productImagePreview-${productId}`, className: 'product-image-preview', textContent: '📷' }),
-            createEl('input', { id: `productImage-${productId}`, type: 'file', accept: 'image/*', style: 'display:none', onchange: (e) => uploadProductImage(productId, e) })
-        ]);
-        imageZone.onclick = () => $(`#productImage-${productId}`).click();
+        card.addEventListener('dragover', dragOver);
+        card.addEventListener('drop', (e) => drop(e, productId));
+        card.addEventListener('dragenter', (e) => e.preventDefault());
 
-        const productDetails = createEl('div', { className: 'product-details' }, [
-            createFormGroup('Nazwa produktu', createInput(`productName-${productId}`, 'text', '', updateSummary)),
-            createEl('div', { className: 'form-grid-inner' }, [
-                createFormGroup('Kod', createInput(`productCode-${productId}`, 'text', '', null)),
-                createFormGroup('Ilość', createInput(`productQty-${productId}`, 'number', 1, updateSummary)),
-                createFormGroup('Cena netto', createInput(`productPrice-${productId}`, 'number', 0, updateSummary)),
-                createFormGroup('Rabat (%)', createInput(`productDiscount-${productId}`, 'number', 0, updateSummary)),
-            ])
-        ]);
-
-        productCard.append(
-            dragHandle,
-            createEl('div', { className: 'product-content-wrapper' }, [imageZone, productDetails]),
-            createFormGroup('Opis produktu', createEl('textarea', { id: `productDesc-${productId}`, className: 'form-textarea', rows: 2, placeholder: '• Cecha 1\n• Cecha 2' })),
-            createEl('div', { className: 'product-actions' }, [
-                createButton('📋 Duplikuj', () => duplicateProduct(productId), 'btn btn-outline'),
-                createButton('🗑️ Usuń', () => removeProduct(productId), 'btn btn-outline btn-danger')
-            ])
-        );
-
-        productCard.addEventListener('dragover', dragOver);
-        productCard.addEventListener('drop', (e) => drop(e, productId));
-        productCard.addEventListener('dragenter', (e) => e.preventDefault());
-
-        return productCard;
+        return card;
     }
 
     function updateProductView() {
@@ -155,19 +156,25 @@
     function addProduct(productData = {}) {
         const newId = productData.id || Date.now() + productIdCounter++;
         products.push(newId);
+
         const productCard = createProductCard(newId);
+        if (!productCard) return;
+
         $('#productsList').appendChild(productCard);
 
-        Object.entries(productData).forEach(([key, value]) => {
-            const elId = `product${key.charAt(0).toUpperCase() + key.slice(1)}-${newId}`;
-            const el = $(`#${elId}`);
-            if (el && key !== 'id') el.value = value;
-        });
+        // Populate fields
+        if (productData.name) productCard.querySelector('.product-name').value = productData.name;
+        if (productData.code) productCard.querySelector('.product-code').value = productData.code;
+        if (productData.qty) productCard.querySelector('.product-qty').value = productData.qty;
+        if (productData.price) productCard.querySelector('.product-price').value = productData.price;
+        if (productData.discount) productCard.querySelector('.product-discount').value = productData.discount;
+        if (productData.desc) productCard.querySelector('.product-desc').value = productData.desc;
 
         if (productData.image) {
             productImages[newId] = productData.image;
-            updateProductImage(newId);
+            updateProductImage(newId, productCard);
         }
+
         updateSummary();
         updateProductView();
     }
@@ -183,8 +190,11 @@
         updateSummary();
     }
 
-    function updateProductImage(productId) {
-        const preview = $(`#productImagePreview-${productId}`);
+    function updateProductImage(productId, card) {
+        if (!card) card = $(`#product-${productId}`);
+        if (!card) return;
+
+        const preview = card.querySelector('.product-image-preview');
         if (preview) {
             if (productImages[productId]) {
                 preview.innerHTML = `<img src="${productImages[productId]}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
@@ -195,33 +205,31 @@
     }
 
     function duplicateProduct(originalId) {
-        const newId = Date.now() + productIdCounter++;
+        const card = $(`#product-${originalId}`);
+        if (!card) return;
+
         const originalData = {
-            id: newId,
-            name: $(`#productName-${originalId}`)?.value || '',
-            code: $(`#productCode-${originalId}`)?.value || '',
-            qty: $(`#productQty-${originalId}`)?.value || '1',
-            price: $(`#productPrice-${originalId}`)?.value || '0',
-            discount: $(`#productDiscount-${originalId}`)?.value || '0',
-            desc: $(`#productDesc-${originalId}`)?.value || '',
+            name: card.querySelector('.product-name').value,
+            code: card.querySelector('.product-code').value,
+            qty: card.querySelector('.product-qty').value,
+            price: card.querySelector('.product-price').value,
+            discount: card.querySelector('.product-discount').value,
+            desc: card.querySelector('.product-desc').value,
+            image: productImages[originalId]
         };
-        const originalImage = productImages[originalId];
 
         addProduct(originalData);
-        if (originalImage) {
-            productImages[newId] = originalImage;
-            updateProductImage(newId);
-        }
+        UI.Feedback.toast('📋 Produkt zduplikowany', 'info');
     }
 
-    function uploadProductImage(productId, event) {
+    function uploadProductImage(productId, event, card) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (e) => {
             productImages[productId] = e.target.result;
-            updateProductImage(productId);
+            updateProductImage(productId, card);
             UI.Feedback.toast('📸 Zdjęcie załadowane', 'success');
         };
         reader.readAsDataURL(file);
@@ -244,10 +252,10 @@
         event.preventDefault();
         if (!draggedElement) return;
 
-        const draggedId = parseInt(event.dataTransfer.getData('text/plain'));
+        const draggedId = event.dataTransfer.getData('text/plain');
         const targetElement = $(`#product-${targetProductId}`);
 
-        if (draggedId !== targetProductId && targetElement) {
+        if (draggedId !== targetProductId.toString() && targetElement) {
             const container = $('#productsList');
             const rect = targetElement.getBoundingClientRect();
             const offsetY = event.clientY - rect.top;
@@ -258,10 +266,12 @@
                 container.insertBefore(draggedElement, targetElement);
             }
 
-            const draggedIndex = products.indexOf(draggedId);
-            products.splice(draggedIndex, 1);
-            const newNodes = Array.from(container.querySelectorAll('.product-card')).map(node => parseInt(node.id.replace('product-', '')));
+            // Update internal products array order
+            const newNodes = Array.from(container.querySelectorAll('.product-card')).map(node => {
+                return node.id.replace('product-', '');
+            });
             products = newNodes;
+            updateSummary();
         }
 
         draggedElement.classList.remove('dragging');
@@ -275,12 +285,16 @@
 
         let totalNet = 0;
 
-        const productData = products.map(id => ({
-            name: $(`#productName-${id}`)?.value || '',
-            qty: parseFloat($(`#productQty-${id}`)?.value) || 0,
-            price: parseFloat($(`#productPrice-${id}`)?.value) || 0,
-            discount: parseFloat($(`#productDiscount-${id}`)?.value) || 0,
-        })).filter(p => p.name.trim());
+        const productData = products.map(id => {
+            const card = $(`#product-${id}`);
+            if (!card) return null;
+            return {
+                name: card.querySelector('.product-name').value || '',
+                qty: parseFloat(card.querySelector('.product-qty').value) || 0,
+                price: parseFloat(card.querySelector('.product-price').value) || 0,
+                discount: parseFloat(card.querySelector('.product-discount').value) || 0,
+            };
+        }).filter(p => p && p.name.trim());
 
         if (productData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 2rem;">Brak produktów</td></tr>';
@@ -303,12 +317,13 @@
             });
         }
 
-        const vat = totalNet * 0.23;
+        const vatRate = parseFloat($('#vatRate')?.value) || 23;
+        const vat = totalNet * (vatRate / 100);
         const gross = totalNet + vat;
 
-        $('#totalNet').textContent = totalNet.toFixed(2) + ' zł';
-        $('#totalVat').textContent = vat.toFixed(2) + ' zł';
-        $('#totalGross').textContent = gross.toFixed(2) + ' zł';
+        $('#totalNet').textContent = totalNet.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+        $('#totalVat').textContent = vat.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+        $('#totalGross').textContent = gross.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
     }
 
     async function generatePDF() {
@@ -338,18 +353,20 @@
             notes: getValue('orderNotes')
         };
 
-        const pdfProducts = products.map(id => ({
-            id: id,
-            name: getValue(`productName-${id}`),
-            code: getValue(`productCode-${id}`),
-            qty: getValue(`productQty-${id}`),
-            price: getValue(`productPrice-${id}`),
-            discount: getValue(`productDiscount-${id}`),
-            desc: getValue(`productDesc-${id}`),
-            image: productImages[id] || null,
-        }));
+        const pdfProducts = products.map(id => {
+            const card = $(`#product-${id}`);
+            return {
+                id: id,
+                name: card.querySelector('.product-name').value,
+                code: card.querySelector('.product-code').value,
+                qty: card.querySelector('.product-qty').value,
+                price: card.querySelector('.product-price').value,
+                discount: card.querySelector('.product-discount').value,
+                desc: card.querySelector('.product-desc').value,
+                image: productImages[id] || null,
+            };
+        });
 
-        // This is a global element, so document is appropriate
         document.getElementById('loadingOverlay')?.classList.add('show');
 
         try {
@@ -368,6 +385,7 @@
             const pdf = await PDFManager.generatePDF({
                 orientation: getValue('pdfOrientation'),
                 format: getValue('pdfFormat'),
+                vatRate: getValue('vatRate'),
                 seller: sellerData,
                 products: pdfProducts,
                 offerData: offerData
@@ -410,16 +428,19 @@
                 warranty: getValue('warranty'),
                 deliveryMethod: getValue('deliveryMethod')
             },
-            products: products.map(id => ({
-                id,
-                name: getValue(`productName-${id}`),
-                code: getValue(`productCode-${id}`),
-                qty: getValue(`productQty-${id}`),
-                price: getValue(`productPrice-${id}`),
-                discount: getValue(`productDiscount-${id}`),
-                desc: getValue(`productDesc-${id}`),
-                image: productImages[id] || null
-            })),
+            products: products.map(id => {
+                const card = $(`#product-${id}`);
+                return {
+                    id,
+                    name: card.querySelector('.product-name').value,
+                    code: card.querySelector('.product-code').value,
+                    qty: card.querySelector('.product-qty').value,
+                    price: card.querySelector('.product-price').value,
+                    discount: card.querySelector('.product-discount').value,
+                    desc: card.querySelector('.product-desc').value,
+                    image: productImages[id] || null
+                };
+            }),
             timestamp: new Date().toISOString()
         };
     }
@@ -484,7 +505,7 @@
             `).join('');
 
             UI.Modal.show('Wczytaj ofertę', `<div class="offers-history-list">${listHTML}</div>`, 'loadOfferModal');
-            // This needs to use document because modal is outside the app window
+
             document.querySelectorAll('.offer-history-item').forEach(item => {
                 item.addEventListener('click', () => loadOfferFromHistory(item.dataset.offerId));
             });
@@ -519,11 +540,6 @@
             if (offer.products?.length > 0) {
                 offer.products.forEach(p => {
                     addProduct(p);
-                    const newId = products[products.length - 1];
-                    if(p.image) {
-                         productImages[newId] = p.image;
-                         updateProductImage(newId);
-                    }
                 });
             }
             updateSummary();

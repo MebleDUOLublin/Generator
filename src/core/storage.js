@@ -170,6 +170,13 @@ const IndexedDBStore = (() => {
         });
     };
 
+    const getAllBy = (storeName, key, value) => {
+        return new Promise(async (resolve) => {
+            const all = await getAll(storeName);
+            resolve(all.filter(item => item[key] === value));
+        });
+    };
+
     const delete_ = (storeName, id) => {
         return new Promise(async (resolve, reject) => {
             try {
@@ -239,6 +246,7 @@ const IndexedDBStore = (() => {
         set,
         get,
         getAll,
+        getAllBy,
         delete: delete_,
         clear,
         subscribe,

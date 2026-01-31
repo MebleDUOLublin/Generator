@@ -5,8 +5,8 @@ const NeonSnake = {
     // e.g., this.canvas, this.ctx, this.gameState, etc.
 };
 
-NeonSnake.init = function(canvasId) {
-    this.canvas = document.getElementById(canvasId);
+NeonSnake.init = function(profile, windowEl) {
+    this.canvas = windowEl.querySelector('canvas');
     if (!this.canvas) {
         console.error("Snake canvas not found!");
         return;
@@ -199,5 +199,5 @@ NeonSnake.drawText = function(text, size, y) {
 };
 
 window.SnakeApp = {
-    init: () => NeonSnake.init('snakeCanvas')
+    init: (profile, windowEl) => NeonSnake.init(profile, windowEl)
 };

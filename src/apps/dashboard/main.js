@@ -1,111 +1,38 @@
 // src/apps/dashboard/main.js
 
-const Dashboard = {
-    init: function() {
-        console.log("Dashboard App Initialized");
-        this.renderChart();
-    },
-
-    renderChart: function() {
-        const ctx = document.getElementById('offersChart')?.getContext('2d');
-        if (!ctx) {
-            console.warn('Could not find offersChart canvas element.');
-            return;
-        }
-
-        const data = {
-            labels: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip'],
-            datasets: [
-                {
-                    label: 'Wartość Ofert (netto)',
-                    data: [12000, 19000, 15000, 22000, 18000, 25000, 28000],
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                },
-                {
-                    label: 'Ilość Ofert',
-                    data: [15, 22, 18, 25, 20, 28, 32],
-                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y1'
-                }
-            ]
-        };
-
-        const options = {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    type: 'linear',
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Wartość (zł)'
-                    }
-                },
-                y1: {
-                    beginAtZero: true,
-                    type: 'linear',
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Ilość'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Aktywność Ofert w Czasie'
-                }
-            }
-        };
-
-        new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: options
-        });
-    }
-};
-
-
-window.DashboardApp = {
-  init: Dashboard.init.bind(Dashboard)
 const DashboardApp = {
     async init() {
         console.log("Dashboard App Initialized");
         this.updateWelcomeMessage();
         await this.loadAndRenderStats();
+        this.renderChart();
     },
 
     updateWelcomeMessage() {
         const welcomeEl = document.getElementById('dashboard-welcome');
-        if (welcomeEl && currentProfile) {
-            welcomeEl.textContent = `Witaj, ${currentProfile.name}!`;
+        if (welcomeEl && window.currentProfile) {
+            welcomeEl.textContent = `Witaj, ${window.currentProfile.name}!`;
         }
     },
 
     async loadAndRenderStats() {
-        if (!currentProfile) return;
+        if (!window.currentProfile) return;
 
         try {
-            const allOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', currentProfile.key);
-            const thisMonthOffers = allOffers.filter(offer => new Date(offer.timestamp).getMonth() === new Date().getMonth());
+            // Fallback to getAll and filter if getAllBy is missing
+            let allOffers = [];
+            if (typeof StorageSystem.db.getAllBy === 'function') {
+                allOffers = await StorageSystem.db.getAllBy(StorageSystem.db.STORES.offers, 'profileKey', window.currentProfile.key);
+            } else {
+                const rawOffers = await StorageSystem.db.getAll(StorageSystem.db.STORES.offers);
+                allOffers = rawOffers.filter(o => o.profileKey === window.currentProfile.key);
+            }
+
+            const now = new Date();
+            const thisMonthOffers = allOffers.filter(offer => {
+                const offerDate = new Date(offer.timestamp);
+                return offerDate.getMonth() === now.getMonth() && offerDate.getFullYear() === now.getFullYear();
+            });
 
             this.renderStatCards(thisMonthOffers);
             this.renderRecentActivity(allOffers);
@@ -124,20 +51,26 @@ const DashboardApp = {
             }, 0);
         }, 0);
 
-        const newClients = new Set(offers.map(o => o.buyer?.name.trim().toLowerCase())).size;
-        const topOffer = Math.max(0, ...offers.map(offer => {
+        const newClients = new Set(offers.map(o => o.buyer?.name?.trim().toLowerCase()).filter(Boolean)).size;
+
+        const topOffer = offers.length > 0 ? Math.max(...offers.map(offer => {
              return (offer.products || []).reduce((offerSum, p) => {
                 const price = parseFloat(p.price) || 0;
                 const qty = parseInt(p.qty, 10) || 0;
                 const discount = parseFloat(p.discount) || 0;
                 return offerSum + (price * qty * (1 - discount / 100));
             }, 0);
-        }));
+        })) : 0;
 
-        document.getElementById('stats-total-offers').textContent = offers.length;
-        document.getElementById('stats-total-value').textContent = `${totalValue.toFixed(2)} zł`;
-        document.getElementById('stats-new-clients').textContent = newClients;
-        document.getElementById('stats-top-offer').textContent = `${topOffer.toFixed(2)} zł`;
+        const setEl = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+
+        setEl('stats-total-offers', offers.length);
+        setEl('stats-total-value', `${totalValue.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`);
+        setEl('stats-new-clients', newClients);
+        setEl('stats-top-offer', `${topOffer.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`);
     },
 
     renderRecentActivity(offers) {
@@ -149,8 +82,8 @@ const DashboardApp = {
 
         if (recentOffers.length === 0) {
             activityList.innerHTML = `
-                <div class="empty-state-small">
-                    <div class="empty-state-icon">📂</div>
+                <div class="empty-state-small" style="text-align: center; padding: 2rem; color: var(--gray-400);">
+                    <div class="empty-state-icon" style="font-size: 2rem;">📂</div>
                     <p>Brak ostatniej aktywności do wyświetlenia.</p>
                 </div>`;
             return;
@@ -165,22 +98,54 @@ const DashboardApp = {
             }, 0);
 
             return `
-                <div class="activity-item">
-                    <div class="activity-icon">📄</div>
-                    <div class="activity-details">
-                        <span class="activity-title">Nowa oferta: ${offer.offer.number}</span>
-                        <span class="activity-subtitle">dla ${offer.buyer.name}</span>
+                <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--gray-100);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="activity-icon" style="font-size: 1.25rem;">📄</div>
+                        <div class="activity-details" style="display: flex; flex-direction: column;">
+                            <span class="activity-title" style="font-weight: 600; color: var(--gray-800);">${offer.offer?.number || 'Oferta'}</span>
+                            <span class="activity-subtitle" style="font-size: 0.8rem; color: var(--gray-500);">dla ${offer.buyer?.name || 'Klienta'}</span>
+                        </div>
                     </div>
-                    <div class="activity-meta">
-                        <span class="activity-value">${value.toFixed(2)} zł</span>
-                        <span class="activity-time">${new Date(offer.timestamp).toLocaleDateString('pl-PL')}</span>
+                    <div class="activity-meta" style="text-align: right; display: flex; flex-direction: column;">
+                        <span class="activity-value" style="font-weight: 700; color: var(--primary-600);">${value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł</span>
+                        <span class="activity-time" style="font-size: 0.75rem; color: var(--gray-400);">${new Date(offer.timestamp).toLocaleDateString('pl-PL')}</span>
                     </div>
                 </div>
             `;
         }).join('');
+    },
+
+    renderChart() {
+        const ctx = document.getElementById('offersChart')?.getContext('2d');
+        if (!ctx) return;
+
+        // Dummy data for visualization
+        const data = {
+            labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
+            datasets: [{
+                label: 'Wartość Ofert',
+                data: [1200, 1900, 3000, 5000, 2000, 3000, 4500],
+                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-500').trim() || '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        };
+
+        new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
     }
 };
 
-window.DashboardApp = {
-    init: DashboardApp.init.bind(DashboardApp)
-};
+window.DashboardApp = DashboardApp;
