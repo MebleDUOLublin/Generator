@@ -1,203 +1,166 @@
 // src/apps/snake/main.js
 
-const NeonSnake = {
-    // Game state and properties will be attached to this object
-    // e.g., this.canvas, this.ctx, this.gameState, etc.
-};
+(function() {
+    let appWindow = null;
+    let canvas = null;
+    let ctx = null;
+    let gameState = 'MENU';
+    let snake = [];
+    let food = { x: 0, y: 0 };
+    let direction = { x: 0, y: 0 };
+    let score = 0;
+    let highScore = localStorage.getItem('snakeHighScore') || 0;
+    let gameLoopInterval = null;
 
-NeonSnake.init = function(canvasId) {
-    this.canvas = document.getElementById(canvasId);
-    if (!this.canvas) {
-        console.error("Snake canvas not found!");
-        return;
+    const GRID_SIZE = 20;
+    const GAME_STATES = { MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER' };
+
+    function init(profile, windowEl) {
+        appWindow = windowEl;
+        canvas = windowEl.querySelector('#snakeCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        if (gameLoopInterval) clearInterval(gameLoopInterval);
+        gameLoopInterval = setInterval(gameLoop, 100);
+
+        console.log("Neon Snake Initialized");
     }
-    this.ctx = this.canvas.getContext('2d');
 
-    // Unbind previous listeners if any, to prevent duplicates
-    if (this.boundKeyDown) {
-        document.removeEventListener('keydown', this.boundKeyDown);
+    function resetGame() {
+        snake = [{ x: 10, y: 10 }];
+        food = getRandomFoodPosition();
+        direction = { x: 0, y: 0 };
+        score = 0;
+        highScore = localStorage.getItem('snakeHighScore') || 0;
     }
 
-    this.GAME_STATES = {
-        MENU: 'MENU',
-        PLAYING: 'PLAYING',
-        GAME_OVER: 'GAME_OVER'
-    };
-    this.gameState = this.GAME_STATES.MENU;
-
-    this.GRID_SIZE = 20;
-    this.TILE_COUNT = this.canvas.width / this.GRID_SIZE;
-
-    this.resetGame();
-
-    this.boundKeyDown = this.handleKeyDown.bind(this);
-    document.addEventListener('keydown', this.boundKeyDown);
-
-    if (this.gameLoopInterval) {
-        clearInterval(this.gameLoopInterval);
+    function getRandomFoodPosition() {
+        const tileCount = canvas.width / GRID_SIZE;
+        let position;
+        do {
+            position = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+        } while (snake.some(s => s.x === position.x && s.y === position.y));
+        return position;
     }
-    this.gameLoopInterval = setInterval(this.gameLoop.bind(this), 100);
 
-    console.log("Neon Snake Initialized");
-};
+    function handleKeyDown(e) {
+        // Only handle keys if the snake window is focused
+        if (!appWindow.classList.contains('focused')) return;
 
-NeonSnake.resetGame = function() {
-    this.snake = [{ x: 10, y: 10 }];
-    this.food = this.getRandomFoodPosition();
-    this.direction = { x: 0, y: 0 };
-    this.score = 0;
-    this.highScore = localStorage.getItem('snakeHighScore') || 0;
-};
-
-NeonSnake.getRandomFoodPosition = function() {
-    let position;
-    do {
-        position = {
-            x: Math.floor(Math.random() * this.TILE_COUNT),
-            y: Math.floor(Math.random() * this.TILE_COUNT)
-        };
-    } while (this.isSnakeOn(position.x, position.y));
-    return position;
-};
-
-NeonSnake.isSnakeOn = function(x, y) {
-    return this.snake.some(segment => segment.x === x && segment.y === y);
-};
-
-NeonSnake.handleKeyDown = function(e) {
-    switch (e.key) {
-        case 'ArrowUp':
-            if (this.direction.y === 0) this.direction = { x: 0, y: -1 };
-            break;
-        case 'ArrowDown':
-            if (this.direction.y === 0) this.direction = { x: 0, y: 1 };
-            break;
-        case 'ArrowLeft':
-            if (this.direction.x === 0) this.direction = { x: -1, y: 0 };
-            break;
-        case 'ArrowRight':
-            if (this.direction.x === 0) this.direction = { x: 1, y: 0 };
-            break;
-        case 'Enter':
-        case ' ': // Spacebar
-             if (this.gameState !== this.GAME_STATES.PLAYING) {
-                this.gameState = this.GAME_STATES.PLAYING;
-                this.resetGame();
-            }
-            e.preventDefault(); // Prevent spacebar from scrolling
-            break;
-    }
-};
-
-
-NeonSnake.gameLoop = function() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    switch(this.gameState) {
-        case this.GAME_STATES.MENU:
-            this.drawMenu();
-            break;
-        case this.GAME_STATES.PLAYING:
-            this.updateGame();
-            this.drawGame();
-            break;
-        case this.GAME_STATES.GAME_OVER:
-            this.drawGameOver();
-            break;
-    }
-};
-
-NeonSnake.updateGame = function() {
-    const head = { x: this.snake[0].x + this.direction.x, y: this.snake[0].y + this.direction.y };
-
-    // Check for collisions
-    if (head.x < 0 || head.x >= this.TILE_COUNT || head.y < 0 || head.y >= this.TILE_COUNT || this.isSnakeOn(head.x, head.y)) {
-        this.gameState = this.GAME_STATES.GAME_OVER;
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            localStorage.setItem('snakeHighScore', this.highScore);
+        switch (e.key) {
+            case 'ArrowUp': if (direction.y === 0) direction = { x: 0, y: -1 }; break;
+            case 'ArrowDown': if (direction.y === 0) direction = { x: 0, y: 1 }; break;
+            case 'ArrowLeft': if (direction.x === 0) direction = { x: -1, y: 0 }; break;
+            case 'ArrowRight': if (direction.x === 0) direction = { x: 1, y: 0 }; break;
+            case 'Enter':
+            case ' ':
+                if (gameState !== GAME_STATES.PLAYING) {
+                    gameState = GAME_STATES.PLAYING;
+                    resetGame();
+                }
+                e.preventDefault();
+                break;
         }
-        return;
     }
 
-    this.snake.unshift(head);
+    function gameLoop() {
+        if (!canvas) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Check for food
-    if (head.x === this.food.x && head.y === this.food.y) {
-        this.score++;
-        this.food = this.getRandomFoodPosition();
-    } else {
-        this.snake.pop();
+        switch(gameState) {
+            case GAME_STATES.MENU: drawMenu(); break;
+            case GAME_STATES.PLAYING: updateGame(); drawGame(); break;
+            case GAME_STATES.GAME_OVER: drawGameOver(); break;
+        }
     }
-};
 
-NeonSnake.drawGame = function() {
-    this.drawGrid();
+    function updateGame() {
+        const tileCount = canvas.width / GRID_SIZE;
+        const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
-    // Draw food
-    this.ctx.fillStyle = '#ff00ff';
-    this.ctx.shadowBlur = 20;
-    this.ctx.shadowColor = '#ff00ff';
-    this.ctx.fillRect(this.food.x * this.GRID_SIZE, this.food.y * this.GRID_SIZE, this.GRID_SIZE, this.GRID_SIZE);
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || snake.some(s => s.x === head.x && s.y === head.y)) {
+            gameState = GAME_STATES.GAME_OVER;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snakeHighScore', highScore);
+            }
+            return;
+        }
 
-    // Draw snake
-    this.ctx.fillStyle = '#00ffff';
-    this.ctx.shadowBlur = 15;
-    this.ctx.shadowColor = '#00ffff';
-    this.snake.forEach((segment, index) => {
-        this.ctx.globalAlpha = 1 - (index / this.snake.length) * 0.5;
-        this.ctx.fillRect(segment.x * this.GRID_SIZE, segment.y * this.GRID_SIZE, this.GRID_SIZE, this.GRID_SIZE);
-    });
-    this.ctx.globalAlpha = 1.0;
-
-    this.drawScore();
-};
-
-NeonSnake.drawGrid = function() {
-    this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-    this.ctx.shadowBlur = 0;
-    for (let i = 0; i <= this.TILE_COUNT; i++) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(i * this.GRID_SIZE, 0);
-        this.ctx.lineTo(i * this.GRID_SIZE, this.canvas.height);
-        this.ctx.stroke();
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, i * this.GRID_SIZE);
-        this.ctx.lineTo(this.canvas.width, i * this.GRID_SIZE);
-        this.ctx.stroke();
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            food = getRandomFoodPosition();
+        } else {
+            snake.pop();
+        }
     }
-};
 
-NeonSnake.drawScore = function() {
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = '20px "JetBrains Mono", monospace';
-    this.ctx.shadowBlur = 5;
-    this.ctx.shadowColor = '#ffffff';
-    this.ctx.fillText(`Score: ${this.score}`, 10, 25);
-    this.ctx.fillText(`High Score: ${this.highScore}`, this.canvas.width - 150, 25);
-};
+    function drawGame() {
+        drawGrid();
+        ctx.fillStyle = '#ff00ff';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff00ff';
+        ctx.fillRect(food.x * GRID_SIZE, food.y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
 
-NeonSnake.drawMenu = function() {
-    this.drawText('NEON SNAKE', 60, this.canvas.height / 2 - 50);
-    this.drawText('Press Enter to Start', 30, this.canvas.height / 2 + 20);
-};
+        ctx.fillStyle = '#00ffff';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00ffff';
+        snake.forEach((segment, index) => {
+            ctx.globalAlpha = 1 - (index / snake.length) * 0.5;
+            ctx.fillRect(segment.x * GRID_SIZE, segment.y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+        });
+        ctx.globalAlpha = 1.0;
+        drawScore();
+    }
 
-NeonSnake.drawGameOver = function() {
-    this.drawText('GAME OVER', 60, this.canvas.height / 2 - 50);
-    this.drawText(`Your Score: ${this.score}`, 40, this.canvas.height / 2 + 20);
-    this.drawText('Press Enter to Restart', 20, this.canvas.height / 2 + 70);
-};
+    function drawGrid() {
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+        ctx.shadowBlur = 0;
+        const tileCount = canvas.width / GRID_SIZE;
+        for (let i = 0; i <= tileCount; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * GRID_SIZE, 0); ctx.lineTo(i * GRID_SIZE, canvas.height); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, i * GRID_SIZE); ctx.lineTo(canvas.width, i * GRID_SIZE); ctx.stroke();
+        }
+    }
 
-NeonSnake.drawText = function(text, size, y) {
-    this.ctx.fillStyle = '#00ffff';
-    this.ctx.font = `bold ${size}px "JetBrains Mono", monospace`;
-    this.ctx.textAlign = 'center';
-    this.ctx.shadowBlur = 10;
-    this.ctx.shadowColor = '#00ffff';
-    this.ctx.fillText(text, this.canvas.width / 2, y);
-    this.ctx.textAlign = 'left'; // Reset
-};
+    function drawScore() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '20px "JetBrains Mono", monospace';
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#ffffff';
+        ctx.fillText(`Score: ${score}`, 10, 25);
+        ctx.fillText(`High Score: ${highScore}`, canvas.width - 150, 25);
+    }
 
-window.SnakeApp = {
-    init: () => NeonSnake.init('snakeCanvas')
-};
+    function drawMenu() {
+        drawText('NEON SNAKE', 60, canvas.height / 2 - 50);
+        drawText('Press Enter to Start', 30, canvas.height / 2 + 20);
+    }
+
+    function drawGameOver() {
+        drawText('GAME OVER', 60, canvas.height / 2 - 50);
+        drawText(`Your Score: ${score}`, 40, canvas.height / 2 + 20);
+        drawText('Press Enter to Restart', 20, canvas.height / 2 + 70);
+    }
+
+    function drawText(text, size, y) {
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `bold ${size}px "JetBrains Mono", monospace`;
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ffff';
+        ctx.fillText(text, canvas.width / 2, y);
+        ctx.textAlign = 'left';
+    }
+
+    window.SnakeApp = { init };
+})();

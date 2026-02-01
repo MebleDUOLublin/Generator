@@ -486,9 +486,43 @@ const UIFeedback = (() => {
         });
     };
 
+    const show = (title, message, type = 'info') => {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-overlay';
+        backdrop.style.zIndex = '10002';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-content';
+        dialog.style.width = '400px';
+
+        const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+
+        dialog.innerHTML = `
+            <div class="modal-header">
+                <h3 class="modal-title">${icon} ${title}</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div style="padding: 1rem 0; color: var(--gray-600);">
+                ${message}
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button class="btn btn-primary btn-close-modal">Zamknij</button>
+            </div>
+        `;
+
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+
+        const close = () => backdrop.remove();
+        dialog.querySelector('.modal-close').onclick = close;
+        dialog.querySelector('.btn-close-modal').onclick = close;
+        backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+    };
+
     return {
         toast,
-        confirm
+        confirm,
+        show
     };
 })();
 
@@ -550,9 +584,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const UIModal = (() => {
+    const show = (title, content, id = 'genericModal') => {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-overlay';
+        backdrop.id = id;
+        backdrop.style.zIndex = '10005';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-content';
+        dialog.style.minWidth = '500px';
+
+        dialog.innerHTML = `
+            <div class="modal-header">
+                <h3 class="modal-title">${title}</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1rem 0;">
+                ${content}
+            </div>
+        `;
+
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+
+        const close = () => backdrop.remove();
+        dialog.querySelector('.modal-close').onclick = close;
+        backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+
+        return backdrop;
+    };
+
+    const hide = (id) => {
+        const modal = document.getElementById(id);
+        if (modal) modal.remove();
+    };
+
+    return { show, hide };
+})();
+
 window.UI = {
     Form: ReactiveForm,
     Observer: FormObserver,
     Feedback: UIFeedback,
-    Command: CommandManager
+    Command: CommandManager,
+    Modal: UIModal
 };
