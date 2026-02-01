@@ -9,8 +9,6 @@
             <div class="stat-card-title">Wystawione Oferty</div>
             <div class="stat-card-icon">📄</div>
         </div>
-        <div class="stat-card-value" id="stats-total-offers">128</div>
-        <div class="stat-card-change stat-card-change-positive">+12% vs. Poprzedni miesiąc</div>
         <div class="stat-card-value" id="stats-total-offers">0</div>
         <div class="stat-card-change">w tym miesiącu</div>
     </div>
@@ -19,8 +17,6 @@
             <div class="stat-card-title">Wartość Ofert (Netto)</div>
             <div class="stat-card-icon">💰</div>
         </div>
-        <div class="stat-card-value" id="stats-total-value">245,6K zł</div>
-        <div class="stat-card-change stat-card-change-positive">+25.3% vs. Poprzedni miesiąc</div>
         <div class="stat-card-value" id="stats-total-value">0,00 zł</div>
         <div class="stat-card-change">w tym miesiącu</div>
     </div>
@@ -29,20 +25,6 @@
             <div class="stat-card-title">Nowi Klienci</div>
             <div class="stat-card-icon">🏢</div>
         </div>
-        <div class="stat-card-value" id="stats-new-clients">32</div>
-        <div class="stat-card-change stat-card-change-negative">-5% vs. Poprzedni miesiąc</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <div class="stat-card-title">Współczynnik Konwersji</div>
-            <div class="stat-card-icon">🎯</div>
-        </div>
-        <div class="stat-card-value" id="stats-conversion-rate">48%</div>
-        <div class="stat-card-change stat-card-change-positive">+2.1% vs. Poprzedni miesiąc</div>
-    </div>
-</div>
-<div class="dashboard-chart-container">
-    <canvas id="offersChart"></canvas>
         <div class="stat-card-value" id="stats-new-clients">0</div>
         <div class="stat-card-change">w tym miesiącu</div>
     </div>
@@ -56,12 +38,18 @@
     </div>
 </div>
 
-<div class="dashboard-recent-activity">
-    <h2 class="section-title">Ostatnia Aktywność</h2>
-    <div id="recent-activity-list">
-        <div class="empty-state-small">
-            <div class="empty-state-icon">📂</div>
-            <p>Brak ostatniej aktywności do wyświetlenia.</p>
+<div class="dashboard-content-grid" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-6); margin-top: var(--space-6);">
+    <div class="dashboard-chart-container section">
+        <h2 class="section-title">Aktywność Ofert</h2>
+        <div style="height: 300px;">
+            <canvas id="offersChart"></canvas>
+        </div>
+    </div>
+
+    <div class="dashboard-recent-activity section">
+        <h2 class="section-title">Ostatnia Aktywność</h2>
+        <div id="recent-activity-list">
+            <!-- Dynamiczny content -->
         </div>
     </div>
 </div>
